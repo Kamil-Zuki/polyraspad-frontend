@@ -53,88 +53,139 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50">
-      <div className="w-full max-w-md p-8 bg-white rounded-lg border border-gray-200 shadow-sm">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6 text-center">
-          {isLogin ? "Вход" : "Регистрация"}
+    <div className="flex items-center justify-center min-h-screen bg-dark-900">
+      <div className="w-full max-w-md p-8 glass-panel rounded-xl border-white/10 shadow-2xl">
+        {/* Logo */}
+        <div className="flex items-center justify-center mb-6">
+          <div className="w-12 h-12 rounded bg-gradient-to-br from-brand-purple to-brand-blue flex items-center justify-center text-white font-bold text-xl mr-3 shadow-lg shadow-purple-500/20">
+            P
+          </div>
+          <span className="font-bold text-white text-2xl tracking-tight">PVS.ai</span>
+        </div>
+
+        <h1 className="text-2xl font-bold text-white mb-6 text-center">
+          {isLogin ? "Welcome Back" : "Create Account"}
         </h1>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+          <div className="mb-4 p-3 bg-red-500/20 border border-red-500/30 rounded-lg text-red-400 text-sm flex items-center gap-2">
+            <i className="fas fa-exclamation-circle" />
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">
               Email
             </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="your@email.com"
-            />
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <i className="fas fa-envelope text-gray-500" />
+              </div>
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full pl-10 pr-3 py-2 border border-white/10 rounded-lg bg-dark-800 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-purple focus:border-brand-purple/50 transition"
+                placeholder="your@email.com"
+              />
+            </div>
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-              Пароль
+            <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-1">
+              Password
             </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={6}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <i className="fas fa-lock text-gray-500" />
+              </div>
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={6}
+                className="w-full pl-10 pr-3 py-2 border border-white/10 rounded-lg bg-dark-800 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-purple focus:border-brand-purple/50 transition"
+                placeholder="••••••"
+              />
+            </div>
           </div>
 
           {!isLogin && (
             <div>
               <label
                 htmlFor="confirmPassword"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className="block text-sm font-medium text-gray-300 mb-1"
               >
-                Подтвердите пароль
+                Confirm Password
               </label>
-              <input
-                id="confirmPassword"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                minLength={6}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <i className="fas fa-lock text-gray-500" />
+                </div>
+                <input
+                  id="confirmPassword"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  className="w-full pl-10 pr-3 py-2 border border-white/10 rounded-lg bg-dark-800 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-purple focus:border-brand-purple/50 transition"
+                  placeholder="••••••"
+                />
+              </div>
             </div>
           )}
 
           <button
             type="submit"
             disabled={isPending}
-            className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+            className="w-full py-2.5 px-4 bg-brand-purple hover:bg-indigo-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium shadow-[0_0_15px_rgba(139,92,246,0.3)] flex items-center justify-center gap-2"
           >
-            {isPending ? "Загрузка..." : isLogin ? "Войти" : "Зарегистрироваться"}
+            {isPending ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Loading...
+              </>
+            ) : (
+              <>
+                {isLogin ? (
+                  <>
+                    <i className="fas fa-sign-in-alt" /> Sign In
+                  </>
+                ) : (
+                  <>
+                    <i className="fas fa-user-plus" /> Sign Up
+                  </>
+                )}
+              </>
+            )}
           </button>
         </form>
 
-        <div className="mt-4 text-center">
+        <div className="mt-6 text-center">
           <button
             type="button"
             onClick={() => {
               setIsLogin(!isLogin)
               setError("")
             }}
-            className="text-sm text-blue-600 hover:text-blue-700"
+            className="text-sm text-gray-400 hover:text-brand-purple transition"
           >
-            {isLogin ? "Нет аккаунта? Зарегистрироваться" : "Уже есть аккаунт? Войти"}
+            {isLogin ? (
+              <>
+                Don't have an account? <span className="text-brand-purple font-medium">Sign Up</span>
+              </>
+            ) : (
+              <>
+                Already have an account? <span className="text-brand-purple font-medium">Sign In</span>
+              </>
+            )}
           </button>
         </div>
       </div>

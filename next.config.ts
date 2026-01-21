@@ -7,6 +7,8 @@ const nextConfig: NextConfig = {
   compress: true,
   experimental: {
     optimizePackageImports: ["@tanstack/react-query"],
+    // Disable Turbopack if causing CSS issues
+    // turbo: {},
   },
 };
 

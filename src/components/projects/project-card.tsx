@@ -1,3 +1,5 @@
+"use client"
+
 import Link from "next/link"
 import { ProjectResponseDto } from "@/lib/api/types"
 import { ROUTES } from "@/lib/constants"
@@ -17,48 +19,81 @@ export function ProjectCard({ project }: ProjectCardProps) {
     <Link
       href={ROUTES.PROJECT_DETAIL(project.id)}
       className={cn(
-        "block p-6 bg-white rounded-lg border border-gray-200",
-        "hover:shadow-md hover:border-blue-300 transition-all",
-        "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+        "glass-panel rounded-xl overflow-hidden group cursor-pointer relative transition duration-300",
+        "hover:border-brand-purple/50"
       )}
       aria-label={`Проект ${project.title}`}
     >
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex-1">
-          <h3 className="text-lg font-semibold text-gray-900 mb-1">{project.title}</h3>
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-            <span className="uppercase">{project.sourceLang}</span>
-            <span>→</span>
-            <span className="uppercase">{project.targetLang}</span>
+      {/* Cover Image Area */}
+      <div className="h-40 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-brand-purple/20 to-brand-blue/20" />
+        <div className="absolute inset-0 bg-gradient-to-t from-dark-800 to-transparent" />
+        {project.isArchived && (
+          <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md px-2 py-1 rounded text-[10px] font-bold text-white border border-white/10">
+            Archived
+          </div>
+        )}
+        <div className="absolute bottom-2 left-2 right-2">
+          <div className="flex items-center gap-2 text-xs text-gray-300">
+            <span className="uppercase font-medium">{project.sourceLang}</span>
+            <i className="fas fa-arrow-right text-[8px]" />
+            <span className="uppercase font-medium">{project.targetLang}</span>
           </div>
         </div>
-        {project.isArchived && (
-          <span className="px-2 py-1 text-xs font-medium text-gray-500 bg-gray-100 rounded">
-            Архив
-          </span>
-        )}
       </div>
 
-      {stats && (
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-600">Изучено слов</span>
-            <span className="font-medium text-gray-900">
-              {stats.matureLemmas} / {stats.totalLemmas}
-            </span>
+      {/* Content */}
+      <div className="p-5">
+        <div className="flex justify-between items-start mb-3">
+          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-brand-purple to-brand-blue flex items-center justify-center text-white font-bold shadow-lg">
+            {project.title[0]?.toUpperCase() || "P"}
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div
-              className="bg-blue-600 h-2 rounded-full transition-all"
-              style={{ width: `${maturePercentage}%` }}
-            />
-          </div>
+          {stats && stats.totalLemmas > 0 && (
+            <div className="px-2 py-0.5 bg-green-500/20 text-green-400 text-[10px] font-bold rounded border border-green-500/30">
+              Active
+            </div>
+          )}
         </div>
-      )}
 
-      {!stats && (
-        <div className="text-sm text-gray-500">Нет статистики</div>
-      )}
+        <h3 className="text-white font-bold text-lg mb-1 group-hover:text-brand-purple transition truncate">
+          {project.title}
+        </h3>
+        <p className="text-gray-400 text-xs mb-4 line-clamp-2">
+          Language learning project
+        </p>
+
+        {stats && stats.totalLemmas > 0 ? (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-xs text-gray-500">
+              <span className="flex items-center gap-1">
+                <i className="fas fa-layer-group text-brand-blue" /> {stats.totalLemmas} cards
+              </span>
+              <span className="flex items-center gap-1 text-red-400 font-medium">
+                <i className="fas fa-clock" /> {stats.totalLemmas - stats.matureLemmas} due
+              </span>
+            </div>
+            <div className="w-full h-1.5 bg-dark-700 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-brand-blue to-brand-purple rounded-full transition-all shadow-[0_0_10px_rgba(139,92,246,0.5)]"
+                style={{ width: `${maturePercentage}%` }}
+              />
+            </div>
+            <div className="text-[10px] text-gray-500 text-right">{maturePercentage}% Mastered</div>
+          </div>
+        ) : (
+          <div className="text-xs text-gray-500">No cards yet</div>
+        )}
+
+        {/* Actions on Hover */}
+        <div className="absolute inset-0 bg-dark-900/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition duration-300 flex items-center justify-center gap-3 rounded-xl">
+          <button className="bg-white text-dark-900 px-4 py-2 rounded-lg font-bold text-sm hover:scale-105 transition shadow-lg">
+            <i className="fas fa-play mr-2" /> Study
+          </button>
+          <button className="bg-dark-700 text-white px-3 py-2 rounded-lg hover:bg-dark-600 transition border border-white/10">
+            <i className="fas fa-pen" />
+          </button>
+        </div>
+      </div>
     </Link>
   )
 }

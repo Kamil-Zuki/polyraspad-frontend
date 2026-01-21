@@ -1,6 +1,5 @@
 "use client"
 
-import { useCreateProject } from "@/lib/react-query/queries"
 import { useState } from "react"
 import { CreateProjectDialog } from "./create-project-dialog"
 
@@ -9,19 +8,18 @@ export function ProjectsPageHeader() {
 
   return (
     <>
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Проекты</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Управление вашими языковыми проектами
-          </p>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-gray-400 text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+          <i className="fas fa-layer-group text-brand-purple" /> My Projects
+        </h2>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setIsDialogOpen(true)}
+            className="bg-brand-purple hover:bg-indigo-600 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition shadow-[0_0_15px_rgba(139,92,246,0.3)] flex items-center gap-2"
+          >
+            <i className="fas fa-plus" /> New Project
+          </button>
         </div>
-        <button
-          onClick={() => setIsDialogOpen(true)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-        >
-          + Создать проект
-        </button>
       </div>
       <CreateProjectDialog
         isOpen={isDialogOpen}

@@ -18,49 +18,31 @@ export function Header() {
     })
   }
 
-  const user = auth.user
-  const userInitial = user?.userName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "U"
-
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-gray-200 bg-white/80 backdrop-blur-sm">
-      <div className="flex h-16 items-center justify-between px-6">
-        {/* Search */}
-        <div className="flex-1 max-w-md">
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Поиск карточек, колод..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-10 pl-10 pr-4 text-sm border border-gray-200 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-            />
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-              🔍
-            </span>
-          </div>
+    <header className="h-16 flex items-center justify-between px-8 z-10 bg-dark-900/80 backdrop-blur-md sticky top-0 border-b border-white/5">
+      {/* Search */}
+      <div className="relative w-96 group">
+        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <i className="fas fa-search text-gray-500 group-focus-within:text-brand-purple transition" />
         </div>
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="block w-full pl-10 pr-3 py-2 border border-white/10 rounded-full leading-5 bg-dark-800 text-gray-300 placeholder-gray-500 focus:outline-none focus:bg-dark-700 focus:border-brand-purple/50 focus:ring-1 focus:ring-brand-purple/50 sm:text-sm transition-all"
+          placeholder="Search decks, tags, or words..."
+        />
+      </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-3">
-          {/* User Menu */}
-          <div className="flex items-center gap-2">
-            <div className="text-right hidden sm:block">
-              <div className="text-sm font-medium text-gray-900">
-                {user?.userName || user?.email || "Пользователь"}
-              </div>
-              <div className="text-xs text-gray-500">{user?.email}</div>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              Выйти
-            </button>
-            <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm font-medium">
-              {userInitial}
-            </div>
-          </div>
-        </div>
+      {/* Actions */}
+      <div className="flex items-center gap-4">
+        <button className="relative p-2 text-gray-400 hover:text-white transition">
+          <i className="fas fa-bell" />
+          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-brand-pink rounded-full" />
+        </button>
+        <button className="gradient-border px-4 py-1.5 text-sm font-medium text-white hover:brightness-110 transition shadow-lg shadow-purple-500/20">
+          <i className="fas fa-plus mr-2" /> Create New
+        </button>
       </div>
     </header>
   )

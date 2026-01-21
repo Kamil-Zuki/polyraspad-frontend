@@ -40,14 +40,14 @@ export function CreateProjectDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">
-          Создать проект
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+      <div className="glass-panel rounded-xl p-6 w-full max-w-md border-white/10">
+        <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+          <i className="fas fa-plus text-brand-purple" /> Create Project
         </h2>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+          <div className="mb-4 p-3 bg-red-500/20 border border-red-500/30 rounded-lg text-red-400 text-sm">
             {error}
           </div>
         )}
@@ -56,9 +56,9 @@ export function CreateProjectDialog({
           <div>
             <label
               htmlFor="title"
-              className="block text-sm font-medium text-gray-700 mb-1"
+              className="block text-sm font-medium text-gray-300 mb-1"
             >
-              Название проекта
+              Project Title
             </label>
             <input
               id="title"
@@ -66,8 +66,8 @@ export function CreateProjectDialog({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Например: Английский язык"
+              className="w-full px-3 py-2 border border-white/10 rounded-lg bg-dark-800 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-purple focus:border-brand-purple/50 transition"
+              placeholder="e.g., English Learning"
             />
           </div>
 
@@ -75,15 +75,15 @@ export function CreateProjectDialog({
             <div>
               <label
                 htmlFor="sourceLang"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className="block text-sm font-medium text-gray-300 mb-1"
               >
-                Родной язык
+                Source Language
               </label>
               <select
                 id="sourceLang"
                 value={sourceLang}
                 onChange={(e) => setSourceLang(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-white/10 rounded-lg bg-dark-800 text-white focus:outline-none focus:ring-2 focus:ring-brand-purple focus:border-brand-purple/50 transition"
               >
                 <option value="ru">Русский</option>
                 <option value="en">English</option>
@@ -95,15 +95,15 @@ export function CreateProjectDialog({
             <div>
               <label
                 htmlFor="targetLang"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className="block text-sm font-medium text-gray-300 mb-1"
               >
-                Изучаемый язык
+                Target Language
               </label>
               <select
                 id="targetLang"
                 value={targetLang}
                 onChange={(e) => setTargetLang(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-white/10 rounded-lg bg-dark-800 text-white focus:outline-none focus:ring-2 focus:ring-brand-purple focus:border-brand-purple/50 transition"
               >
                 <option value="en">English</option>
                 <option value="ru">Русский</option>
@@ -113,20 +113,20 @@ export function CreateProjectDialog({
             </div>
           </div>
 
-          <div className="flex gap-3 justify-end">
+          <div className="flex gap-3 justify-end pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              className="px-4 py-2 text-gray-300 bg-dark-700 hover:bg-dark-600 rounded-lg transition-colors"
             >
-              Отмена
+              Cancel
             </button>
             <button
               type="submit"
               disabled={createProject.isPending}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+              className="px-4 py-2 bg-brand-purple hover:bg-indigo-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium shadow-[0_0_15px_rgba(139,92,246,0.3)]"
             >
-              {createProject.isPending ? "Создание..." : "Создать"}
+              {createProject.isPending ? "Creating..." : "Create"}
             </button>
           </div>
         </form>

@@ -1,9 +1,18 @@
 import type { Metadata, Viewport } from "next"
+import { Inter } from "next/font/google"
 import "./globals.css"
 import { AuthProvider } from "@/contexts/auth-context"
 import { ReactQueryProvider } from "@/lib/react-query/query-client"
 import { AppLayout } from "@/components/layout/app-layout"
 import { ErrorBoundary } from "@/components/error-boundary"
+import { FontAwesomeLoader } from "@/components/font-awesome-loader"
+
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-inter",
+  display: "swap",
+})
 
 export const metadata: Metadata = {
   title: {
@@ -27,8 +36,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
+    { media: "(prefers-color-scheme: light)", color: "#0b0f19" },
+    { media: "(prefers-color-scheme: dark)", color: "#0b0f19" },
   ],
 }
 
@@ -39,7 +48,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ru" suppressHydrationWarning>
-      <body className="antialiased">
+      <body className={`${inter.variable} font-sans antialiased`}>
+        <FontAwesomeLoader />
         <ErrorBoundary>
           <ReactQueryProvider>
             <AuthProvider>
