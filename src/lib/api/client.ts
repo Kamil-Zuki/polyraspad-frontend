@@ -1,0 +1,179 @@
+import {
+  UserLoginDto,
+  UserRegistrationDto,
+  TokenResponseDto,
+  UserInfoDto,
+  AuthResponseDto,
+  ProjectResponseDto,
+  CreateProjectDto,
+} from "./types"
+import { ApiError } from "./errors"
+import { API_ENDPOINTS } from "../constants"
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+
+class ApiClient {
+  private getAuthHeaders(): HeadersInit {
+    const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null
+    return {
+      "Content-Type": "application/json",
+      ...(token && { Authorization: `Bearer ${token}` }),
+    }
+  }
+
+  private async request<T>(
+    endpoint: string,
+    options: RequestInit = {}
+  ): Promise<T> {
+    const url = `${API_BASE_URL}${endpoint}`
+    const config: RequestInit = {
+      ...options,
+      headers: {
+        ...this.getAuthHeaders(),
+        ...options.headers,
+      },
+    }
+
+    // Логирование для отладки (только в development)
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[API] ${options.method || 'GET'} ${url}`, {
+        body: options.body,
+        headers: config.headers,
+      })
+    }
+
+    const response = await fetch(url, config)
+
+    if (response.status === 401) {
+      // Unauthorized - clear token and redirect to login
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("accessToken")
+        localStorage.removeItem("refreshToken")
+        // Используем window.location для гарантированного редиректа
+        window.location.href = "/auth"
+      }
+      throw ApiError.fromResponse(
+        { detail: "Unauthorized" },
+        response.status
+      )
+    }
+
+    if (!response.ok) {
+      let error: any = { detail: "Unknown error" }
+      const contentType = response.headers.get("content-type")
+      
+      try {
+        if (contentType && contentType.includes("application/json")) {
+          error = await response.json()
+          
+          // Обработка формата AggregatorService: { error: "..." }
+          if (error.error && !error.detail) {
+            error.detail = error.error
+            // Если это общее сообщение об исключении, пытаемся извлечь полезную информацию
+            if (error.detail.includes("ResponseException") && error.detail.includes("was thrown")) {
+              // Пытаемся найти более конкретное сообщение
+              // Обычно это "User not found" или "Invalid login attempt"
+              if (error.detail.includes("User not found")) {
+                error.detail = "Пользователь не найден. Проверьте email или зарегистрируйтесь."
+              } else if (error.detail.includes("Invalid login attempt")) {
+                error.detail = "Неверный email или пароль"
+              } else {
+                error.detail = "Ошибка авторизации. Проверьте данные и попробуйте снова."
+              }
+            }
+          }
+          // Обработка формата authorization-module: { Errors: [{ ErrorMessage: "..." }] }
+          else if (error.Errors && Array.isArray(error.Errors) && error.Errors.length > 0) {
+            const firstError = error.Errors[0]
+            error.detail = firstError.ErrorMessage || firstError.message || error.detail
+          }
+          // Обработка формата ProblemDetails с errors: { errors: { Email: [...], Password: [...] } }
+          else if (error.errors && typeof error.errors === 'object') {
+            const errorMessages: string[] = []
+            Object.keys(error.errors).forEach(key => {
+              const fieldErrors = error.errors[key]
+              if (Array.isArray(fieldErrors)) {
+                errorMessages.push(...fieldErrors)
+              }
+            })
+            if (errorMessages.length > 0) {
+              error.detail = errorMessages[0] // Берем первую ошибку
+            }
+          }
+          // ProblemDetails format: { detail, title, status, type, instance }
+          else if (!error.detail && error.title) {
+            error.detail = error.title
+          }
+        } else {
+          // Если ответ не JSON, читаем как текст
+          const text = await response.text().catch(() => "")
+          error = { detail: text || `HTTP ${response.status}: ${response.statusText}` }
+        }
+      } catch (e) {
+        // Если не удалось распарсить, используем статус
+        error = { 
+          detail: `HTTP ${response.status}: ${response.statusText}`,
+          status: response.status 
+        }
+      }
+      
+      throw ApiError.fromResponse(error, response.status)
+    }
+
+    return response.json()
+  }
+
+  // Auth endpoints
+  async login(data: UserLoginDto): Promise<TokenResponseDto> {
+    return this.request<TokenResponseDto>(API_ENDPOINTS.AUTH.LOGIN, {
+      method: "POST",
+      body: JSON.stringify(data),
+    })
+  }
+
+  async register(data: UserRegistrationDto): Promise<AuthResponseDto> {
+    return this.request<AuthResponseDto>(API_ENDPOINTS.AUTH.REGISTER, {
+      method: "POST",
+      body: JSON.stringify(data),
+    })
+  }
+
+  async getUserInfo(): Promise<UserInfoDto> {
+    return this.request<UserInfoDto>(API_ENDPOINTS.AUTH.ME)
+  }
+
+  async refreshToken(refreshToken: string): Promise<TokenResponseDto> {
+    return this.request<TokenResponseDto>(API_ENDPOINTS.AUTH.REFRESH, {
+      method: "POST",
+      body: JSON.stringify({ refreshToken }),
+    })
+  }
+
+  async logout(refreshToken?: string): Promise<AuthResponseDto> {
+    const token = refreshToken || (typeof window !== "undefined" ? localStorage.getItem("refreshToken") : null)
+    return this.request<AuthResponseDto>(API_ENDPOINTS.AUTH.LOGOUT, {
+      method: "POST",
+      body: JSON.stringify({ refreshToken: token || "" }),
+    })
+  }
+
+  // Project endpoints
+  async getProjects(includeArchived = false): Promise<ProjectResponseDto[]> {
+    return this.request<ProjectResponseDto[]>(
+      `${API_ENDPOINTS.PROJECTS.LIST}?includeArchived=${includeArchived}`
+    )
+  }
+
+  async getProject(id: string): Promise<ProjectResponseDto> {
+    return this.request<ProjectResponseDto>(API_ENDPOINTS.PROJECTS.DETAIL(id))
+  }
+
+  async createProject(data: CreateProjectDto): Promise<ProjectResponseDto> {
+    return this.request<ProjectResponseDto>(API_ENDPOINTS.PROJECTS.CREATE, {
+      method: "POST",
+      body: JSON.stringify(data),
+    })
+  }
+}
+
+export const apiClient = new ApiClient()
