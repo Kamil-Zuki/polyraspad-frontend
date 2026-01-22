@@ -6,6 +6,7 @@ import {
   AuthResponseDto,
   ProjectResponseDto,
   CreateProjectDto,
+  UpdateProjectDto,
 } from "./types"
 import { ApiError } from "./errors"
 import { API_ENDPOINTS } from "../constants"
@@ -171,6 +172,13 @@ class ApiClient {
   async createProject(data: CreateProjectDto): Promise<ProjectResponseDto> {
     return this.request<ProjectResponseDto>(API_ENDPOINTS.PROJECTS.CREATE, {
       method: "POST",
+      body: JSON.stringify(data),
+    })
+  }
+
+  async updateProject(id: string, data: UpdateProjectDto): Promise<ProjectResponseDto> {
+    return this.request<ProjectResponseDto>(API_ENDPOINTS.PROJECTS.UPDATE(id), {
+      method: "PUT",
       body: JSON.stringify(data),
     })
   }

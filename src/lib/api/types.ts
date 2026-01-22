@@ -65,3 +65,9 @@ export interface CreateProjectDto {
   targetLang: string
   settings?: SrsSettingsDto
 }
+
+export interface UpdateProjectDto {
+  title?: string
+  isArchived?: boolean
+  settings?: SrsSettingsDto
+}

@@ -3,6 +3,7 @@ import { apiClient } from "../api/client"
 import type {
   ProjectResponseDto,
   CreateProjectDto,
+  UpdateProjectDto,
   UserInfoDto,
 } from "../api/types"
 
@@ -35,6 +36,19 @@ export function useCreateProject() {
   return useMutation({
     mutationFn: (data: CreateProjectDto) => apiClient.createProject(data),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects })
+    },
+  })
+}
+
+export function useUpdateProject() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: UpdateProjectDto }) =>
+      apiClient.updateProject(id, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.project(variables.id) })
       queryClient.invalidateQueries({ queryKey: queryKeys.projects })
     },
   })
