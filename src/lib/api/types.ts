@@ -71,3 +71,76 @@ export interface UpdateProjectDto {
   isArchived?: boolean
   settings?: SrsSettingsDto
 }
+
+// Deck types
+export interface DeckResponseDto {
+  id: string
+  projectId: string
+  parentDeckId?: string | null
+  ownerId: string
+  title: string
+  description?: string | null
+  coverImageUrl?: string | null
+  isPublic: boolean
+  contributionPolicy: ContributionPolicyDto
+  licenseType: LicenseTypeDto
+  forkedFromId?: string | null
+  cardCount: number
+  createdAt: string
+}
+
+export enum ContributionPolicyDto {
+  Open = 0,
+  Restricted = 1,
+  Closed = 2,
+}
+
+export enum LicenseTypeDto {
+  Private = 0,
+  FreeAttribution = 1,
+  Commercial = 2,
+  CommercialDerivative = 3,
+}
+
+export interface DeckTreeItemDto {
+  id: string
+  title: string
+  cardCount: number
+  children: DeckTreeItemDto[]
+}
+
+export interface CreateDeckDto {
+  projectId: string
+  title: string
+  description?: string | null
+  parentDeckId?: string | null
+  isPublic: boolean
+  coverImageUrl?: string | null
+}
+
+export interface UpdateDeckDto {
+  title?: string | null
+  description?: string | null
+  parentDeckId?: string | null
+  isPublic?: boolean | null
+  coverImageUrl?: string | null
+  contributionPolicy?: ContributionPolicyDto | null
+}
+
+// User Settings types
+export interface UserSettingsResponseDto {
+  userId: string
+  rolloverHour: number
+  dailyGoalNew: number
+  dailyGoalReview: number
+  interfaceLanguage: string
+  currentStreak: number
+  maxStreak: number
+}
+
+export interface UpdateUserSettingsDto {
+  rolloverHour?: number | null
+  dailyGoalNew?: number | null
+  dailyGoalReview?: number | null
+  interfaceLanguage?: string | null
+}

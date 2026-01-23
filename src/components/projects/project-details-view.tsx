@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useUpdateProject } from "@/lib/react-query/queries"
 import type { ProjectResponseDto, UpdateProjectDto } from "@/lib/api/types"
 import { FsrsSettingsEditor } from "@/components/projects/fsrs-settings-editor"
+import { DeckTree } from "@/components/decks/deck-tree"
 
 interface ProjectDetailsViewProps {
   project: ProjectResponseDto
@@ -68,6 +69,12 @@ export function ProjectDetailsView({ project }: ProjectDetailsViewProps) {
               <p className="text-white font-medium">{project.stats?.matureLemmas || 0}</p>
             </div>
           </div>
+        </div>
+
+        {/* Decks */}
+        <div className="glass-panel rounded-xl p-6 mb-6">
+          <h2 className="text-xl font-bold text-white mb-4">Deck Structure</h2>
+          <DeckTree projectId={project.id} />
         </div>
 
         {/* FSRS Settings */}

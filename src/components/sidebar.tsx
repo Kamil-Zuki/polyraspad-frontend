@@ -147,7 +147,10 @@ export function Sidebar() {
 
       {/* User Profile Footer */}
       <div className="p-4 border-t border-white/5 bg-dark-900/30">
-        <div className="flex items-center gap-3 group cursor-pointer">
+        <Link
+          href="/settings"
+          className="flex items-center gap-3 group cursor-pointer"
+        >
           <div className="relative">
             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-brand-purple to-brand-blue flex items-center justify-center text-white font-bold text-sm border border-gray-600 group-hover:border-brand-purple transition">
               {userInitial}
@@ -158,11 +161,11 @@ export function Sidebar() {
             <div className="text-sm font-medium text-white truncate group-hover:text-brand-purple transition">
               {user?.userName || user?.email || "User"}
             </div>
-            <div className="text-xs text-gray-500 flex items-center gap-1">
+            <div className="text-xs text-gray-500 flex items-center gap-1 group-hover:text-gray-400 transition">
               <i className="fas fa-cog" /> Settings
             </div>
           </div>
-        </div>
+        </Link>
       </div>
     </aside>
   )

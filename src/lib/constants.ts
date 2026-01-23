@@ -19,6 +19,16 @@ export const API_ENDPOINTS = {
     CREATE: "/api/Projects",
     UPDATE: (id: string) => `/api/Projects/${id}`,
   },
+  DECKS: {
+    TREE: (projectId: string) => `/api/Decks/tree/${projectId}`,
+    CREATE: "/api/Decks",
+    UPDATE: (id: string) => `/api/Decks/${id}`,
+    DELETE: (id: string) => `/api/Decks/${id}`,
+  },
+  USER_SETTINGS: {
+    GET: "/api/UserSettings",
+    UPDATE: "/api/UserSettings",
+  },
 } as const
 
 export const ROUTES = {
@@ -26,4 +36,5 @@ export const ROUTES = {
   AUTH: "/auth",
   PROJECTS: "/projects",
   PROJECT_DETAIL: (id: string) => `/projects/${id}`,
+  SETTINGS: "/settings",
 } as const

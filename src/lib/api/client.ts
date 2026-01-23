@@ -7,6 +7,12 @@ import {
   ProjectResponseDto,
   CreateProjectDto,
   UpdateProjectDto,
+  DeckResponseDto,
+  DeckTreeItemDto,
+  CreateDeckDto,
+  UpdateDeckDto,
+  UserSettingsResponseDto,
+  UpdateUserSettingsDto,
 } from "./types"
 import { ApiError } from "./errors"
 import { API_ENDPOINTS } from "../constants"
@@ -178,6 +184,43 @@ class ApiClient {
 
   async updateProject(id: string, data: UpdateProjectDto): Promise<ProjectResponseDto> {
     return this.request<ProjectResponseDto>(API_ENDPOINTS.PROJECTS.UPDATE(id), {
+      method: "PUT",
+      body: JSON.stringify(data),
+    })
+  }
+
+  // Deck endpoints
+  async getDeckTree(projectId: string): Promise<DeckTreeItemDto[]> {
+    return this.request<DeckTreeItemDto[]>(API_ENDPOINTS.DECKS.TREE(projectId))
+  }
+
+  async createDeck(data: CreateDeckDto): Promise<DeckResponseDto> {
+    return this.request<DeckResponseDto>(API_ENDPOINTS.DECKS.CREATE, {
+      method: "POST",
+      body: JSON.stringify(data),
+    })
+  }
+
+  async updateDeck(id: string, data: UpdateDeckDto): Promise<DeckResponseDto> {
+    return this.request<DeckResponseDto>(API_ENDPOINTS.DECKS.UPDATE(id), {
+      method: "PUT",
+      body: JSON.stringify(data),
+    })
+  }
+
+  async deleteDeck(id: string): Promise<void> {
+    return this.request<void>(API_ENDPOINTS.DECKS.DELETE(id), {
+      method: "DELETE",
+    })
+  }
+
+  // User Settings endpoints
+  async getUserSettings(): Promise<UserSettingsResponseDto> {
+    return this.request<UserSettingsResponseDto>(API_ENDPOINTS.USER_SETTINGS.GET)
+  }
+
+  async updateUserSettings(data: UpdateUserSettingsDto): Promise<UserSettingsResponseDto> {
+    return this.request<UserSettingsResponseDto>(API_ENDPOINTS.USER_SETTINGS.UPDATE, {
       method: "PUT",
       body: JSON.stringify(data),
     })

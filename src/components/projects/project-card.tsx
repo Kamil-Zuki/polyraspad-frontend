@@ -1,15 +1,21 @@
 "use client"
 
+import { useState } from "react"
 import Link from "next/link"
 import { ProjectResponseDto } from "@/lib/api/types"
 import { ROUTES } from "@/lib/constants"
 import { cn } from "@/lib/utils"
+import { UpdateProjectDialog } from "./update-project-dialog"
+import { useUpdateProject } from "@/lib/react-query/queries"
 
 interface ProjectCardProps {
   project: ProjectResponseDto
+  onUpdate?: () => void
 }
 
-export function ProjectCard({ project }: ProjectCardProps) {
+export function ProjectCard({ project, onUpdate }: ProjectCardProps) {
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const updateProject = useUpdateProject()
   const stats = project.stats
   const maturePercentage = stats && stats.totalLemmas > 0
     ? Math.round((stats.matureLemmas / stats.totalLemmas) * 100)
@@ -17,15 +23,28 @@ export function ProjectCard({ project }: ProjectCardProps) {
 
   const firstLetter = project.title[0]?.toUpperCase() || "P"
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Если клик был на кнопке или её дочернем элементе, не переходим по ссылке
+    const target = e.target as HTMLElement
+    if (target.closest('button') || target.closest('a[href]')) {
+      return
+    }
+    // Переход обрабатывается через Link
+  }
+
   return (
-    <Link
-      href={ROUTES.PROJECT_DETAIL(project.id)}
+    <div
       className={cn(
         "glass-panel rounded-xl overflow-hidden group cursor-pointer relative transition duration-300",
         "hover:border-brand-purple/50 flex flex-row h-36"
       )}
-      aria-label={`Проект ${project.title}`}
     >
+      <Link
+        href={ROUTES.PROJECT_DETAIL(project.id)}
+        className="absolute inset-0 z-0"
+        aria-label={`Проект ${project.title}`}
+        onClick={handleCardClick}
+      />
       {/* Left Content Area */}
       <div className="flex-1 p-5 flex flex-col relative z-10">
         {/* Language Tags */}
@@ -111,26 +130,52 @@ export function ProjectCard({ project }: ProjectCardProps) {
       </div>
 
       {/* Actions on Hover */}
-      <div className="absolute inset-0 bg-dark-900/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition duration-300 flex items-center justify-center gap-3 rounded-xl z-20">
-        <button 
-          className="bg-white text-dark-900 px-4 py-2 rounded-lg font-bold text-sm hover:scale-105 transition shadow-lg"
-          onClick={(e) => {
-            e.preventDefault()
-            // TODO: Handle study action
-          }}
+      <div className="absolute inset-0 bg-dark-900/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition duration-300 flex items-center justify-center gap-3 rounded-xl z-30">
+        <Link
+          href={ROUTES.PROJECT_DETAIL(project.id)}
+          className="bg-white text-dark-900 px-4 py-2 rounded-lg font-bold text-sm hover:scale-105 transition shadow-lg relative z-10"
         >
           <i className="fas fa-play mr-2" /> Study
-        </button>
+        </Link>
         <button 
-          className="bg-dark-700 text-white px-3 py-2 rounded-lg hover:bg-dark-600 transition border border-white/10"
+          className="bg-dark-700 text-white px-3 py-2 rounded-lg hover:bg-dark-600 transition border border-white/10 relative z-10"
           onClick={(e) => {
-            e.preventDefault()
-            // TODO: Handle edit action
+            e.stopPropagation()
+            setIsEditDialogOpen(true)
           }}
+          title="Edit project"
         >
           <i className="fas fa-pen" />
         </button>
+        <button 
+          className="bg-dark-700 text-white px-3 py-2 rounded-lg hover:bg-dark-600 transition border border-white/10 relative z-10"
+          onClick={async (e) => {
+            e.stopPropagation()
+            try {
+              await updateProject.mutateAsync({
+                id: project.id,
+                data: { isArchived: !project.isArchived },
+              })
+              onUpdate?.()
+            } catch (err) {
+              console.error("Failed to toggle archive:", err)
+            }
+          }}
+          title={project.isArchived ? "Unarchive project" : "Archive project"}
+        >
+          <i className={project.isArchived ? "fas fa-box-open" : "fas fa-archive"} />
+        </button>
       </div>
-    </Link>
+
+      {/* Edit Dialog */}
+      <UpdateProjectDialog
+        isOpen={isEditDialogOpen}
+        onClose={() => {
+          setIsEditDialogOpen(false)
+          onUpdate?.()
+        }}
+        project={project}
+      />
+    </div>
   )
 }

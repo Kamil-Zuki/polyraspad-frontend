@@ -1,0 +1,231 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { useUserSettings, useUpdateUserSettings } from "@/lib/react-query/queries"
+import type { UpdateUserSettingsDto } from "@/lib/api/types"
+
+export function UserSettingsForm() {
+  const { data: settings, isLoading, error } = useUserSettings()
+  const updateSettings = useUpdateUserSettings()
+
+  const [rolloverHour, setRolloverHour] = useState(4)
+  const [dailyGoalNew, setDailyGoalNew] = useState(20)
+  const [dailyGoalReview, setDailyGoalReview] = useState(100)
+  const [interfaceLanguage, setInterfaceLanguage] = useState("en")
+  const [isEditing, setIsEditing] = useState(false)
+  const [errorMessage, setErrorMessage] = useState("")
+
+  useEffect(() => {
+    if (settings) {
+      setRolloverHour(settings.rolloverHour)
+      setDailyGoalNew(settings.dailyGoalNew)
+      setDailyGoalReview(settings.dailyGoalReview)
+      setInterfaceLanguage(settings.interfaceLanguage)
+    }
+  }, [settings])
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="w-8 h-8 border-4 border-brand-purple border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-red-400">Failed to load user settings</p>
+      </div>
+    )
+  }
+
+  if (!settings) {
+    return null
+  }
+
+  const handleSave = async () => {
+    setErrorMessage("")
+
+    const updateData: UpdateUserSettingsDto = {
+      rolloverHour: rolloverHour !== settings.rolloverHour ? rolloverHour : null,
+      dailyGoalNew: dailyGoalNew !== settings.dailyGoalNew ? dailyGoalNew : null,
+      dailyGoalReview: dailyGoalReview !== settings.dailyGoalReview ? dailyGoalReview : null,
+      interfaceLanguage: interfaceLanguage !== settings.interfaceLanguage ? interfaceLanguage : null,
+    }
+
+    try {
+      await updateSettings.mutateAsync(updateData)
+      setIsEditing(false)
+    } catch (err: any) {
+      setErrorMessage(err.message || "Failed to update settings")
+    }
+  }
+
+  const handleCancel = () => {
+    setRolloverHour(settings.rolloverHour)
+    setDailyGoalNew(settings.dailyGoalNew)
+    setDailyGoalReview(settings.dailyGoalReview)
+    setInterfaceLanguage(settings.interfaceLanguage)
+    setIsEditing(false)
+    setErrorMessage("")
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-white">User Settings</h2>
+        {!isEditing && (
+          <button
+            onClick={() => setIsEditing(true)}
+            className="px-4 py-2 bg-brand-purple hover:bg-indigo-600 text-white rounded-lg transition-colors font-medium"
+          >
+            <i className="fas fa-edit mr-2" />
+            Edit
+          </button>
+        )}
+      </div>
+
+      {errorMessage && (
+        <div className="p-3 bg-red-500/20 border border-red-500/30 rounded-lg text-red-400 text-sm">
+          {errorMessage}
+        </div>
+      )}
+
+      <div className="glass-panel rounded-xl p-6">
+        <div className="space-y-6">
+          {/* Daily Goals */}
+          <div>
+            <h3 className="text-lg font-semibold text-white mb-4">Daily Goals</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  New Cards Goal
+                </label>
+                {isEditing ? (
+                  <input
+                    type="number"
+                    min="0"
+                    value={dailyGoalNew}
+                    onChange={(e) => setDailyGoalNew(parseInt(e.target.value) || 0)}
+                    className="w-full px-3 py-2 border border-white/10 rounded-lg bg-dark-800 text-white focus:outline-none focus:ring-2 focus:ring-brand-purple focus:border-brand-purple/50 transition"
+                  />
+                ) : (
+                  <p className="text-white font-medium">{settings.dailyGoalNew}</p>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Review Cards Goal
+                </label>
+                {isEditing ? (
+                  <input
+                    type="number"
+                    min="0"
+                    value={dailyGoalReview}
+                    onChange={(e) => setDailyGoalReview(parseInt(e.target.value) || 0)}
+                    className="w-full px-3 py-2 border border-white/10 rounded-lg bg-dark-800 text-white focus:outline-none focus:ring-2 focus:ring-brand-purple focus:border-brand-purple/50 transition"
+                  />
+                ) : (
+                  <p className="text-white font-medium">{settings.dailyGoalReview}</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Time Settings */}
+          <div>
+            <h3 className="text-lg font-semibold text-white mb-4">Time Settings</h3>
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Rollover Hour (when the day resets)
+              </label>
+              {isEditing ? (
+                <input
+                  type="number"
+                  min="0"
+                  max="23"
+                  value={rolloverHour}
+                  onChange={(e) => setRolloverHour(parseInt(e.target.value) || 0)}
+                  className="w-full px-3 py-2 border border-white/10 rounded-lg bg-dark-800 text-white focus:outline-none focus:ring-2 focus:ring-brand-purple focus:border-brand-purple/50 transition"
+                />
+              ) : (
+                <p className="text-white font-medium">{settings.rolloverHour}:00</p>
+              )}
+              <p className="text-xs text-gray-400 mt-1">
+                The hour when your daily goals reset (0-23)
+              </p>
+            </div>
+          </div>
+
+          {/* Interface Language */}
+          <div>
+            <h3 className="text-lg font-semibold text-white mb-4">Interface</h3>
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Interface Language
+              </label>
+              {isEditing ? (
+                <select
+                  value={interfaceLanguage}
+                  onChange={(e) => setInterfaceLanguage(e.target.value)}
+                  className="w-full px-3 py-2 border border-white/10 rounded-lg bg-dark-800 text-white focus:outline-none focus:ring-2 focus:ring-brand-purple focus:border-brand-purple/50 transition"
+                >
+                  <option value="en">English</option>
+                  <option value="ru">Русский</option>
+                  <option value="de">Deutsch</option>
+                  <option value="es">Español</option>
+                </select>
+              ) : (
+                <p className="text-white font-medium">
+                  {interfaceLanguage === "en" ? "English" : 
+                   interfaceLanguage === "ru" ? "Русский" :
+                   interfaceLanguage === "de" ? "Deutsch" :
+                   interfaceLanguage === "es" ? "Español" : interfaceLanguage}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Streak Info */}
+          <div>
+            <h3 className="text-lg font-semibold text-white mb-4">Activity</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Current Streak
+                </label>
+                <p className="text-white font-medium text-2xl">{settings.currentStreak} days</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Max Streak
+                </label>
+                <p className="text-white font-medium text-2xl">{settings.maxStreak} days</p>
+              </div>
+            </div>
+          </div>
+
+          {isEditing && (
+            <div className="flex gap-3 justify-end pt-4 border-t border-white/10">
+              <button
+                onClick={handleCancel}
+                className="px-4 py-2 text-gray-300 bg-dark-700 hover:bg-dark-600 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={updateSettings.isPending}
+                className="px-4 py-2 bg-brand-purple hover:bg-indigo-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium shadow-[0_0_15px_rgba(139,92,246,0.3)]"
+              >
+                {updateSettings.isPending ? "Saving..." : "Save Changes"}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
