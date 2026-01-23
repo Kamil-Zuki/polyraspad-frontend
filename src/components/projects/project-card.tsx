@@ -32,11 +32,17 @@ export function ProjectCard({ project, onUpdate }: ProjectCardProps) {
     // Переход обрабатывается через Link
   }
 
+  const hasCards = stats && stats.totalLemmas > 0
+  const dueCount = stats ? stats.totalLemmas - stats.matureLemmas : 0
+  const languagePair = `${project.sourceLang.toUpperCase()} → ${project.targetLang.toUpperCase()}`
+
   return (
     <div
       className={cn(
-        "glass-panel rounded-xl overflow-hidden group cursor-pointer relative transition duration-300",
-        "hover:border-brand-purple/50 flex flex-row h-36"
+        "rounded-xl overflow-hidden group cursor-pointer relative transition duration-300",
+        "bg-gradient-to-br from-purple-900/40 via-indigo-900/40 to-blue-900/40",
+        "border border-white/10 hover:border-brand-purple/50",
+        "flex flex-col min-h-[260px]"
       )}
     >
       <Link
@@ -45,82 +51,21 @@ export function ProjectCard({ project, onUpdate }: ProjectCardProps) {
         aria-label={`Проект ${project.title}`}
         onClick={handleCardClick}
       />
-      {/* Left Content Area */}
-      <div className="flex-1 p-5 flex flex-col relative z-10">
-        {/* Language Tags */}
-        <div className="flex items-center gap-2 mb-3">
-          <span className={cn(
-            "text-xs font-medium uppercase",
-            project.sourceLang === "ru" ? "text-gray-300" : "text-gray-400"
-          )}>
-            {project.sourceLang.toUpperCase()}
-          </span>
-          <span className={cn(
-            "text-xs font-medium uppercase",
-            project.targetLang === "en" ? "text-gray-300 font-semibold" : "text-gray-400"
-          )}>
-            {project.targetLang.toUpperCase()}
-          </span>
+      
+      {/* Top Section - Tag and Actions */}
+      <div className="absolute top-3 right-3 z-20 flex items-center gap-2">
+        {/* Language Tag */}
+        <div className="bg-dark-800/80 backdrop-blur-sm px-2.5 py-1 rounded-full text-[10px] font-medium text-white border border-white/10">
+          {languagePair}
         </div>
-
-        {/* Content with Large Letter */}
-        <div className="flex items-start gap-4 flex-1">
-          {/* Large Letter Icon */}
-          <div className="flex-shrink-0">
-            <div className="text-7xl font-bold text-white/20 select-none leading-none">
-              {firstLetter}
-            </div>
-          </div>
-
-          {/* Title and Description */}
-          <div className="flex-1 flex flex-col justify-between min-h-0">
-            <div>
-              <h3 className="text-white font-bold text-lg mb-1 group-hover:text-brand-purple transition">
-                {project.title}
-              </h3>
-              <p className="text-gray-400 text-xs mb-3">
-                Language learning project
-              </p>
-            </div>
-
-            {/* Stats or Empty State */}
-            <div className="mt-auto">
-              {stats && stats.totalLemmas > 0 ? (
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between text-xs text-gray-500">
-                    <span className="flex items-center gap-1">
-                      <i className="fas fa-layer-group text-brand-blue" /> {stats.totalLemmas} cards
-                    </span>
-                    <span className="flex items-center gap-1 text-red-400 font-medium">
-                      <i className="fas fa-clock" /> {stats.totalLemmas - stats.matureLemmas} due
-                    </span>
-                  </div>
-                  <div className="w-full h-1 bg-dark-700 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-brand-blue to-brand-purple rounded-full transition-all"
-                      style={{ width: `${maturePercentage}%` }}
-                    />
-                  </div>
-                  <div className="text-[10px] text-gray-500 text-right">{maturePercentage}% Mastered</div>
-                </div>
-              ) : (
-                <div className="text-xs text-gray-500">No cards yet</div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Actions Menu - Always Visible */}
-        <div className="absolute top-2 right-2 z-20 flex items-center gap-1">
-          {project.isArchived && (
-            <div className="bg-black/60 backdrop-blur-md px-2 py-1 rounded text-[10px] font-bold text-white border border-white/10">
-              Archived
-            </div>
-          )}
+        
+        {/* Actions */}
+        <div className="flex items-center gap-1">
           <button
-            className="bg-dark-700/90 hover:bg-dark-600 text-white p-1.5 rounded transition border border-white/10 backdrop-blur-sm"
+            className="bg-dark-800/90 hover:bg-dark-700 text-white p-1.5 rounded transition border border-white/10 backdrop-blur-sm"
             onClick={(e) => {
               e.stopPropagation()
+              e.preventDefault()
               setIsEditDialogOpen(true)
             }}
             title="Edit project"
@@ -128,9 +73,10 @@ export function ProjectCard({ project, onUpdate }: ProjectCardProps) {
             <i className="fas fa-pen text-xs" />
           </button>
           <button
-            className="bg-dark-700/90 hover:bg-dark-600 text-white p-1.5 rounded transition border border-white/10 backdrop-blur-sm"
+            className="bg-dark-800/90 hover:bg-dark-700 text-white p-1.5 rounded transition border border-white/10 backdrop-blur-sm"
             onClick={async (e) => {
               e.stopPropagation()
+              e.preventDefault()
               try {
                 await updateProject.mutateAsync({
                   id: project.id,
@@ -148,14 +94,48 @@ export function ProjectCard({ project, onUpdate }: ProjectCardProps) {
         </div>
       </div>
 
-      {/* Right Image Placeholder Area */}
-      <div className="w-28 h-full relative overflow-hidden flex-shrink-0">
-        <div className="absolute inset-0 bg-gradient-to-br from-dark-700/50 to-dark-800/50" />
-        <div className="absolute inset-0 bg-gradient-to-t from-dark-800/80 to-transparent" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-20 h-20 rounded-lg bg-dark-700/40 border border-white/10 flex items-center justify-center">
-            <i className="fas fa-image text-gray-600/50 text-2xl" />
-          </div>
+      {/* Archived Badge */}
+      {project.isArchived && (
+        <div className="absolute top-3 left-3 z-20 bg-black/60 backdrop-blur-md px-2 py-1 rounded text-[10px] font-bold text-white border border-white/10">
+          Archived
+        </div>
+      )}
+
+      {/* Content Area - Flex grow to push content to bottom */}
+      <div className="flex-1 flex flex-col justify-end p-5 relative z-10">
+        {/* Title */}
+        <h3 className="text-white font-bold text-2xl mb-2 group-hover:text-brand-purple transition">
+          {project.title}
+        </h3>
+        
+        {/* Description */}
+        <p className="text-white/80 text-sm mb-4">
+          Language learning project
+        </p>
+
+        {/* Stats */}
+        <div className="flex items-center justify-between">
+          {hasCards ? (
+            <>
+              <div className="flex items-center gap-1.5 text-white/90">
+                <i className="fas fa-layer-group text-brand-blue text-sm" />
+                <span className="text-sm font-medium">{stats.totalLemmas}</span>
+              </div>
+              {dueCount > 0 ? (
+                <div className="flex items-center gap-1.5 text-green-400">
+                  <i className="fas fa-clock text-sm" />
+                  <span className="text-sm font-medium">{dueCount} Due</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5 text-gray-400">
+                  <i className="fas fa-check text-sm" />
+                  <span className="text-sm font-medium">Done</span>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="text-white/60 text-sm">No cards yet</div>
+          )}
         </div>
       </div>
 
