@@ -26,7 +26,7 @@ export function DeckItem({
   return (
     <>
       <div
-        className="group flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/5 transition-colors"
+        className="group flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/5 transition-colors relative"
         style={{ paddingLeft: `${12 + level * 24}px` }}
       >
         <button
@@ -51,27 +51,39 @@ export function DeckItem({
           </span>
         </div>
 
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center gap-1.5 flex-shrink-0 z-10">
           <button
-            onClick={() => onCreateChild(deck.id)}
-            className="p-1.5 text-gray-400 hover:text-brand-purple transition-colors"
+            onClick={(e) => {
+              e.stopPropagation()
+              e.preventDefault()
+              onCreateChild(deck.id)
+            }}
+            className="px-2.5 py-1.5 text-white hover:text-brand-purple transition-all bg-dark-800 hover:bg-dark-700 rounded-md border border-white/20 hover:border-brand-purple/50 shadow-sm text-sm font-bold"
             title="Create sub-deck"
           >
-            <i className="fas fa-plus text-xs" />
+            +
           </button>
           <button
-            onClick={() => setIsUpdateDialogOpen(true)}
-            className="p-1.5 text-gray-400 hover:text-blue-400 transition-colors"
+            onClick={(e) => {
+              e.stopPropagation()
+              e.preventDefault()
+              setIsUpdateDialogOpen(true)
+            }}
+            className="px-2.5 py-1.5 text-white hover:text-blue-400 transition-all bg-dark-800 hover:bg-dark-700 rounded-md border border-white/20 hover:border-blue-400/50 shadow-sm text-sm font-bold"
             title="Edit deck"
           >
-            <i className="fas fa-edit text-xs" />
+            ✎
           </button>
           <button
-            onClick={() => onDelete(deck.id)}
-            className="p-1.5 text-gray-400 hover:text-red-400 transition-colors"
+            onClick={(e) => {
+              e.stopPropagation()
+              e.preventDefault()
+              onDelete(deck.id)
+            }}
+            className="px-2.5 py-1.5 text-white hover:text-red-400 transition-all bg-dark-800 hover:bg-dark-700 rounded-md border border-white/20 hover:border-red-400/50 shadow-sm text-sm font-bold"
             title="Delete deck"
           >
-            <i className="fas fa-trash text-xs" />
+            ×
           </button>
         </div>
       </div>

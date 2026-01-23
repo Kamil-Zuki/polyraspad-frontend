@@ -110,12 +110,42 @@ export function ProjectCard({ project, onUpdate }: ProjectCardProps) {
           </div>
         </div>
 
-        {/* Archived Badge */}
-        {project.isArchived && (
-          <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md px-2 py-1 rounded text-[10px] font-bold text-white border border-white/10">
-            Archived
-          </div>
-        )}
+        {/* Actions Menu - Always Visible */}
+        <div className="absolute top-2 right-2 z-20 flex items-center gap-1">
+          {project.isArchived && (
+            <div className="bg-black/60 backdrop-blur-md px-2 py-1 rounded text-[10px] font-bold text-white border border-white/10">
+              Archived
+            </div>
+          )}
+          <button
+            className="bg-dark-700/90 hover:bg-dark-600 text-white p-1.5 rounded transition border border-white/10 backdrop-blur-sm"
+            onClick={(e) => {
+              e.stopPropagation()
+              setIsEditDialogOpen(true)
+            }}
+            title="Edit project"
+          >
+            <i className="fas fa-pen text-xs" />
+          </button>
+          <button
+            className="bg-dark-700/90 hover:bg-dark-600 text-white p-1.5 rounded transition border border-white/10 backdrop-blur-sm"
+            onClick={async (e) => {
+              e.stopPropagation()
+              try {
+                await updateProject.mutateAsync({
+                  id: project.id,
+                  data: { isArchived: !project.isArchived },
+                })
+                onUpdate?.()
+              } catch (err) {
+                console.error("Failed to toggle archive:", err)
+              }
+            }}
+            title={project.isArchived ? "Unarchive project" : "Archive project"}
+          >
+            <i className={`fas ${project.isArchived ? "fa-box-open" : "fa-archive"} text-xs`} />
+          </button>
+        </div>
       </div>
 
       {/* Right Image Placeholder Area */}
@@ -129,42 +159,15 @@ export function ProjectCard({ project, onUpdate }: ProjectCardProps) {
         </div>
       </div>
 
-      {/* Actions on Hover */}
-      <div className="absolute inset-0 bg-dark-900/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition duration-300 flex items-center justify-center gap-3 rounded-xl z-30">
+      {/* Study Button on Hover */}
+      <div className="absolute inset-0 bg-dark-900/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition duration-300 flex items-center justify-center rounded-xl z-30 pointer-events-none">
         <Link
           href={ROUTES.PROJECT_DETAIL(project.id)}
-          className="bg-white text-dark-900 px-4 py-2 rounded-lg font-bold text-sm hover:scale-105 transition shadow-lg relative z-10"
+          className="bg-white text-dark-900 px-4 py-2 rounded-lg font-bold text-sm hover:scale-105 transition shadow-lg pointer-events-auto"
+          onClick={(e) => e.stopPropagation()}
         >
           <i className="fas fa-play mr-2" /> Study
         </Link>
-        <button 
-          className="bg-dark-700 text-white px-3 py-2 rounded-lg hover:bg-dark-600 transition border border-white/10 relative z-10"
-          onClick={(e) => {
-            e.stopPropagation()
-            setIsEditDialogOpen(true)
-          }}
-          title="Edit project"
-        >
-          <i className="fas fa-pen" />
-        </button>
-        <button 
-          className="bg-dark-700 text-white px-3 py-2 rounded-lg hover:bg-dark-600 transition border border-white/10 relative z-10"
-          onClick={async (e) => {
-            e.stopPropagation()
-            try {
-              await updateProject.mutateAsync({
-                id: project.id,
-                data: { isArchived: !project.isArchived },
-              })
-              onUpdate?.()
-            } catch (err) {
-              console.error("Failed to toggle archive:", err)
-            }
-          }}
-          title={project.isArchived ? "Unarchive project" : "Archive project"}
-        >
-          <i className={project.isArchived ? "fas fa-box-open" : "fas fa-archive"} />
-        </button>
       </div>
 
       {/* Edit Dialog */}

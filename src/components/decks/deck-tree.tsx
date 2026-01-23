@@ -13,7 +13,7 @@ interface DeckTreeProps {
 export function DeckTree({ projectId }: DeckTreeProps) {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [selectedParentId, setSelectedParentId] = useState<string | null>(null)
-  const { data: deckTree, isLoading, error } = useDeckTree(projectId)
+  const { data: deckTree, isLoading, error, refetch } = useDeckTree(projectId)
   const deleteDeck = useDeleteDeck()
 
   const handleCreateDeck = (parentId?: string | null) => {
@@ -78,7 +78,13 @@ export function DeckTree({ projectId }: DeckTreeProps) {
             onCreateChild={(parentId) => handleCreateDeck(parentId)}
             onDelete={async (id) => {
               if (confirm("Are you sure you want to delete this deck? All cards and sub-decks will be deleted.")) {
-                await deleteDeck.mutateAsync(id)
+                try {
+                  await deleteDeck.mutateAsync(id)
+                  // Explicitly refetch to ensure UI updates
+                  await refetch()
+                } catch (err) {
+                  console.error("Failed to delete deck:", err)
+                }
               }
             }}
           />

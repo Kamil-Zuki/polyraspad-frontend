@@ -97,7 +97,7 @@ export function useUpdateDeck() {
     mutationFn: ({ id, data }: { id: string; data: UpdateDeckDto }) =>
       apiClient.updateDeck(id, data),
     onSuccess: () => {
-      // Invalidate all deck trees since we don't know which project was affected
+      // Invalidate all deck trees to refresh the UI
       queryClient.invalidateQueries({ queryKey: ["decks", "tree"] })
     },
   })
@@ -109,7 +109,7 @@ export function useDeleteDeck() {
   return useMutation({
     mutationFn: (id: string) => apiClient.deleteDeck(id),
     onSuccess: () => {
-      // Invalidate all deck trees since we don't know which project was affected
+      // Invalidate all deck trees to refresh the UI
       queryClient.invalidateQueries({ queryKey: ["decks", "tree"] })
     },
   })

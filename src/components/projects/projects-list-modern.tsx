@@ -47,7 +47,11 @@ export function ProjectsListModern() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {projects.map((project) => (
-        <ProjectCard key={project.id} project={project} />
+        <ProjectCard 
+          key={project.id} 
+          project={project} 
+          onUpdate={() => refetch()}
+        />
       ))}
       {/* Create New Project Card */}
       <button className="glass-panel rounded-xl overflow-hidden hover:border-brand-purple/50 transition duration-300 group cursor-pointer relative border-dashed border-2 border-white/10 hover:bg-white/5 flex flex-col items-center justify-center text-center p-6 min-h-[260px]">
