@@ -21,15 +21,12 @@ export function ProjectCard({ project, onUpdate }: ProjectCardProps) {
     ? Math.round((stats.matureLemmas / stats.totalLemmas) * 100)
     : 0
 
-  const firstLetter = project.title[0]?.toUpperCase() || "P"
-
   const handleCardClick = (e: React.MouseEvent) => {
-    // Если клик был на кнопке или её дочернем элементе, не переходим по ссылке
+    // If click was on a button or its children, don't navigate
     const target = e.target as HTMLElement
     if (target.closest('button') || target.closest('a[href]')) {
       return
     }
-    // Переход обрабатывается через Link
   }
 
   const hasCards = stats && stats.totalLemmas > 0
@@ -46,9 +43,9 @@ export function ProjectCard({ project, onUpdate }: ProjectCardProps) {
       )}
     >
       <Link
-        href={ROUTES.PROJECT_DETAIL(project.id)}
+        href={ROUTES.DASHBOARD}
         className="absolute inset-0 z-0"
-        aria-label={`Проект ${project.title}`}
+        aria-label={`Project ${project.title}`}
         onClick={handleCardClick}
       />
       
@@ -82,11 +79,11 @@ export function ProjectCard({ project, onUpdate }: ProjectCardProps) {
         </div>
       )}
 
-      {/* Content Area - Flex grow to push content to bottom */}
+      {/* Content Area */}
       <div className="flex-1 flex flex-col justify-end p-8 relative z-10">
         <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-brand-primary/10 to-transparent opacity-50 group-hover:opacity-80 transition pointer-events-none" />
         
-        {/* Icon/Flag Placeholder */}
+        {/* Icon Placeholder */}
         <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-primary/20 to-brand-secondary/20 flex items-center justify-center text-3xl mb-6 border border-white/5 group-hover:scale-110 transition duration-300">
           🌐
         </div>
@@ -96,12 +93,11 @@ export function ProjectCard({ project, onUpdate }: ProjectCardProps) {
           {project.title}
         </h3>
         
-        {/* Description */}
         <p className="text-gray-400 text-sm mb-6">
           Advanced Level • Focus Mode
         </p>
 
-        {/* Progress Bar (Standardized) */}
+        {/* Progress Bar */}
         <div className="space-y-2 mb-6">
           <div className="flex justify-between text-[10px] text-gray-500 uppercase font-bold tracking-wider">
             <span>Progress</span>
@@ -136,17 +132,16 @@ export function ProjectCard({ project, onUpdate }: ProjectCardProps) {
         </div>
       </div>
 
-      {/* Edit Dialog */}
-      <UpdateProjectDialog
-        isOpen={isEditDialogOpen}
-        onClose={() => {
-          setIsEditDialogOpen(false)
-          onUpdate?.()
-        }}
-        project={project}
-      />
-    </div>
-  )
+      {/* Study Button on Hover */}
+      <div className="absolute inset-0 bg-app-bg/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition duration-300 flex items-center justify-center rounded-2xl z-30 pointer-events-none">
+        <Link
+          href={ROUTES.DASHBOARD}
+          className="bg-white text-app-bg px-6 py-2.5 rounded-xl font-bold text-sm hover:scale-105 transition shadow-2xl pointer-events-auto flex items-center gap-2"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <i className="fas fa-play text-xs" /> Open Dashboard
+        </Link>
+      </div>
 
       {/* Edit Dialog */}
       <UpdateProjectDialog

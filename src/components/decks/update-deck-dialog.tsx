@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { useUpdateDeck } from "@/lib/react-query/queries"
-import type { UpdateDeckDto, ContributionPolicyDto } from "@/lib/api/types"
+import { ContributionPolicyDto } from "@/lib/api/types"
+import type { UpdateDeckDto } from "@/lib/api/types"
 
 interface UpdateDeckDialogProps {
   isOpen: boolean

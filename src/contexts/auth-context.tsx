@@ -101,7 +101,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         register,
         logout,
-        refreshUser: () => refreshUser(),
+        refreshUser: async () => {
+          await refreshUser()
+        },
       }}
     >
       {children}

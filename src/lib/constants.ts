@@ -35,6 +35,7 @@ export const ROUTES = {
   HOME: "/",
   AUTH: "/auth",
   PROJECTS: "/projects",
+  DASHBOARD: "/dashboard",
   PROJECT_DETAIL: (id: string) => `/projects/${id}`,
   SETTINGS: "/settings",
 } as const
