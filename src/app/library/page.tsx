@@ -36,47 +36,43 @@ export default function LibraryPage() {
   return (
     <ProtectedRoute>
       <div className="flex-1 flex flex-col h-full bg-app-bg relative">
-        {/* Header (Breadcrumbs & Actions) */}
-        <header className="h-16 glass-panel border-b border-app-border flex items-center justify-between px-8 sticky top-0 z-20">
-          {/* Breadcrumbs */}
-          <div className="flex items-center gap-2 text-sm font-medium">
-            <span className="text-gray-500 hover:text-white transition cursor-pointer">Project</span>
-            <i className="fas fa-chevron-right text-[10px] text-gray-700" />
-            <span className="text-gray-400 hover:text-white transition cursor-pointer">English C1</span>
-            <i className="fas fa-chevron-right text-[10px] text-gray-700" />
-            <span className="text-white font-bold flex items-center gap-2.5">
-              <i className="fas fa-layer-group text-brand-primary" /> Library
-            </span>
-          </div>
-
-          {/* Search & Add */}
-          <div className="flex items-center gap-4">
-            <div className="relative group">
-              <i className="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-brand-primary transition-colors" />
-              <input 
-                type="text" 
-                placeholder="Filter decks..." 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-app-bg border border-app-border rounded-xl pl-10 pr-4 py-2 text-sm text-white focus:border-brand-primary focus:outline-none w-48 transition-all focus:w-72" 
-              />
-            </div>
-            <div className="h-6 w-px bg-app-border mx-1" />
-            <button className="bg-app-surface hover:bg-white/5 text-white px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest border border-app-border transition-all active:scale-95">
-              <i className="fas fa-folder-plus mr-2" /> New Folder
-            </button>
-            <button className="btn-primary flex items-center gap-2 text-[10px] uppercase tracking-widest py-2">
-              <i className="fas fa-plus" /> New Deck
-            </button>
-          </div>
-        </header>
-
         {/* Scrollable Content */}
-        <main className="flex-1 overflow-y-auto p-8 relative custom-scroll">
+        <main className="flex-1 overflow-y-auto relative custom-scroll">
+          {/* Actions Bar - First element in scrollable content */}
+          <div className="h-14 glass-panel border-b border-app-border flex items-center justify-between px-8 sticky top-0 z-20 bg-app-bg/95 backdrop-blur-sm">
+            <div className="flex items-center gap-2 text-sm text-gray-400">
+              <i className="fas fa-layer-group text-brand-primary" />
+              <span>Manage your decks and folders</span>
+            </div>
+
+            {/* Search & Add */}
+            <div className="flex items-center gap-4">
+              <div className="relative group">
+                <i className="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-brand-primary transition-colors" />
+                <input 
+                  type="text" 
+                  placeholder="Filter decks..." 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="bg-app-bg border border-app-border rounded-xl pl-10 pr-4 py-2 text-sm text-white focus:border-brand-primary focus:outline-none w-48 transition-all focus:w-72" 
+                />
+              </div>
+              <div className="h-6 w-px bg-app-border mx-1" />
+              <button className="bg-app-surface hover:bg-white/5 text-white px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest border border-app-border transition-all active:scale-95">
+                <i className="fas fa-folder-plus mr-2" /> New Folder
+              </button>
+              <button className="btn-primary flex items-center gap-2 text-[10px] uppercase tracking-widest py-2">
+                <i className="fas fa-plus" /> New Deck
+              </button>
+            </div>
+          </div>
+          
           {/* Background Decor */}
           <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-brand-primary/5 to-transparent pointer-events-none" />
 
-          <div className="max-w-6xl mx-auto relative z-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+          {/* Content Area */}
+          <div className="p-8 relative z-10">
+            <div className="max-w-6xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
             {/* Project Stats Banner */}
             <ProjectStatsBanner />
 
@@ -120,6 +116,7 @@ export default function LibraryPage() {
                 </button>
               </div>
             </section>
+            </div>
           </div>
         </main>
       </div>
