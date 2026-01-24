@@ -1,5 +1,6 @@
 "use client"
 
+import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 
 interface ProjectStatsBannerProps {
@@ -13,6 +14,8 @@ export function ProjectStatsBanner({
   matureLemmas = 1850,
   learningLemmas = 350,
 }: ProjectStatsBannerProps) {
+  const router = useRouter();
+
   return (
     <div className="w-full bg-gradient-to-r from-app-surface to-app-bg border border-app-border rounded-2xl p-8 mb-10 relative overflow-hidden flex flex-col md:flex-row items-center justify-between shadow-xl">
       {/* Decorative Glow */}
@@ -37,7 +40,10 @@ export function ProjectStatsBanner({
       </div>
 
       <div className="z-10 mt-6 md:mt-0">
-        <button className="btn-secondary flex items-center gap-2.5 text-xs py-2.5">
+        <button 
+          onClick={() => router.push('/analytics')}
+          className="btn-secondary flex items-center gap-2.5 text-xs py-2.5"
+        >
           <i className="fas fa-chart-pie text-brand-primary" /> View Detailed Analytics
         </button>
       </div>
