@@ -9,7 +9,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   
   // Level 1 Pages (Launcher) and specialized tools according to IA
-  const isGlobalPage = pathname === "/auth" || pathname === "/projects" || pathname === "/profile" || pathname === "/editor"
+  const isGlobalPage = pathname === "/auth" || pathname === "/projects" || pathname === "/profile" || pathname === "/editor" || pathname === "/study"
 
   if (isGlobalPage) {
     return <div className="min-h-screen bg-app-bg text-gray-400 font-sans selection:bg-brand-primary selection:text-white">{children}</div>

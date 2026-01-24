@@ -1,53 +1,83 @@
 "use client"
 
-import { useProjects } from "@/lib/react-query/queries"
+import React, { useState } from 'react';
+import { StudyHeader } from '@/components/study/study-header';
+import { StudyCard } from '@/components/study/study-card';
+import { StudyControls } from '@/components/study/study-controls';
 
 export default function StudyPage() {
-  const { data: projects, isLoading } = useProjects()
+  const [currentCardIndex, setCurrentCardIndex] = useState(0);
+  const [isRevealed, setIsRevealed] = useState(false);
 
-  if (isLoading) {
-    return (
-      <div className="flex-1 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-brand-purple border-t-transparent rounded-full animate-spin" />
-      </div>
-    )
-  }
+  // Mock data for the session
+  const sessionData = {
+    total: 50,
+    deckName: "Business Idioms",
+    projectName: "English C1",
+    cards: [
+      {
+        id: 1,
+        sentence: "Success is not final, failure is not fatal.",
+        targetWord: "fatal",
+        translation: "Успех не окончателен, неудача не смертельна.",
+        note: "Fatal — causing death. Often confused with 'fateful' (судьбоносный).",
+        sourceType: 'youtube' as const,
+        sourceTitle: 'TED Talk',
+        sourceTimestamp: '12:45'
+      },
+      {
+        id: 2,
+        sentence: "We need to address the elephant in the room.",
+        targetWord: "elephant in the room",
+        translation: "Нам нужно обсудить очевидную проблему, которую все игнорируют.",
+        note: "An obvious problem or difficult situation that people do not want to talk about.",
+        sourceType: 'youtube' as const,
+        sourceTitle: 'Business Meeting Pro',
+        sourceTimestamp: '05:20'
+      }
+    ]
+  };
 
-  if (!projects || projects.length === 0) {
-    return (
-      <div className="flex-1 overflow-y-auto p-8">
-        <div className="max-w-4xl mx-auto text-center py-12">
-          <div className="mb-4">
-            <i className="fas fa-play text-6xl text-gray-600" />
-          </div>
-          <h1 className="text-3xl font-bold text-white mb-2">No Projects Available</h1>
-          <p className="text-gray-400 mb-6">
-            Create a project first to start studying
-          </p>
-        </div>
-      </div>
-    )
-  }
+  const currentCard = sessionData.cards[currentCardIndex % sessionData.cards.length];
+
+  const handleRate = (rating: number) => {
+    console.log(`Rated card ${currentCard.id} with ${rating}`);
+    setIsRevealed(false);
+    setCurrentCardIndex(prev => prev + 1);
+  };
+
+  const handleReveal = () => {
+    setIsRevealed(true);
+  };
 
   return (
-    <div className="flex-1 overflow-y-auto p-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-white mb-2">Study Now</h1>
-          <p className="text-gray-400">Start your learning session</p>
-        </div>
+    <div className="h-screen flex flex-col bg-app-bg text-gray-200 relative overflow-hidden font-sans">
+      {/* Ambient Background Light */}
+      <div className="absolute top-[-20%] left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-brand-primary/10 rounded-full blur-[120px] pointer-events-none" />
 
-        <div className="glass-panel rounded-xl p-8 text-center">
-          <div className="mb-6">
-            <i className="fas fa-graduation-cap text-6xl text-brand-purple mb-4" />
-            <h2 className="text-2xl font-bold text-white mb-2">Study Session</h2>
-            <p className="text-gray-400">
-              Study functionality will be implemented soon
-            </p>
-          </div>
-        </div>
-      </div>
+      {/* 1. TOP BAR */}
+      <StudyHeader 
+        current={currentCardIndex + 1}
+        total={sessionData.total}
+        deckName={sessionData.deckName}
+        projectName={sessionData.projectName}
+      />
+
+      {/* 2. MAIN CARD AREA */}
+      <main className="flex-1 flex flex-col items-center justify-center p-6 relative z-10">
+        <StudyCard 
+          {...currentCard}
+          isRevealed={isRevealed}
+          onReveal={handleReveal}
+        />
+      </main>
+
+      {/* 3. CONTROLS */}
+      <StudyControls 
+        isRevealed={isRevealed}
+        onReveal={handleReveal}
+        onRate={handleRate}
+      />
     </div>
-  )
+  );
 }
-
