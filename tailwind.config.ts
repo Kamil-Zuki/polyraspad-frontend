@@ -9,19 +9,33 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        dark: {
-          900: "#0b0f19", // Main Background
-          800: "#151b2d", // Sidebar/Cards
-          700: "#21283d", // Hover states
+        app: {
+          bg: "#0B0F15",
+          surface: "#131927",
+          hover: "#1C2438",
+          border: "rgba(255, 255, 255, 0.08)",
         },
         brand: {
-          purple: "#8B5CF6",
+          primary: "#8B5CF6",
+          secondary: "#3B82F6",
           pink: "#EC4899",
-          blue: "#3B82F6",
+        },
+        status: {
+          success: "#10B981",
+          warning: "#F59E0B",
+          error: "#EF4444",
+          info: "#06B6D4",
+          again: "#F43F5E",
+          hard: "#F59E0B",
+          good: "#10B981",
+          easy: "#06B6D4",
         },
       },
       fontFamily: {
-        sans: ["var(--font-inter)", "system-ui", "sans-serif"],
+        sans: ["Inter", "system-ui", "sans-serif"],
+      },
+      boxShadow: {
+        glow: "0 0 20px rgba(139, 92, 246, 0.15)",
       },
     },
   },

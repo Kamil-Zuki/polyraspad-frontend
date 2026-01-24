@@ -39,10 +39,10 @@ export function ProjectCard({ project, onUpdate }: ProjectCardProps) {
   return (
     <div
       className={cn(
-        "rounded-xl overflow-hidden group cursor-pointer relative transition duration-300",
-        "bg-gradient-to-br from-purple-900/40 via-indigo-900/40 to-blue-900/40",
-        "border border-white/10 hover:border-brand-purple/50",
-        "flex flex-col min-h-[260px]"
+        "rounded-2xl overflow-hidden group cursor-pointer relative transition-all duration-300",
+        "bg-app-surface/60 backdrop-blur-md",
+        "border border-app-border hover:border-brand-primary/50",
+        "flex flex-col min-h-[320px] shadow-lg hover:-translate-y-2 hover:shadow-brand-primary/10"
       )}
     >
       <Link
@@ -53,16 +53,16 @@ export function ProjectCard({ project, onUpdate }: ProjectCardProps) {
       />
       
       {/* Top Section - Tag and Actions */}
-      <div className="absolute top-3 right-3 z-20 flex items-center gap-2">
+      <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
         {/* Language Tag */}
-        <div className="bg-dark-800/80 backdrop-blur-sm px-2.5 py-1 rounded-full text-[10px] font-medium text-white border border-white/10">
+        <div className="bg-app-bg/80 backdrop-blur-sm px-2.5 py-1 rounded-lg text-[10px] font-bold text-gray-400 uppercase tracking-wider border border-app-border">
           {languagePair}
         </div>
         
         {/* Actions */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition duration-300">
           <button
-            className="bg-dark-800/90 hover:bg-dark-700 text-white p-1.5 rounded transition border border-white/10 backdrop-blur-sm"
+            className="bg-app-surface/90 hover:bg-app-hover text-white p-1.5 rounded-lg transition border border-app-border backdrop-blur-sm"
             onClick={(e) => {
               e.stopPropagation()
               e.preventDefault()
@@ -72,83 +72,81 @@ export function ProjectCard({ project, onUpdate }: ProjectCardProps) {
           >
             <i className="fas fa-pen text-xs" />
           </button>
-          <button
-            className="bg-dark-800/90 hover:bg-dark-700 text-white p-1.5 rounded transition border border-white/10 backdrop-blur-sm"
-            onClick={async (e) => {
-              e.stopPropagation()
-              e.preventDefault()
-              try {
-                await updateProject.mutateAsync({
-                  id: project.id,
-                  data: { isArchived: !project.isArchived },
-                })
-                onUpdate?.()
-              } catch (err) {
-                console.error("Failed to toggle archive:", err)
-              }
-            }}
-            title={project.isArchived ? "Unarchive project" : "Archive project"}
-          >
-            <i className={`fas ${project.isArchived ? "fa-box-open" : "fa-archive"} text-xs`} />
-          </button>
         </div>
       </div>
 
       {/* Archived Badge */}
       {project.isArchived && (
-        <div className="absolute top-3 left-3 z-20 bg-black/60 backdrop-blur-md px-2 py-1 rounded text-[10px] font-bold text-white border border-white/10">
+        <div className="absolute top-4 left-4 z-20 bg-black/60 backdrop-blur-md px-2 py-1 rounded text-[10px] font-bold text-white border border-app-border uppercase tracking-widest">
           Archived
         </div>
       )}
 
       {/* Content Area - Flex grow to push content to bottom */}
-      <div className="flex-1 flex flex-col justify-end p-5 relative z-10">
+      <div className="flex-1 flex flex-col justify-end p-8 relative z-10">
+        <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-brand-primary/10 to-transparent opacity-50 group-hover:opacity-80 transition pointer-events-none" />
+        
+        {/* Icon/Flag Placeholder */}
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-primary/20 to-brand-secondary/20 flex items-center justify-center text-3xl mb-6 border border-white/5 group-hover:scale-110 transition duration-300">
+          🌐
+        </div>
+
         {/* Title */}
-        <h3 className="text-white font-bold text-2xl mb-2 group-hover:text-brand-purple transition">
+        <h3 className="text-white font-bold text-2xl mb-1 group-hover:text-brand-primary transition">
           {project.title}
         </h3>
         
         {/* Description */}
-        <p className="text-white/80 text-sm mb-4">
-          Language learning project
+        <p className="text-gray-400 text-sm mb-6">
+          Advanced Level • Focus Mode
         </p>
 
-        {/* Stats */}
-        <div className="flex items-center justify-between">
-          {hasCards ? (
-            <>
-              <div className="flex items-center gap-1.5 text-white/90">
-                <i className="fas fa-layer-group text-brand-blue text-sm" />
-                <span className="text-sm font-medium">{stats.totalLemmas}</span>
+        {/* Progress Bar (Standardized) */}
+        <div className="space-y-2 mb-6">
+          <div className="flex justify-between text-[10px] text-gray-500 uppercase font-bold tracking-wider">
+            <span>Progress</span>
+            <span className="text-white">{maturePercentage}%</span>
+          </div>
+          <div className="w-full h-1.5 bg-app-bg rounded-full overflow-hidden border border-white/5">
+            <div 
+              className="h-full bg-gradient-to-r from-brand-primary to-brand-secondary shadow-[0_0_10px_rgba(139,92,246,0.5)] transition-all duration-500"
+              style={{ width: `${maturePercentage}%` }}
+            />
+          </div>
+        </div>
+
+        {/* Footer Stats */}
+        <div className="flex items-center justify-between pt-4 border-t border-app-border">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1.5 text-gray-500 text-xs">
+              <i className="fas fa-layer-group text-brand-primary" />
+              <span>{stats?.totalLemmas || 0}</span>
+            </div>
+            {dueCount > 0 && (
+              <div className="flex items-center gap-1.5 text-status-warning text-xs">
+                <i className="fas fa-clock" />
+                <span>{dueCount} Due</span>
               </div>
-              {dueCount > 0 ? (
-                <div className="flex items-center gap-1.5 text-green-400">
-                  <i className="fas fa-clock text-sm" />
-                  <span className="text-sm font-medium">{dueCount} Due</span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-1.5 text-gray-400">
-                  <i className="fas fa-check text-sm" />
-                  <span className="text-sm font-medium">Done</span>
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="text-white/60 text-sm">No cards yet</div>
-          )}
+            )}
+          </div>
+          
+          <div className="text-white font-bold text-sm flex items-center gap-2 group-hover:translate-x-1 transition">
+            Open <i className="fas fa-arrow-right text-brand-secondary" />
+          </div>
         </div>
       </div>
 
-      {/* Study Button on Hover */}
-      <div className="absolute inset-0 bg-dark-900/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition duration-300 flex items-center justify-center rounded-xl z-30 pointer-events-none">
-        <Link
-          href={ROUTES.PROJECT_DETAIL(project.id)}
-          className="bg-white text-dark-900 px-4 py-2 rounded-lg font-bold text-sm hover:scale-105 transition shadow-lg pointer-events-auto"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <i className="fas fa-play mr-2" /> Study
-        </Link>
-      </div>
+      {/* Edit Dialog */}
+      <UpdateProjectDialog
+        isOpen={isEditDialogOpen}
+        onClose={() => {
+          setIsEditDialogOpen(false)
+          onUpdate?.()
+        }}
+        project={project}
+      />
+    </div>
+  )
 
       {/* Edit Dialog */}
       <UpdateProjectDialog

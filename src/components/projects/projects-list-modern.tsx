@@ -11,8 +11,8 @@ export function ProjectsListModern() {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-4 border-brand-purple border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm text-gray-400">Loading projects...</p>
+          <div className="w-8 h-8 border-4 border-brand-primary border-t-transparent rounded-full animate-spin shadow-[0_0_15px_rgba(139,92,246,0.2)]" />
+          <p className="text-sm text-gray-500 font-medium animate-pulse">Loading projects...</p>
         </div>
       </div>
     )
@@ -20,19 +20,21 @@ export function ProjectsListModern() {
 
   if (error) {
     return (
-      <div className="p-6 glass-panel border-red-500/30 rounded-lg">
-        <div className="flex items-start gap-3">
-          <i className="fas fa-exclamation-triangle text-red-400 text-xl" />
+      <div className="p-6 glass-panel border-red-500/30 rounded-2xl">
+        <div className="flex items-start gap-4">
+          <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center flex-shrink-0">
+            <i className="fas fa-exclamation-triangle text-red-400" />
+          </div>
           <div className="flex-1">
-            <h3 className="font-semibold text-red-400 mb-1">Error loading projects</h3>
-            <p className="text-sm text-gray-400 mb-3">
+            <h3 className="font-bold text-white mb-1">Error loading projects</h3>
+            <p className="text-sm text-gray-400 mb-4">
               {error instanceof Error ? error.message : "Failed to load projects"}
             </p>
             <button
               onClick={() => refetch()}
-              className="text-sm text-brand-purple hover:text-brand-pink font-medium transition"
+              className="text-sm text-brand-primary hover:text-white font-bold transition flex items-center gap-2"
             >
-              Try again
+              <i className="fas fa-sync-alt" /> Try again
             </button>
           </div>
         </div>
@@ -54,12 +56,12 @@ export function ProjectsListModern() {
         />
       ))}
       {/* Create New Project Card */}
-      <button className="glass-panel rounded-xl overflow-hidden hover:border-brand-purple/50 transition duration-300 group cursor-pointer relative border-dashed border-2 border-white/10 hover:bg-white/5 flex flex-col items-center justify-center text-center p-6 min-h-[260px]">
-        <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mb-3 group-hover:bg-brand-purple group-hover:text-white transition duration-300 text-gray-400">
-          <i className="fas fa-plus text-lg" />
+      <button className="rounded-2xl border-2 border-dashed border-white/10 hover:border-brand-primary/50 hover:bg-white/5 transition-all duration-300 group cursor-pointer flex flex-col items-center justify-center text-center p-8 min-h-[320px]">
+        <div className="w-16 h-16 rounded-full bg-app-surface border border-white/5 flex items-center justify-center mb-6 group-hover:scale-110 transition duration-300 group-hover:border-brand-primary/50 shadow-lg group-hover:bg-brand-primary/10">
+          <i className="fas fa-plus text-2xl text-gray-500 group-hover:text-brand-primary transition" />
         </div>
-        <h4 className="text-white font-bold mb-1">Create New Project</h4>
-        <p className="text-gray-500 text-xs">Start a new language learning journey</p>
+        <h3 className="text-xl font-bold text-white mb-2 group-hover:text-brand-primary transition">New Project</h3>
+        <p className="text-sm text-gray-500 max-w-[200px] leading-relaxed">Start learning a new language. We'll set up the best SRS settings.</p>
       </button>
     </div>
   )

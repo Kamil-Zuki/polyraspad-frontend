@@ -53,35 +53,42 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-dark-900">
-      <div className="w-full max-w-md p-8 glass-panel rounded-xl border-white/10 shadow-2xl">
+    <div className="flex items-center justify-center min-h-screen bg-app-bg relative overflow-hidden">
+      {/* Background Decor */}
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-brand-primary/10 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-brand-secondary/10 rounded-full blur-[120px] pointer-events-none" />
+
+      <div className="w-full max-w-md p-10 glass-panel rounded-2xl border-app-border shadow-2xl relative z-10 animate-in fade-in zoom-in duration-300">
         {/* Logo */}
-        <div className="flex items-center justify-center mb-6">
-          <div className="w-12 h-12 rounded bg-gradient-to-br from-brand-purple to-brand-blue flex items-center justify-center text-white font-bold text-xl mr-3 shadow-lg shadow-purple-500/20">
+        <div className="flex items-center justify-center mb-8">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-brand-primary to-brand-secondary flex items-center justify-center text-white font-bold text-xl mr-4 shadow-glow">
             P
           </div>
-          <span className="font-bold text-white text-2xl tracking-tight">PVS.ai</span>
+          <span className="font-bold text-white text-3xl tracking-tight">PVS.ai</span>
         </div>
 
-        <h1 className="text-2xl font-bold text-white mb-6 text-center">
+        <h1 className="text-2xl font-bold text-white mb-2 text-center">
           {isLogin ? "Welcome Back" : "Create Account"}
         </h1>
+        <p className="text-gray-500 text-sm text-center mb-8">
+          {isLogin ? "Continue your learning journey" : "Start mastering new languages today"}
+        </p>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-500/20 border border-red-500/30 rounded-lg text-red-400 text-sm flex items-center gap-2">
+          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm flex items-center gap-3">
             <i className="fas fa-exclamation-circle" />
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">
-              Email
+            <label htmlFor="email" className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">
+              Email Address
             </label>
             <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <i className="fas fa-envelope text-gray-500" />
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                <i className="fas fa-envelope text-gray-600" />
               </div>
               <input
                 id="email"
@@ -89,19 +96,19 @@ export default function AuthPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full pl-10 pr-3 py-2 border border-white/10 rounded-lg bg-dark-800 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-purple focus:border-brand-purple/50 transition"
+                className="input-dark w-full pl-10"
                 placeholder="your@email.com"
               />
             </div>
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-1">
+            <label htmlFor="password" className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">
               Password
             </label>
             <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <i className="fas fa-lock text-gray-500" />
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                <i className="fas fa-lock text-gray-600" />
               </div>
               <input
                 id="password"
@@ -110,8 +117,8 @@ export default function AuthPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={6}
-                className="w-full pl-10 pr-3 py-2 border border-white/10 rounded-lg bg-dark-800 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-purple focus:border-brand-purple/50 transition"
-                placeholder="••••••"
+                className="input-dark w-full pl-10"
+                placeholder="••••••••"
               />
             </div>
           </div>
@@ -120,13 +127,13 @@ export default function AuthPage() {
             <div>
               <label
                 htmlFor="confirmPassword"
-                className="block text-sm font-medium text-gray-300 mb-1"
+                className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2"
               >
                 Confirm Password
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <i className="fas fa-lock text-gray-500" />
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                  <i className="fas fa-lock text-gray-600" />
                 </div>
                 <input
                   id="confirmPassword"
@@ -135,8 +142,8 @@ export default function AuthPage() {
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
                   minLength={6}
-                  className="w-full pl-10 pr-3 py-2 border border-white/10 rounded-lg bg-dark-800 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-purple focus:border-brand-purple/50 transition"
-                  placeholder="••••••"
+                  className="input-dark w-full pl-10"
+                  placeholder="••••••••"
                 />
               </div>
             </div>
@@ -145,12 +152,12 @@ export default function AuthPage() {
           <button
             type="submit"
             disabled={isPending}
-            className="w-full py-2.5 px-4 bg-brand-purple hover:bg-indigo-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium shadow-[0_0_15px_rgba(139,92,246,0.3)] flex items-center justify-center gap-2"
+            className="btn-primary w-full py-3 mt-2"
           >
             {isPending ? (
               <>
                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                Loading...
+                Processing...
               </>
             ) : (
               <>
@@ -160,7 +167,7 @@ export default function AuthPage() {
                   </>
                 ) : (
                   <>
-                    <i className="fas fa-user-plus" /> Sign Up
+                    <i className="fas fa-user-plus" /> Create Account
                   </>
                 )}
               </>
@@ -168,22 +175,22 @@ export default function AuthPage() {
           </button>
         </form>
 
-        <div className="mt-6 text-center">
+        <div className="mt-8 text-center pt-6 border-t border-app-border">
           <button
             type="button"
             onClick={() => {
               setIsLogin(!isLogin)
               setError("")
             }}
-            className="text-sm text-gray-400 hover:text-brand-purple transition"
+            className="text-sm text-gray-500 hover:text-brand-primary transition"
           >
             {isLogin ? (
               <>
-                Don't have an account? <span className="text-brand-purple font-medium">Sign Up</span>
+                Don't have an account? <span className="text-brand-primary font-bold">Sign Up</span>
               </>
             ) : (
               <>
-                Already have an account? <span className="text-brand-purple font-medium">Sign In</span>
+                Already have an account? <span className="text-brand-primary font-bold">Sign In</span>
               </>
             )}
           </button>

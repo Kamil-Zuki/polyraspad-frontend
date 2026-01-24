@@ -9,15 +9,15 @@ export function ProjectsPageHeader() {
   return (
     <>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-gray-400 text-xs font-bold uppercase tracking-wider flex items-center gap-2">
-          <i className="fas fa-layer-group text-brand-purple" /> My Projects
+        <h2 className="text-gray-500 text-[10px] font-bold uppercase tracking-widest flex items-center gap-2">
+          <i className="fas fa-layer-group text-brand-primary" /> My Projects
         </h2>
         <div className="flex gap-2">
           <button
             onClick={() => setIsDialogOpen(true)}
-            className="bg-brand-purple hover:bg-indigo-600 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition shadow-[0_0_15px_rgba(139,92,246,0.3)] flex items-center gap-2"
+            className="btn-primary flex items-center gap-2 text-sm py-1.5"
           >
-            <i className="fas fa-plus" /> New Project
+            <i className="fas fa-plus text-xs" /> New Project
           </button>
         </div>
       </div>

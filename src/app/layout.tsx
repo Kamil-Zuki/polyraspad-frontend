@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next"
 import { Inter } from "next/font/google"
+// @ts-ignore: allow side-effect CSS import without type declarations
 import "./globals.css"
 import { AuthProvider } from "@/contexts/auth-context"
 import { ReactQueryProvider } from "@/lib/react-query/query-client"
@@ -36,8 +37,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#0b0f19" },
-    { media: "(prefers-color-scheme: dark)", color: "#0b0f19" },
+    { media: "(prefers-color-scheme: light)", color: "#0B0F15" },
+    { media: "(prefers-color-scheme: dark)", color: "#0B0F15" },
   ],
 }
 

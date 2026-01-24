@@ -40,23 +40,27 @@ export function CreateProjectDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-      <div className="glass-panel rounded-xl p-6 w-full max-w-md border-white/10">
-        <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-          <i className="fas fa-plus text-brand-purple" /> Create Project
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md">
+      <div className="glass-panel rounded-2xl p-8 w-full max-w-md border-app-border animate-in fade-in zoom-in duration-200">
+        <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-brand-primary/20 flex items-center justify-center border border-brand-primary/30">
+            <i className="fas fa-plus text-brand-primary text-lg" />
+          </div>
+          Create Project
         </h2>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-500/20 border border-red-500/30 rounded-lg text-red-400 text-sm">
+          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm flex items-center gap-3">
+            <i className="fas fa-exclamation-circle" />
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label
               htmlFor="title"
-              className="block text-sm font-medium text-gray-300 mb-1"
+              className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2"
             >
               Project Title
             </label>
@@ -66,24 +70,24 @@ export function CreateProjectDialog({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
-              className="w-full px-3 py-2 border border-white/10 rounded-lg bg-dark-800 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-purple focus:border-brand-purple/50 transition"
-              placeholder="e.g., English Learning"
+              className="input-dark w-full"
+              placeholder="e.g., English Mastery"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-6">
             <div>
               <label
                 htmlFor="sourceLang"
-                className="block text-sm font-medium text-gray-300 mb-1"
+                className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2"
               >
-                Source Language
+                Source
               </label>
               <select
                 id="sourceLang"
                 value={sourceLang}
                 onChange={(e) => setSourceLang(e.target.value)}
-                className="w-full px-3 py-2 border border-white/10 rounded-lg bg-dark-800 text-white focus:outline-none focus:ring-2 focus:ring-brand-purple focus:border-brand-purple/50 transition"
+                className="input-dark w-full appearance-none cursor-pointer"
               >
                 <option value="ru">Русский</option>
                 <option value="en">English</option>
@@ -95,15 +99,15 @@ export function CreateProjectDialog({
             <div>
               <label
                 htmlFor="targetLang"
-                className="block text-sm font-medium text-gray-300 mb-1"
+                className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2"
               >
-                Target Language
+                Target
               </label>
               <select
                 id="targetLang"
                 value={targetLang}
                 onChange={(e) => setTargetLang(e.target.value)}
-                className="w-full px-3 py-2 border border-white/10 rounded-lg bg-dark-800 text-white focus:outline-none focus:ring-2 focus:ring-brand-purple focus:border-brand-purple/50 transition"
+                className="input-dark w-full appearance-none cursor-pointer"
               >
                 <option value="en">English</option>
                 <option value="ru">Русский</option>
@@ -113,20 +117,20 @@ export function CreateProjectDialog({
             </div>
           </div>
 
-          <div className="flex gap-3 justify-end pt-2">
+          <div className="flex gap-4 justify-end pt-4 border-t border-app-border">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-300 bg-dark-700 hover:bg-dark-600 rounded-lg transition-colors"
+              className="btn-secondary"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={createProject.isPending}
-              className="px-4 py-2 bg-brand-purple hover:bg-indigo-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium shadow-[0_0_15px_rgba(139,92,246,0.3)]"
+              className="btn-primary"
             >
-              {createProject.isPending ? "Creating..." : "Create"}
+              {createProject.isPending ? "Creating..." : "Create Project"}
             </button>
           </div>
         </form>

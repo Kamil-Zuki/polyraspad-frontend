@@ -13,16 +13,25 @@ export default function HomePage() {
       {/* Scrollable Area */}
       <div className="flex-1 overflow-y-auto p-8">
         {/* Hero / Welcome Section */}
-        <section className="mb-10">
-          <div className="flex justify-between items-end mb-4">
-            <div>
-              <h1 className="text-3xl font-bold text-white mb-1">
-                Good Morning
-              </h1>
-              <p className="text-gray-400 text-sm">
-                Manage your language learning projects
-              </p>
-            </div>
+        <section className="mb-12 flex justify-between items-end relative">
+          <div>
+            <h1 className="text-4xl font-bold text-white mb-2">
+              Good Evening, Kamil
+            </h1>
+            <p className="text-gray-500 text-sm">
+              You're on a <span className="text-brand-primary font-bold">12-day streak</span>! Keep the momentum going.
+            </p>
+          </div>
+          <div className="flex gap-4">
+             {/* Quick Stats from IA */}
+             <div className="px-5 py-3 bg-app-surface border border-app-border rounded-xl flex flex-col items-center min-w-[120px]">
+                 <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Vocabulary</span>
+                 <strong className="text-white text-xl">2,540</strong>
+             </div>
+             <div className="px-5 py-3 bg-app-surface border border-app-border rounded-xl flex flex-col items-center min-w-[120px]">
+                 <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Retention</span>
+                 <strong className="text-status-success text-xl">94%</strong>
+             </div>
           </div>
         </section>
 

@@ -8,19 +8,19 @@ export function EmptyProjectsState() {
 
   return (
     <>
-      <div className="text-center py-16">
-        <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-brand-purple/20 to-brand-blue/20 flex items-center justify-center">
-          <i className="fas fa-layer-group text-4xl text-brand-purple" />
+      <div className="text-center py-20 flex flex-col items-center justify-center border-2 border-dashed border-white/10 rounded-3xl bg-app-surface/30">
+        <div className="w-20 h-20 mb-6 rounded-full bg-app-surface border border-white/5 flex items-center justify-center shadow-lg group-hover:scale-110 transition duration-300">
+          <i className="fas fa-layer-group text-3xl text-brand-primary" />
         </div>
-        <h3 className="text-xl font-semibold text-white mb-2">
+        <h3 className="text-2xl font-bold text-white mb-2">
           No projects yet
         </h3>
-        <p className="text-gray-400 mb-6 max-w-md mx-auto">
-          Create your first language learning project to start your journey
+        <p className="text-gray-500 mb-8 max-w-sm mx-auto leading-relaxed">
+          Your language learning journey starts here. Create your first project to organize your vocabulary.
         </p>
         <button
           onClick={() => setIsDialogOpen(true)}
-          className="px-6 py-3 bg-brand-purple hover:bg-indigo-600 text-white rounded-lg transition-colors font-medium shadow-[0_0_15px_rgba(139,92,246,0.3)] flex items-center gap-2 mx-auto"
+          className="btn-primary flex items-center gap-2 px-8 py-3"
         >
           <i className="fas fa-plus" /> Create First Project
         </button>
