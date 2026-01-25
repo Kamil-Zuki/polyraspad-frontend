@@ -1,12 +1,48 @@
 "use client"
 
 import { cn } from "@/lib/utils"
+import { useProjectContext } from "@/contexts/project-context"
+import { useHeatmap } from "@/lib/react-query/queries"
+import { useMemo } from "react"
 
 export function ActivityHeatmap() {
-  // Generating fake intensity levels for the heatmap
-  const cells = Array.from({ length: 300 }, () => 
-    Math.random() > 0.7 ? Math.floor(Math.random() * 5) : 0
-  )
+  const { currentProject } = useProjectContext()
+  const currentYear = new Date().getFullYear()
+  const { data: heatmapData, isLoading } = useHeatmap(currentProject?.id, currentYear)
+
+  // Generate cells from heatmap data
+  const cells = useMemo(() => {
+    if (!heatmapData?.activity) {
+      return Array.from({ length: 300 }, () => 0)
+    }
+
+    // Create a map of date -> level
+    const activityMap = new Map<string, number>()
+    Object.entries(heatmapData.activity).forEach(([date, data]) => {
+      activityMap.set(date, data.level)
+    })
+
+    // Generate cells for the last ~300 days
+    const cells: number[] = []
+    const today = new Date()
+    for (let i = 299; i >= 0; i--) {
+      const date = new Date(today)
+      date.setDate(date.getDate() - i)
+      const dateStr = date.toISOString().split('T')[0]
+      const level = activityMap.get(dateStr) || 0
+      cells.push(level)
+    }
+
+    return cells
+  }, [heatmapData])
+
+  if (isLoading) {
+    return (
+      <section className="glass-panel p-6 rounded-2xl border-app-border relative overflow-hidden">
+        <div className="h-32 animate-pulse bg-app-surface/50 rounded" />
+      </section>
+    )
+  }
 
   return (
     <section className="glass-panel p-6 rounded-2xl border-app-border relative overflow-hidden">

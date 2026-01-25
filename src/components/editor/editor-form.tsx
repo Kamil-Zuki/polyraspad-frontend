@@ -1,18 +1,117 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
+import { useProjectContext } from "@/contexts/project-context"
+import { useDeckTree } from "@/lib/react-query/queries"
+import { useCreateCard } from "@/lib/react-query/queries"
+import { CreateCardDto } from "@/lib/api/types"
 
 export function EditorForm() {
+  const router = useRouter()
+  const { currentProject } = useProjectContext()
+  const { data: deckTree } = useDeckTree(currentProject?.id || "", {
+    enabled: !!currentProject?.id,
+  })
+  const createCard = useCreateCard()
+
+  const [sentence, setSentence] = useState("")
+  const [targetWord, setTargetWord] = useState("")
+  const [translation, setTranslation] = useState("")
+  const [selectedDeckId, setSelectedDeckId] = useState<string>("")
+  const [error, setError] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Get first available deck as default
+  const firstDeck = deckTree && deckTree.length > 0 ? findFirstDeck(deckTree) : null
+  if (firstDeck && !selectedDeckId) {
+    setSelectedDeckId(firstDeck.id)
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError("")
+
+    if (!selectedDeckId) {
+      setError("Please select a deck")
+      return
+    }
+
+    if (!sentence || !targetWord || !translation) {
+      setError("Please fill in all required fields")
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      const cardData: CreateCardDto = {
+        deckId: selectedDeckId,
+        sentence,
+        targetWord,
+        translation,
+      }
+
+      await createCard.mutateAsync(cardData)
+      
+      // Reset form
+      setSentence("")
+      setTargetWord("")
+      setTranslation("")
+      
+      // Show success message (could use a toast library)
+      alert("Card created successfully!")
+      
+      // Optionally navigate back
+      // router.push("/library")
+    } catch (err: any) {
+      setError(err.message || "Failed to create card")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   return (
-    <div className="max-w-3xl mx-auto space-y-8 relative z-10 py-12 px-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <form onSubmit={handleSubmit} className="max-w-3xl mx-auto space-y-8 relative z-10 py-12 px-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      {/* Deck Selection */}
+      {deckTree && deckTree.length > 0 && (
+        <section className="glass-panel p-6 rounded-2xl border-app-border">
+          <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Select Deck</label>
+          <select
+            value={selectedDeckId}
+            onChange={(e) => setSelectedDeckId(e.target.value)}
+            className="input-dark w-full"
+            required
+          >
+            <option value="">Choose a deck...</option>
+            {flattenDeckTree(deckTree).map((deck) => (
+              <option key={deck.id} value={deck.id}>
+                {deck.title} ({deck.cardCount} cards)
+              </option>
+            ))}
+          </select>
+        </section>
+      )}
+
+      {error && (
+        <div className="glass-panel p-4 rounded-xl border-red-500/30 bg-red-500/10">
+          <div className="text-red-400 text-sm flex items-center gap-2">
+            <i className="fas fa-exclamation-circle" />
+            {error}
+          </div>
+        </div>
+      )}
+
       {/* 1. Sentence (Front) */}
       <section className="glass-panel p-8 rounded-3xl border-app-border">
         <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Front (Sentence)</label>
         <div className="relative group">
           <textarea 
+            value={sentence}
+            onChange={(e) => setSentence(e.target.value)}
             className="input-dark w-full p-5 rounded-2xl text-xl min-h-[140px] resize-none leading-relaxed" 
             placeholder="Type or paste your sentence here..."
+            required
           />
           <div className="absolute bottom-4 right-4 text-[10px] font-bold uppercase tracking-widest text-gray-600 group-focus-within:text-brand-primary transition-colors">
             Highlight word to set Target
@@ -29,9 +128,11 @@ export function EditorForm() {
           <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Target Word</label>
           <input 
             type="text" 
+            value={targetWord}
+            onChange={(e) => setTargetWord(e.target.value)}
             className="input-dark w-full p-4 rounded-xl font-bold text-white" 
-            defaultValue="address" 
             placeholder="Auto-filled..." 
+            required
           />
           <p className="text-[10px] text-gray-500 mt-3 font-medium uppercase tracking-wider">Focus word for this card</p>
         </section>
@@ -39,15 +140,20 @@ export function EditorForm() {
         <section className="glass-panel p-8 rounded-3xl border-app-border">
           <div className="flex justify-between items-center mb-3">
             <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest">Back (Meaning)</label>
-            <button className="text-[10px] font-bold uppercase tracking-widest text-brand-primary hover:text-white transition-colors flex items-center gap-1.5">
+            <button 
+              type="button"
+              className="text-[10px] font-bold uppercase tracking-widest text-brand-primary hover:text-white transition-colors flex items-center gap-1.5"
+            >
               <i className="fas fa-magic" /> AI Translate
             </button>
           </div>
           <input 
             type="text" 
+            value={translation}
+            onChange={(e) => setTranslation(e.target.value)}
             className="input-dark w-full p-4 rounded-xl text-white" 
-            defaultValue="заняться (проблемой)" 
             placeholder="Translation..." 
+            required
           />
           <p className="text-[10px] text-gray-500 mt-3 font-medium uppercase tracking-wider">Translation in context</p>
         </section>
@@ -107,6 +213,47 @@ export function EditorForm() {
           </button>
         </div>
       </section>
-    </div>
+
+      {/* Submit Button */}
+      <div className="flex justify-end gap-4">
+        <button
+          type="button"
+          onClick={() => router.back()}
+          className="btn-secondary"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          disabled={isSubmitting || !selectedDeckId}
+          className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isSubmitting ? "Creating..." : "Create Card"}
+        </button>
+      </div>
+    </form>
   )
+}
+
+// Helper functions
+function findFirstDeck(tree: any[]): any | null {
+  for (const node of tree) {
+    if (!node.children || node.children.length === 0) {
+      return node
+    }
+    const found = findFirstDeck(node.children)
+    if (found) return found
+  }
+  return null
+}
+
+function flattenDeckTree(tree: any[]): any[] {
+  const result: any[] = []
+  for (const node of tree) {
+    result.push(node)
+    if (node.children && node.children.length > 0) {
+      result.push(...flattenDeckTree(node.children))
+    }
+  }
+  return result
 }

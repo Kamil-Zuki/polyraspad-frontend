@@ -6,59 +6,35 @@ import { VocabularyStats } from '@/components/analytics/vocabulary-stats';
 import { EnhancedHeatmap } from '@/components/analytics/enhanced-heatmap';
 import { StreakHistory } from '@/components/analytics/streak-history';
 import { ProtectedRoute } from '@/components/auth/protected-route';
+import { useProjectContext } from '@/contexts/project-context';
+import { useVocabularyStats, useHeatmap, useDailySummary, useUserSettings } from '@/lib/react-query/queries';
 
 export default function AnalyticsPage() {
   const router = useRouter();
+  const { currentProject } = useProjectContext();
+  const currentYear = new Date().getFullYear();
 
-  // Mock data - в реальном приложении будет загружаться через API
-  const vocabularyData = {
-    totalLemmas: 5000,
-    matureCount: 2100,
-    learningCount: 450,
-    newCount: 150,
-    cefrLevel: {
-      code: 'B1',
-      title: 'Intermediate',
-      progressPercent: 5
-    },
-    estimatedFluency: 65
-  };
+  // Fetch real data from API
+  const { data: vocabularyData, isLoading: vocabularyLoading, error: vocabularyError } = useVocabularyStats(
+    currentProject?.id || '',
+    { enabled: !!currentProject?.id }
+  );
 
-  const heatmapData = {
-    year: 2025,
-    totalReviews: 15000,
-    activity: {
-      '2025-01-15': { count: 50, level: 3 },
-      '2025-01-16': { count: 80, level: 4 },
-      '2025-01-17': { count: 30, level: 2 },
-      '2025-01-18': { count: 100, level: 4 },
-      '2025-01-19': { count: 20, level: 1 },
-      '2025-01-20': { count: 60, level: 3 },
-      '2025-01-21': { count: 40, level: 2 },
-    }
-  };
+  const { data: heatmapData, isLoading: heatmapLoading, error: heatmapError } = useHeatmap(
+    currentProject?.id,
+    currentYear,
+    { enabled: !!currentProject?.id }
+  );
 
+  const { data: dailySummary } = useDailySummary(currentProject?.id);
+  const { data: userSettings } = useUserSettings();
+
+  // Calculate streak data from userSettings and dailySummary
   const streakData = {
-    currentStreak: 12,
-    longestStreak: 45,
-    totalDays: 180,
-    streakHistory: [
-      {
-        startDate: '2025-01-10',
-        endDate: new Date().toISOString().split('T')[0],
-        days: 12
-      },
-      {
-        startDate: '2024-11-01',
-        endDate: '2024-12-20',
-        days: 50
-      },
-      {
-        startDate: '2024-09-15',
-        endDate: '2024-10-05',
-        days: 21
-      }
-    ]
+    currentStreak: dailySummary?.currentStreak || userSettings?.currentStreak || 0,
+    longestStreak: userSettings?.maxStreak || 0,
+    totalDays: 0, // This would need to be calculated from activity history
+    streakHistory: [] // This would need to be calculated from activity history
   };
 
   return (
@@ -86,11 +62,35 @@ export default function AnalyticsPage() {
           </div>
 
           {/* Vocabulary Statistics */}
-          <VocabularyStats {...vocabularyData} />
+          {vocabularyLoading ? (
+            <div className="glass-panel p-8 rounded-2xl border border-app-border flex items-center justify-center">
+              <div className="w-8 h-8 border-4 border-brand-primary border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : vocabularyError ? (
+            <div className="glass-panel p-6 rounded-2xl border border-red-500/30">
+              <div className="text-red-400">Error loading vocabulary stats: {vocabularyError instanceof Error ? vocabularyError.message : 'Unknown error'}</div>
+            </div>
+          ) : vocabularyData ? (
+            <VocabularyStats {...vocabularyData} />
+          ) : !currentProject ? (
+            <div className="glass-panel p-6 rounded-2xl border border-app-border">
+              <div className="text-gray-400">Please select a project to view analytics</div>
+            </div>
+          ) : null}
 
           {/* Grid: Heatmap & Streaks */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <EnhancedHeatmap {...heatmapData} />
+            {heatmapLoading ? (
+              <div className="glass-panel p-8 rounded-2xl border border-app-border flex items-center justify-center">
+                <div className="w-8 h-8 border-4 border-brand-primary border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : heatmapError ? (
+              <div className="glass-panel p-6 rounded-2xl border border-red-500/30">
+                <div className="text-red-400">Error loading heatmap</div>
+              </div>
+            ) : heatmapData ? (
+              <EnhancedHeatmap {...heatmapData} />
+            ) : null}
             <StreakHistory {...streakData} />
           </div>
 

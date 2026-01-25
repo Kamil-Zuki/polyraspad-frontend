@@ -1,11 +1,24 @@
 "use client"
 
-import { Suspense } from "react"
+import { Suspense, useMemo } from "react"
 import { GlobalNav } from "@/components/layout/global-nav"
 import { ProjectsListModern } from "@/components/projects/projects-list-modern"
 import { ProtectedRoute } from "@/components/auth/protected-route"
+import { useProjects } from "@/lib/react-query/queries"
+import { useUserSettings } from "@/lib/react-query/queries"
 
 export default function ProjectsHubPage() {
+  const { data: projects } = useProjects(false) // Only non-archived projects
+  const { data: userSettings } = useUserSettings()
+
+  // Calculate total words across all projects
+  const totalWords = useMemo(() => {
+    if (!projects) return 0
+    return projects.reduce((sum, project) => {
+      return sum + (project.stats?.totalLemmas || 0)
+    }, 0)
+  }, [projects])
+
   return (
     <ProtectedRoute>
       <div className="min-h-screen flex flex-col bg-app-bg relative">
@@ -22,16 +35,18 @@ export default function ProjectsHubPage() {
               <p className="text-gray-400">Select a project to continue your learning session.</p>
             </div>
             
-            {/* Global Stats Widget from IA */}
+            {/* Global Stats Widget from IA - Real Data */}
             <div className="flex gap-4">
               <div className="px-6 py-4 rounded-2xl bg-app-surface border border-white/5 flex flex-col items-center shadow-lg">
                 <span className="text-[10px] uppercase font-bold text-gray-500 tracking-widest mb-1">Total Words</span>
-                <span className="text-2xl font-bold text-white">2,850</span>
+                <span className="text-2xl font-bold text-white tabular-nums">
+                  {totalWords.toLocaleString()}
+                </span>
               </div>
               <div className="px-6 py-4 rounded-2xl bg-app-surface border border-white/5 flex flex-col items-center shadow-lg">
                 <span className="text-[10px] uppercase font-bold text-gray-500 tracking-widest mb-1">Day Streak</span>
-                <span className="text-2xl font-bold text-brand-secondary flex items-center gap-2">
-                  <i className="fas fa-fire text-orange-400 animate-pulse" /> 12
+                <span className="text-2xl font-bold text-brand-secondary flex items-center gap-2 tabular-nums">
+                  <i className="fas fa-fire text-orange-400 animate-pulse" /> {userSettings?.currentStreak || 0}
                 </span>
               </div>
             </div>

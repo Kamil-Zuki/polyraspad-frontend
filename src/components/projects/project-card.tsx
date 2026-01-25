@@ -2,11 +2,13 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { ProjectResponseDto } from "@/lib/api/types"
 import { ROUTES } from "@/lib/constants"
 import { cn } from "@/lib/utils"
 import { UpdateProjectDialog } from "./update-project-dialog"
 import { useUpdateProject } from "@/lib/react-query/queries"
+import { useProjectContext } from "@/contexts/project-context"
 
 interface ProjectCardProps {
   project: ProjectResponseDto
@@ -16,6 +18,8 @@ interface ProjectCardProps {
 export function ProjectCard({ project, onUpdate }: ProjectCardProps) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const updateProject = useUpdateProject()
+  const { setCurrentProject } = useProjectContext()
+  const router = useRouter()
   const stats = project.stats
   const maturePercentage = stats && stats.totalLemmas > 0
     ? Math.round((stats.matureLemmas / stats.totalLemmas) * 100)
@@ -27,6 +31,9 @@ export function ProjectCard({ project, onUpdate }: ProjectCardProps) {
     if (target.closest('button') || target.closest('a[href]')) {
       return
     }
+    // Set as current project and navigate to dashboard
+    setCurrentProject(project)
+    router.push(ROUTES.DASHBOARD)
   }
 
   const hasCards = stats && stats.totalLemmas > 0
@@ -134,13 +141,16 @@ export function ProjectCard({ project, onUpdate }: ProjectCardProps) {
 
       {/* Study Button on Hover */}
       <div className="absolute inset-0 bg-app-bg/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition duration-300 flex items-center justify-center rounded-2xl z-30 pointer-events-none">
-        <Link
-          href={ROUTES.DASHBOARD}
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            setCurrentProject(project)
+            router.push(ROUTES.DASHBOARD)
+          }}
           className="bg-white text-app-bg px-6 py-2.5 rounded-xl font-bold text-sm hover:scale-105 transition shadow-2xl pointer-events-auto flex items-center gap-2"
-          onClick={(e) => e.stopPropagation()}
         >
           <i className="fas fa-play text-xs" /> Open Dashboard
-        </Link>
+        </button>
       </div>
 
       {/* Edit Dialog */}

@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useCreateProject } from "@/lib/react-query/queries"
 import { useRouter } from "next/navigation"
+import { useProjectContext } from "@/contexts/project-context"
 
 interface CreateProjectDialogProps {
   isOpen: boolean
@@ -19,6 +20,7 @@ export function CreateProjectDialog({
   const [error, setError] = useState("")
   const createProject = useCreateProject()
   const router = useRouter()
+  const { setCurrentProject } = useProjectContext()
 
   if (!isOpen) return null
 
@@ -32,8 +34,11 @@ export function CreateProjectDialog({
         sourceLang,
         targetLang,
       })
+      // Set as current project
+      setCurrentProject(project)
       onClose()
-      router.push(`/projects/${project.id}`)
+      // Navigate to dashboard after creating project
+      router.push("/dashboard")
     } catch (err: any) {
       setError(err.message || "Не удалось создать проект")
     }

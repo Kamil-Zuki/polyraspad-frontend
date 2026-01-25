@@ -48,7 +48,7 @@ export function CreateDeckDialog({
       setTitle("")
       setDescription("")
       setIsPublic(false)
-      onClose()
+      onClose() // This will trigger refetch in parent component
     } catch (err: any) {
       setError(err.message || "Failed to create deck")
     }

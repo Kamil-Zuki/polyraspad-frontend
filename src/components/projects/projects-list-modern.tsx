@@ -25,7 +25,7 @@ export function ProjectsListModern() {
     return (
       <div className="p-6 glass-panel border-red-500/30 rounded-2xl">
         <div className="flex items-start gap-4">
-          <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center flex-shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center shrink-0">
             <i className="fas fa-exclamation-triangle text-red-400" />
           </div>
           <div className="flex-1">
@@ -50,22 +50,34 @@ export function ProjectsListModern() {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-      {projects.map((project) => (
-        <ProjectCard
-          key={project.id}
-          project={project}
-          onUpdate={() => refetch()}
-        />
-      ))}
-      {/* Create New Project Card */}
-      <button className="rounded-2xl border-2 border-dashed border-white/10 hover:border-brand-primary/50 hover:bg-white/5 transition-all duration-300 group cursor-pointer flex flex-col items-center justify-center text-center p-8 min-h-[320px]">
-        <div className="w-16 h-16 rounded-full bg-app-surface border border-white/5 flex items-center justify-center mb-6 group-hover:scale-110 transition duration-300 group-hover:border-brand-primary/50 shadow-lg group-hover:bg-brand-primary/10">
-          <i className="fas fa-plus text-2xl text-gray-500 group-hover:text-brand-primary transition" />
-        </div>
-        <h3 className="text-xl font-bold text-white mb-2 group-hover:text-brand-primary transition">New Project</h3>
-        <p className="text-sm text-gray-500 max-w-[200px] leading-relaxed">Start learning a new language. We'll set up the best SRS settings.</p>
-      </button>
-    </div>
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {projects.map((project) => (
+          <ProjectCard
+            key={project.id}
+            project={project}
+            onUpdate={() => refetch()}
+          />
+        ))}
+        {/* Create New Project Card */}
+        <button 
+          onClick={() => setIsCreateDialogOpen(true)}
+          className="rounded-2xl border-2 border-dashed border-white/10 hover:border-brand-primary/50 hover:bg-white/5 transition-all duration-300 group cursor-pointer flex flex-col items-center justify-center text-center p-8 min-h-[320px]"
+        >
+          <div className="w-16 h-16 rounded-full bg-app-surface border border-white/5 flex items-center justify-center mb-6 group-hover:scale-110 transition duration-300 group-hover:border-brand-primary/50 shadow-lg group-hover:bg-brand-primary/10">
+            <i className="fas fa-plus text-2xl text-gray-500 group-hover:text-brand-primary transition" />
+          </div>
+          <h3 className="text-xl font-bold text-white mb-2 group-hover:text-brand-primary transition">New Project</h3>
+          <p className="text-sm text-gray-500 max-w-[200px] leading-relaxed">Start learning a new language. We'll set up the best SRS settings.</p>
+        </button>
+      </div>
+      <CreateProjectDialog
+        isOpen={isCreateDialogOpen}
+        onClose={() => {
+          setIsCreateDialogOpen(false)
+          refetch()
+        }}
+      />
+    </>
   )
 }

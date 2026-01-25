@@ -11,6 +11,7 @@ interface FolderItemProps {
 }
 
 export function FolderItem({ title, deckCount, cardCount, icon, color }: FolderItemProps) {
+  // Note: onClick is handled by parent component
   const colorClasses = {
     secondary: "group-hover:text-brand-secondary group-hover:border-brand-secondary/50",
     pink: "group-hover:text-brand-pink group-hover:border-brand-pink/50",

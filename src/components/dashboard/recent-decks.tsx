@@ -2,27 +2,41 @@
 
 import Link from "next/link"
 import { cn } from "@/lib/utils"
+import { useProjectContext } from "@/contexts/project-context"
+import { useDeckTree } from "@/lib/react-query/queries"
+import { useMemo } from "react"
+import { DeckTreeItemDto } from "@/lib/api/types"
 
-const DEMO_DECKS = [
-  {
-    id: "1",
-    title: "Business English",
-    image: "https://images.unsplash.com/photo-1543269865-cbf427effbad?w=400&q=80",
-    due: 15,
-    new: 5,
-    total: 120,
-  },
-  {
-    id: "2",
-    title: "Finance Basics",
-    image: "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=400&q=80",
-    due: 0,
-    new: 0,
-    completed: true,
-  },
-]
+// Helper to flatten deck tree and get root decks
+function getRootDecks(tree: DeckTreeItemDto[]): DeckTreeItemDto[] {
+  return tree.filter(deck => !deck.children || deck.children.length === 0)
+}
 
 export function RecentDecks() {
+  const { currentProject } = useProjectContext()
+  const { data: deckTree, isLoading } = useDeckTree(currentProject?.id || "", {
+    enabled: !!currentProject?.id,
+  })
+
+  const rootDecks = useMemo(() => {
+    if (!deckTree || deckTree.length === 0) return []
+    return getRootDecks(deckTree).slice(0, 4) // Show max 4 recent decks
+  }, [deckTree])
+
+  if (isLoading) {
+    return (
+      <section>
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest">Recent Decks</h3>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="bg-app-surface rounded-2xl h-48 animate-pulse" />
+          ))}
+        </div>
+      </section>
+    )
+  }
   return (
     <section>
       <div className="flex justify-between items-center mb-6">
@@ -33,44 +47,35 @@ export function RecentDecks() {
       </div>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {DEMO_DECKS.map((deck) => (
-          <div 
-            key={deck.id}
-            className="bg-app-surface rounded-2xl overflow-hidden border border-app-border group cursor-pointer transition-all duration-300 hover:-translate-y-2 hover:border-brand-primary/40 hover:shadow-2xl hover:shadow-brand-primary/5"
-          >
-            <div className="h-32 bg-dark-900 relative overflow-hidden">
-              <img 
-                src={deck.image} 
-                className="w-full h-full object-cover opacity-50 group-hover:opacity-100 group-hover:scale-110 transition duration-700"
-                alt={deck.title}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-app-surface to-transparent opacity-60" />
-              {deck.total && (
+        {rootDecks.length === 0 ? (
+          <div className="col-span-full text-center py-8 text-gray-500">
+            No decks yet. Create your first deck to get started!
+          </div>
+        ) : (
+          rootDecks.map((deck) => (
+            <div 
+              key={deck.id}
+              className="bg-app-surface rounded-2xl overflow-hidden border border-app-border group cursor-pointer transition-all duration-300 hover:-translate-y-2 hover:border-brand-primary/40 hover:shadow-2xl hover:shadow-brand-primary/5"
+            >
+              <div className="h-32 bg-dark-900 relative overflow-hidden">
+                <div className="w-full h-full bg-gradient-to-br from-brand-primary/20 to-brand-secondary/20 opacity-50 group-hover:opacity-100 transition duration-700" />
+                <div className="absolute inset-0 bg-gradient-to-t from-app-surface to-transparent opacity-60" />
                 <div className="absolute top-3 right-3 bg-black/60 text-white text-[10px] px-2 py-1 rounded-lg backdrop-blur-md border border-white/10 font-bold">
                   <i className="fas fa-layer-group text-brand-primary mr-1.5" />
-                  {deck.total}
+                  {deck.cardCount}
                 </div>
-              )}
-            </div>
-            <div className="p-5">
-              <h4 className="text-white font-bold text-sm mb-1 truncate group-hover:text-brand-primary transition-colors">
-                {deck.title}
-              </h4>
-              <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-gray-500 mt-4">
-                {deck.completed ? (
-                  <span className="text-status-success flex items-center gap-1.5">
-                    <i className="fas fa-check-circle" /> Completed
-                  </span>
-                ) : (
-                  <>
-                    <span>Due: <span className="text-status-warning">{deck.due}</span></span>
-                    <span>New: <span className="text-brand-secondary">{deck.new}</span></span>
-                  </>
-                )}
+              </div>
+              <div className="p-5">
+                <h4 className="text-white font-bold text-sm mb-1 truncate group-hover:text-brand-primary transition-colors">
+                  {deck.title}
+                </h4>
+                <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-gray-500 mt-4">
+                  <span>Cards: <span className="text-brand-secondary">{deck.cardCount}</span></span>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))
+        )}
 
         {/* Add New Deck Card */}
         <button className="bg-app-surface/40 rounded-2xl border-2 border-dashed border-white/5 hover:border-brand-primary/40 hover:bg-app-surface transition-all duration-300 cursor-pointer flex flex-col items-center justify-center h-full min-h-[200px] group p-6">

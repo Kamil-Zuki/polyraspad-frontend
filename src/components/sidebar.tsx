@@ -4,6 +4,8 @@ import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
+import { useUserSettings } from "@/lib/react-query/queries"
+import { ProjectSwitcher } from "./sidebar/project-switcher"
 import { cn } from "@/lib/utils"
 
 interface NavItem {
@@ -36,6 +38,7 @@ export function Sidebar() {
   const pathname = usePathname()
   const auth = useAuth()
   const user = auth.user
+  const { data: userSettings } = useUserSettings()
   const userInitial = user?.userName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "U"
 
   const groupedItems = navItems.reduce((acc, item) => {
@@ -67,22 +70,7 @@ export function Sidebar() {
       </div>
 
       {/* Project Switcher */}
-      <div className="p-4 pb-2">
-        <button className="w-full bg-app-bg hover:bg-app-hover border border-app-border transition-all duration-200 rounded-xl p-3 flex items-center justify-between group">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded bg-indigo-900/40 flex items-center justify-center text-lg border border-white/5">
-              🇬🇧
-            </div>
-            <div className="text-left">
-              <div className="text-[10px] text-gray-500 font-bold group-hover:text-brand-primary transition uppercase tracking-wider">
-                Current Project
-              </div>
-              <div className="text-sm font-bold text-gray-100">English C1</div>
-            </div>
-          </div>
-          <i className="fas fa-chevron-down text-gray-500 text-xs" />
-        </button>
-      </div>
+      <ProjectSwitcher />
 
       {/* Scrollable Navigation Area */}
       <div className="flex-1 overflow-y-auto px-3 py-6 space-y-8 custom-scroll">
@@ -121,15 +109,20 @@ export function Sidebar() {
             </span>
             <div className="flex items-center gap-1.5 text-orange-400">
               <i className="fas fa-fire text-sm animate-pulse" />
-              <span className="font-bold text-white text-sm">12</span>
+              <span className="font-bold text-white text-sm tabular-nums">
+                {userSettings?.currentStreak || 0}
+              </span>
             </div>
           </div>
           <div className="w-full bg-app-bg h-1.5 rounded-full overflow-hidden relative z-10">
+            {/* Progress will be calculated from DailySummary - placeholder for now */}
             <div className="bg-gradient-to-r from-orange-400 to-red-500 h-full w-[65%] rounded-full shadow-[0_0_8px_rgba(249,115,22,0.6)]" />
           </div>
           <div className="flex justify-between text-[9px] text-gray-500 mt-1.5 relative z-10">
             <span>Daily Goal</span>
-            <span className="text-gray-300">13 / 20</span>
+            <span className="text-gray-300 tabular-nums">
+              {userSettings?.dailyGoalReview || 0} reviews
+            </span>
           </div>
         </div>
 

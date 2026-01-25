@@ -3,6 +3,7 @@ import { Inter } from "next/font/google"
 // @ts-ignore: allow side-effect CSS import without type declarations
 import "./globals.css"
 import { AuthProvider } from "@/contexts/auth-context"
+import { ProjectProvider } from "@/contexts/project-context"
 import { ReactQueryProvider } from "@/lib/react-query/query-client"
 import { AppLayout } from "@/components/layout/app-layout"
 import { ErrorBoundary } from "@/components/error-boundary"
@@ -54,7 +55,9 @@ export default function RootLayout({
         <ErrorBoundary>
           <ReactQueryProvider>
             <AuthProvider>
-              <AppLayout>{children}</AppLayout>
+              <ProjectProvider>
+                <AppLayout>{children}</AppLayout>
+              </ProjectProvider>
             </AuthProvider>
           </ReactQueryProvider>
         </ErrorBoundary>

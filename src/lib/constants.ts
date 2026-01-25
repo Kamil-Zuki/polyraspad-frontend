@@ -12,6 +12,9 @@ export const API_ENDPOINTS = {
     ME: "/api/Auth/me",
     REFRESH: "/api/Auth/refresh-token",
     LOGOUT: "/api/Auth/logout",
+    UPDATE_USERNAME: "/api/Auth/username",
+    UPDATE_PASSWORD: "/api/Auth/password",
+    CONFIRM_EMAIL: "/api/Auth/confirm-email",
   },
   PROJECTS: {
     LIST: "/api/Projects",
@@ -21,9 +24,18 @@ export const API_ENDPOINTS = {
   },
   DECKS: {
     TREE: (projectId: string) => `/api/Decks/tree/${projectId}`,
+    GET: (id: string) => `/api/Decks/${id}`,
     CREATE: "/api/Decks",
     UPDATE: (id: string) => `/api/Decks/${id}`,
     DELETE: (id: string) => `/api/Decks/${id}`,
+  },
+  CARDS: {
+    CREATE: "/api/Cards",
+    CAPTURE: "/api/Cards/capture",
+    SEARCH: "/api/Cards/search",
+    GET: (id: string) => `/api/Cards/${id}`,
+    UPDATE: (id: string) => `/api/Cards/${id}`,
+    BULK_CREATE: "/api/Cards/import",
   },
   USER_SETTINGS: {
     GET: "/api/settings",

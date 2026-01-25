@@ -4,6 +4,9 @@ import {
   TokenResponseDto,
   UserInfoDto,
   AuthResponseDto,
+  UpdateUsernameDto,
+  UpdatePasswordDto,
+  ConfirmEmailDto,
   ProjectResponseDto,
   CreateProjectDto,
   UpdateProjectDto,
@@ -16,6 +19,12 @@ import {
   VocabularyStatsDto,
   HeatmapDto,
   DailySummaryDto,
+  CardResponseDto,
+  CreateCardDto,
+  CaptureCardDto,
+  UpdateCardDto,
+  BulkCreateCardsDto,
+  SearchCardsResponseDto,
 } from "./types"
 import { ApiError } from "./errors"
 import { API_ENDPOINTS } from "../constants"
@@ -167,6 +176,27 @@ class ApiClient {
     })
   }
 
+  async updateUsername(data: UpdateUsernameDto): Promise<AuthResponseDto> {
+    return this.request<AuthResponseDto>(API_ENDPOINTS.AUTH.UPDATE_USERNAME, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    })
+  }
+
+  async updatePassword(data: UpdatePasswordDto): Promise<AuthResponseDto> {
+    return this.request<AuthResponseDto>(API_ENDPOINTS.AUTH.UPDATE_PASSWORD, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    })
+  }
+
+  async confirmEmail(data: ConfirmEmailDto): Promise<AuthResponseDto> {
+    const params = new URLSearchParams()
+    params.append('userId', data.userId)
+    params.append('token', data.token)
+    return this.request<AuthResponseDto>(`${API_ENDPOINTS.AUTH.CONFIRM_EMAIL}?${params.toString()}`)
+  }
+
   // Project endpoints
   async getProjects(includeArchived = false): Promise<ProjectResponseDto[]> {
     return this.request<ProjectResponseDto[]>(
@@ -211,6 +241,10 @@ class ApiClient {
     })
   }
 
+  async getDeck(id: string): Promise<DeckResponseDto> {
+    return this.request<DeckResponseDto>(API_ENDPOINTS.DECKS.GET(id))
+  }
+
   async deleteDeck(id: string): Promise<void> {
     return this.request<void>(API_ENDPOINTS.DECKS.DELETE(id), {
       method: "DELETE",
@@ -240,6 +274,61 @@ class ApiClient {
 
   async getDailySummary(projectId?: string): Promise<DailySummaryDto> {
     return this.request<DailySummaryDto>(API_ENDPOINTS.ANALYTICS.DAILY(projectId))
+  }
+
+  // Card endpoints
+  async createCard(data: CreateCardDto): Promise<CardResponseDto> {
+    return this.request<CardResponseDto>(API_ENDPOINTS.CARDS.CREATE, {
+      method: "POST",
+      body: JSON.stringify(data),
+    })
+  }
+
+  async captureCard(data: CaptureCardDto): Promise<CardResponseDto> {
+    return this.request<CardResponseDto>(API_ENDPOINTS.CARDS.CAPTURE, {
+      method: "POST",
+      body: JSON.stringify(data),
+    })
+  }
+
+  async searchCards(
+    query: string,
+    options?: {
+      projectId?: string
+      deckId?: string
+      srsStatuses?: string[]
+      pageNumber?: number
+      pageSize?: number
+    }
+  ): Promise<SearchCardsResponseDto> {
+    const params = new URLSearchParams()
+    params.append('query', query)
+    if (options?.projectId) params.append('projectId', options.projectId)
+    if (options?.deckId) params.append('deckId', options.deckId)
+    if (options?.pageNumber) params.append('pageNumber', options.pageNumber.toString())
+    if (options?.pageSize) params.append('pageSize', options.pageSize.toString())
+    if (options?.srsStatuses && options.srsStatuses.length > 0) {
+      options.srsStatuses.forEach(status => params.append('srsStatuses', status))
+    }
+    return this.request<SearchCardsResponseDto>(`${API_ENDPOINTS.CARDS.SEARCH}?${params.toString()}`)
+  }
+
+  async getCard(id: string): Promise<CardResponseDto> {
+    return this.request<CardResponseDto>(API_ENDPOINTS.CARDS.GET(id))
+  }
+
+  async updateCard(id: string, data: UpdateCardDto): Promise<CardResponseDto> {
+    return this.request<CardResponseDto>(API_ENDPOINTS.CARDS.UPDATE(id), {
+      method: "PUT",
+      body: JSON.stringify(data),
+    })
+  }
+
+  async bulkCreateCards(data: BulkCreateCardsDto): Promise<CardResponseDto[]> {
+    return this.request<CardResponseDto[]>(API_ENDPOINTS.CARDS.BULK_CREATE, {
+      method: "POST",
+      body: JSON.stringify(data),
+    })
   }
 }
 

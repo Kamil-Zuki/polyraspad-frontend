@@ -183,3 +183,94 @@ export interface DailySummaryDto {
     isCompleted: boolean
   }
 }
+
+// Card types
+export interface CardResponseDto {
+  id: string
+  deckId: string
+  creatorId: string
+  sentence: string
+  translation: string
+  targetWord: string
+  targetIndex?: TargetIndexDto | null
+  sourceMeta?: SourceMetaDto | null
+  media?: CardMediaDto | null
+  lemmaId?: string | null
+  srsStatus: string
+  createdAt: string
+}
+
+export interface CardMediaDto {
+  imageId?: string | null
+  audioId?: string | null
+}
+
+export interface SourceMetaDto {
+  type: string
+  title: string
+  url?: string | null
+  page?: number | null
+  timestamp?: number | null
+  service?: string | null
+}
+
+export interface TargetIndexDto {
+  start: number
+  len: number
+}
+
+export interface CreateCardDto {
+  deckId: string
+  sentence: string
+  targetWord: string
+  translation: string
+  sourceMeta?: SourceMetaDto | null
+}
+
+export interface CaptureCardDto {
+  projectId: string
+  sentence: string
+  targetWord: string
+  translation: string
+  sourceMeta?: SourceMetaDto | null
+  screenshotBase64?: string | null
+}
+
+export interface UpdateCardDto {
+  sentence?: string | null
+  translation?: string | null
+  targetWord?: string | null
+  targetIndex?: TargetIndexDto | null
+  sourceMeta?: SourceMetaDto | null
+}
+
+export interface BulkCreateCardsDto {
+  deckId: string
+  cards: CreateCardDto[]
+}
+
+export interface PaginatedResponseDto<T> {
+  items: T[]
+  pageNumber: number
+  totalPages: number
+  totalCount: number
+  hasPreviousPage: boolean
+  hasNextPage: boolean
+}
+
+export interface SearchCardsResponseDto extends PaginatedResponseDto<CardResponseDto> {}
+
+// Auth additional types
+export interface UpdateUsernameDto {
+  userName: string
+}
+
+export interface UpdatePasswordDto {
+  currentPassword: string
+  newPassword: string
+}
+
+export interface ConfirmEmailDto {
+  userId: string
+  token: string
+}

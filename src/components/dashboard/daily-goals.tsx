@@ -1,8 +1,32 @@
 "use client"
 
 import { cn } from "@/lib/utils"
+import { useProjectContext } from "@/contexts/project-context"
+import { useDailySummary } from "@/lib/react-query/queries"
 
 export function DailyGoals() {
+  const { currentProject } = useProjectContext()
+  const { data: dailySummary, isLoading } = useDailySummary(currentProject?.id)
+
+  const reviews = dailySummary?.reviews || { current: 0, target: 0, isCompleted: false }
+  const newCards = dailySummary?.newCards || { current: 0, target: 0, isCompleted: false }
+  
+  const reviewsProgress = reviews.target > 0 ? Math.min((reviews.current / reviews.target) * 100, 100) : 0
+  const newCardsProgress = newCards.target > 0 ? Math.min((newCards.current / newCards.target) * 100, 100) : 0
+  
+  const reviewsRemaining = Math.max(reviews.target - reviews.current, 0)
+  const newCardsRemaining = Math.max(newCards.target - newCards.current, 0)
+
+  if (isLoading) {
+    return (
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="glass-panel p-6 rounded-2xl border-app-border h-48 animate-pulse" />
+        ))}
+      </section>
+    )
+  }
+
   return (
     <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
       {/* Goal: Reviews */}
@@ -13,16 +37,19 @@ export function DailyGoals() {
         <div className="flex justify-between items-start mb-4 relative z-10">
           <div>
             <div className="text-[10px] font-bold text-brand-secondary uppercase tracking-widest mb-1">Reviews</div>
-            <div className="text-3xl font-bold text-white">45 <span className="text-sm text-gray-500 font-normal">/ 100</span></div>
+            <div className="text-3xl font-bold text-white">
+              {reviews.current} <span className="text-sm text-gray-500 font-normal">/ {reviews.target}</span>
+            </div>
           </div>
         </div>
         <div className="w-full bg-app-bg h-1.5 rounded-full overflow-hidden relative z-10">
           <div 
-            className="bg-brand-secondary h-full w-[45%] shadow-[0_0_10px_rgba(59,130,246,0.5)] transition-all duration-700" 
+            className="bg-brand-secondary h-full shadow-[0_0_10px_rgba(59,130,246,0.5)] transition-all duration-700" 
+            style={{ width: `${reviewsProgress}%` }}
           />
         </div>
         <div className="mt-4 text-xs text-gray-500 relative z-10">
-          55 cards remaining to maintain memory.
+          {reviewsRemaining > 0 ? `${reviewsRemaining} cards remaining to maintain memory.` : "Daily goal completed! 🎉"}
         </div>
       </div>
 
@@ -34,19 +61,24 @@ export function DailyGoals() {
         <div className="flex justify-between items-start mb-4 relative z-10">
           <div>
             <div className="text-[10px] font-bold text-brand-primary uppercase tracking-widest mb-1">New Words</div>
-            <div className="text-3xl font-bold text-white">13 <span className="text-sm text-gray-500 font-normal">/ 20</span></div>
+            <div className="text-3xl font-bold text-white">
+              {newCards.current} <span className="text-sm text-gray-500 font-normal">/ {newCards.target}</span>
+            </div>
           </div>
-          <div className="w-8 h-8 rounded-full bg-brand-primary/20 text-brand-primary flex items-center justify-center border border-brand-primary/30">
-            <i className="fas fa-check text-xs" />
-          </div>
+          {newCards.isCompleted && (
+            <div className="w-8 h-8 rounded-full bg-brand-primary/20 text-brand-primary flex items-center justify-center border border-brand-primary/30">
+              <i className="fas fa-check text-xs" />
+            </div>
+          )}
         </div>
         <div className="w-full bg-app-bg h-1.5 rounded-full overflow-hidden relative z-10">
           <div 
-            className="bg-brand-primary h-full w-[65%] shadow-[0_0_10px_rgba(139,92,246,0.5)] transition-all duration-700" 
+            className="bg-brand-primary h-full shadow-[0_0_10px_rgba(139,92,246,0.5)] transition-all duration-700" 
+            style={{ width: `${newCardsProgress}%` }}
           />
         </div>
         <div className="mt-4 text-xs text-gray-500 relative z-10">
-          Great pace! 7 more to reach daily target.
+          {newCardsRemaining > 0 ? `Great pace! ${newCardsRemaining} more to reach daily target.` : "Daily goal completed! 🎉"}
         </div>
       </div>
 

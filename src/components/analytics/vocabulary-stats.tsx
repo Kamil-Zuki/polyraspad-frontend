@@ -69,7 +69,7 @@ export function VocabularyStats({
                 </div>
                 <div className="w-full h-3 bg-app-bg rounded-full overflow-hidden">
                     <div
-                        className="h-full bg-gradient-to-r from-brand-primary to-brand-secondary transition-all duration-500 shadow-[0_0_8px_rgba(139,92,246,0.5)]"
+                        className="h-full bg-linear-to-r from-brand-primary to-brand-secondary transition-all duration-500 shadow-[0_0_8px_rgba(139,92,246,0.5)]"
                         style={{ width: `${cefrLevel.progressPercent}%` }}
                     />
                 </div>
