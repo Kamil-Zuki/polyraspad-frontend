@@ -10,6 +10,9 @@ import type {
   UpdateDeckDto,
   UserSettingsResponseDto,
   UpdateUserSettingsDto,
+  VocabularyStatsDto,
+  HeatmapDto,
+  DailySummaryDto,
 } from "../api/types"
 
 // Query keys
@@ -19,6 +22,9 @@ export const queryKeys = {
   userInfo: ["userInfo"] as const,
   deckTree: (projectId: string) => ["decks", "tree", projectId] as const,
   userSettings: ["userSettings"] as const,
+  vocabularyStats: (projectId: string) => ["analytics", "vocabulary", projectId] as const,
+  heatmap: (projectId?: string, year?: number) => ["analytics", "heatmap", projectId, year] as const,
+  dailySummary: (projectId?: string) => ["analytics", "daily", projectId] as const,
 }
 
 // Projects queries
@@ -131,5 +137,28 @@ export function useUpdateUserSettings() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.userSettings })
     },
+  })
+}
+
+// Analytics queries
+export function useVocabularyStats(projectId: string) {
+  return useQuery({
+    queryKey: queryKeys.vocabularyStats(projectId),
+    queryFn: () => apiClient.getVocabularyStats(projectId),
+    enabled: !!projectId,
+  })
+}
+
+export function useHeatmap(projectId?: string, year?: number) {
+  return useQuery({
+    queryKey: queryKeys.heatmap(projectId, year),
+    queryFn: () => apiClient.getHeatmap(projectId, year),
+  })
+}
+
+export function useDailySummary(projectId?: string) {
+  return useQuery({
+    queryKey: queryKeys.dailySummary(projectId),
+    queryFn: () => apiClient.getDailySummary(projectId),
   })
 }

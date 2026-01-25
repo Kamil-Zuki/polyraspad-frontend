@@ -144,3 +144,42 @@ export interface UpdateUserSettingsDto {
   dailyGoalReview?: number | null
   interfaceLanguage?: string | null
 }
+
+// Analytics types
+export interface VocabularyStatsDto {
+  projectId: string
+  totalLemmas: number
+  matureCount: number
+  learningCount: number
+  newCount: number
+  cefrLevel: {
+    code: string
+    title: string
+    progressPercent: number
+  }
+  estimatedFluency: number
+}
+
+export interface HeatmapDto {
+  projectId?: string | null
+  year: number
+  totalReviews: number
+  activity: Record<string, { count: number; level: number }>
+}
+
+export interface DailySummaryDto {
+  date: string
+  currentStreak: number
+  isStreakExtendedToday: boolean
+  timeSpentSeconds: number
+  newCards: {
+    current: number
+    target: number
+    isCompleted: boolean
+  }
+  reviews: {
+    current: number
+    target: number
+    isCompleted: boolean
+  }
+}

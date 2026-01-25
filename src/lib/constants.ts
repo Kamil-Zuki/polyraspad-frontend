@@ -26,8 +26,22 @@ export const API_ENDPOINTS = {
     DELETE: (id: string) => `/api/Decks/${id}`,
   },
   USER_SETTINGS: {
-    GET: "/api/UserSettings",
-    UPDATE: "/api/UserSettings",
+    GET: "/api/settings",
+    UPDATE: "/api/settings",
+  },
+  ANALYTICS: {
+    VOCABULARY: (projectId: string) => `/api/analytics/vocabulary?projectId=${projectId}`,
+    HEATMAP: (projectId?: string, year?: number) => {
+      const params = new URLSearchParams()
+      if (projectId) params.append('projectId', projectId)
+      if (year) params.append('year', year.toString())
+      return `/api/analytics/heatmap${params.toString() ? `?${params.toString()}` : ''}`
+    },
+    DAILY: (projectId?: string) => {
+      const params = new URLSearchParams()
+      if (projectId) params.append('projectId', projectId)
+      return `/api/analytics/daily${params.toString() ? `?${params.toString()}` : ''}`
+    },
   },
 } as const
 

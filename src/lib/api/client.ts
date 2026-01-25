@@ -13,6 +13,9 @@ import {
   UpdateDeckDto,
   UserSettingsResponseDto,
   UpdateUserSettingsDto,
+  VocabularyStatsDto,
+  HeatmapDto,
+  DailySummaryDto,
 } from "./types"
 import { ApiError } from "./errors"
 import { API_ENDPOINTS } from "../constants"
@@ -224,6 +227,19 @@ class ApiClient {
       method: "PUT",
       body: JSON.stringify(data),
     })
+  }
+
+  // Analytics endpoints
+  async getVocabularyStats(projectId: string): Promise<VocabularyStatsDto> {
+    return this.request<VocabularyStatsDto>(API_ENDPOINTS.ANALYTICS.VOCABULARY(projectId))
+  }
+
+  async getHeatmap(projectId?: string, year?: number): Promise<HeatmapDto> {
+    return this.request<HeatmapDto>(API_ENDPOINTS.ANALYTICS.HEATMAP(projectId, year))
+  }
+
+  async getDailySummary(projectId?: string): Promise<DailySummaryDto> {
+    return this.request<DailySummaryDto>(API_ENDPOINTS.ANALYTICS.DAILY(projectId))
   }
 }
 

@@ -1,10 +1,13 @@
 "use client"
 
+import { useState } from "react"
 import { useProjects } from "@/lib/react-query/queries"
 import { ProjectCard } from "./project-card"
 import { EmptyProjectsState } from "./empty-projects-state"
+import { CreateProjectDialog } from "./create-project-dialog"
 
 export function ProjectsListModern() {
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const { data: projects, isLoading, error, refetch } = useProjects()
 
   if (isLoading) {
