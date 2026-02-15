@@ -2,9 +2,9 @@
 
 import { createContext, useContext, ReactNode } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { apiClient } from "@/lib/api/client"
+import { apiClient } from "@/lib/api/index"
 import { UserInfoDto } from "@/lib/api/types"
-import { queryKeys } from "@/lib/react-query/queries"
+import { queryKeys } from "@/lib/react-query/index"
 
 interface AuthContextType {
   user: UserInfoDto | null
@@ -28,14 +28,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refetch: refreshUser,
   } = useQuery({
     queryKey: queryKeys.userInfo,
-    queryFn: () => apiClient.getUserInfo(),
+    queryFn: () => apiClient.auth.getUserInfo(),
     enabled: typeof window !== "undefined" && !!localStorage.getItem("accessToken"),
     retry: false,
   })
 
   const loginMutation = useMutation({
     mutationFn: async ({ email, password }: { email: string; password: string }) => {
-      const response = await apiClient.login({ email, password })
+      const response = await apiClient.auth.login({ email, password })
       localStorage.setItem("accessToken", response.accessToken)
       localStorage.setItem("refreshToken", response.refreshToken)
       return response
@@ -55,8 +55,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password: string
       confirmPassword: string
     }) => {
-      await apiClient.register({ email, password, confirmPassword })
-      const response = await apiClient.login({ email, password })
+      await apiClient.auth.register({ email, password, confirmPassword })
+      const response = await apiClient.auth.login({ email, password })
       localStorage.setItem("accessToken", response.accessToken)
       localStorage.setItem("refreshToken", response.refreshToken)
       return response
@@ -70,7 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     mutationFn: async () => {
       const refreshToken = localStorage.getItem("refreshToken")
       if (refreshToken) {
-        await apiClient.logout(refreshToken)
+        await apiClient.auth.logout(refreshToken)
       }
     },
     onSuccess: () => {

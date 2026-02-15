@@ -1,0 +1,115 @@
+import { ApiError } from "./errors";
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
+export abstract class BaseApiClient {
+  protected getAuthHeaders(): HeadersInit {
+    const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+    return {
+      "Content-Type": "application/json",
+      ...(token && { Authorization: `Bearer ${token}` }),
+    };
+  }
+
+  protected async request<T>(
+    endpoint: string,
+    options: RequestInit = {}
+  ): Promise<T> {
+    const url = `${API_BASE_URL}${endpoint}`;
+    const config: RequestInit = {
+      ...options,
+      headers: {
+        ...this.getAuthHeaders(),
+        ...options.headers,
+      },
+    };
+
+    // Logging for debugging (only in development)
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[API] ${options.method || 'GET'} ${url}`, {
+        body: options.body,
+        headers: config.headers,
+      });
+    }
+
+    const response = await fetch(url, config);
+
+    if (response.status === 401) {
+      // Unauthorized - clear token and redirect to login
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+        // Use window.location for guaranteed redirect
+        window.location.href = "/auth";
+      }
+      throw ApiError.fromResponse(
+        { detail: "Unauthorized" },
+        response.status
+      );
+    }
+
+    if (!response.ok) {
+      let error: any = { detail: "Unknown error" };
+      const contentType = response.headers.get("content-type");
+
+      try {
+        if (contentType && contentType.includes("application/json")) {
+          error = await response.json();
+
+          // Handle AggregatorService format: { error: "..." }
+          if (error.error && !error.detail) {
+            error.detail = error.error;
+            // If this is a general exception message, try to extract useful info
+            if (error.detail.includes("ResponseException") && error.detail.includes("was thrown")) {
+              // Try to find more specific message
+              // Usually this is "User not found" or "Invalid login attempt"
+              if (error.detail.includes("User not found")) {
+                error.detail = "Пользователь не найден. Проверьте email или зарегистрируйтесь.";
+              } else if (error.detail.includes("Invalid login attempt")) {
+                error.detail = "Неверный email или пароль";
+              } else {
+                error.detail = "Ошибка авторизации. Проверьте данные и попробуйте снова.";
+              }
+            }
+          }
+          // Handle authorization-module format: { Errors: [{ ErrorMessage: "..." }] }
+          else if (error.Errors && Array.isArray(error.Errors) && error.Errors.length > 0) {
+            const firstError = error.Errors[0];
+            error.detail = firstError.ErrorMessage || firstError.message || error.detail;
+          }
+          // Handle ProblemDetails format: { errors: { errors: { Email: [...], Password: [...] } } }
+          else if (error.errors && typeof error.errors === 'object') {
+            const errorMessages: string[] = [];
+            Object.keys(error.errors).forEach(key => {
+              const fieldErrors = error.errors[key];
+              if (Array.isArray(fieldErrors)) {
+                errorMessages.push(...fieldErrors);
+              }
+            });
+            if (errorMessages.length > 0) {
+              error.detail = errorMessages[0]; // Take the first error
+            }
+          }
+          // ProblemDetails format: { detail, title, status, type, instance }
+          else if (!error.detail && error.title) {
+            error.detail = error.title;
+          }
+        } else {
+          // If response is not JSON, read as text
+          const text = await response.text().catch(() => "");
+          error = { detail: text || `HTTP ${response.status}: ${response.statusText}` };
+        }
+      } catch (e) {
+        // If parsing fails, use status
+        error = {
+          detail: `HTTP ${response.status}: ${response.statusText}`,
+          status: response.status
+        };
+      }
+
+      throw ApiError.fromResponse(error, response.status);
+    }
+
+    return response.json();
+  }
+}
