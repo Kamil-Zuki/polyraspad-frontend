@@ -1,6 +1,7 @@
 "use client"
 
 import { cn } from "@/lib/utils"
+import Link from "next/link"
 
 interface FolderItemProps {
   title: string
@@ -46,8 +47,9 @@ export function FolderItem({ title, deckCount, cardCount, icon, color }: FolderI
 }
 
 interface LibraryDeckCardProps {
+  id: string
   title: string
-  image: string
+  image?: string
   cardCount: number
   dueCount: number
   progress: number
@@ -55,6 +57,7 @@ interface LibraryDeckCardProps {
 }
 
 export function LibraryDeckCard({
+  id,
   title,
   image,
   cardCount,
@@ -63,68 +66,76 @@ export function LibraryDeckCard({
   isPurchased = false,
 }: LibraryDeckCardProps) {
   return (
-    <div className="glass-panel rounded-2xl overflow-hidden hover:-translate-y-1.5 transition-all duration-300 border-app-border hover:border-brand-primary/50 group cursor-pointer shadow-xl">
-      {/* Cover */}
-      <div className="h-36 bg-app-bg relative overflow-hidden">
-        <img 
-          src={image} 
-          className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-all duration-700 group-hover:scale-110" 
-          alt={title}
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-app-surface to-transparent opacity-80" />
-        
-        {isPurchased && (
-          <div className="absolute top-3 left-3 bg-brand-secondary text-white text-[9px] font-bold px-2 py-1 rounded-lg backdrop-blur-md shadow-lg uppercase tracking-widest border border-white/10">
-            Purchased
-          </div>
-        )}
+    <Link href={`/study/${id}`}>
+      <div className="glass-panel rounded-2xl overflow-hidden hover:-translate-y-1.5 transition-all duration-300 border-app-border hover:border-brand-primary/50 group cursor-pointer shadow-xl">
+        {/* Cover */}
+        <div className="h-36 bg-app-bg relative overflow-hidden">
+          {image ? (
+            <img
+              src={image}
+              className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-all duration-700 group-hover:scale-110"
+              alt={title}
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-brand-primary/20 to-brand-secondary/20 flex items-center justify-center">
+              <i className="fas fa-clone text-4xl text-brand-primary/30" />
+            </div>
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-app-surface to-transparent opacity-80" />
 
-        {/* Menu */}
-        <button className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center bg-black/60 rounded-lg text-gray-300 hover:text-white opacity-0 group-hover:opacity-100 transition-all duration-300 backdrop-blur-md border border-white/5">
-          <i className="fas fa-ellipsis-h" />
-        </button>
-      </div>
+          {isPurchased && (
+            <div className="absolute top-3 left-3 bg-brand-secondary text-white text-[9px] font-bold px-2 py-1 rounded-lg backdrop-blur-md shadow-lg uppercase tracking-widest border border-white/10">
+              Purchased
+            </div>
+          )}
 
-      {/* Content */}
-      <div className="p-5 pt-3">
-        <h3 className="text-base font-bold text-white leading-tight mb-4 group-hover:text-brand-primary transition-colors truncate">
-          {title}
-        </h3>
-        
-        {/* Progress Bar */}
-        <div className="w-full h-1 bg-app-bg rounded-full mb-5 overflow-hidden">
-          <div 
-            className={cn(
-              "h-full transition-all duration-1000 ease-out",
-              isPurchased ? "bg-brand-secondary shadow-[0_0_8px_rgba(59,130,246,0.5)]" : "bg-brand-primary shadow-[0_0_8px_rgba(139,92,246,0.5)]"
-            )}
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-gray-500 pt-4 border-t border-white/5">
-          <div className="flex gap-4">
-            <span className="flex items-center gap-1.5 transition-colors group-hover:text-gray-300">
-              <i className="fas fa-clone text-brand-primary" /> {cardCount}
-            </span>
-            {dueCount > 0 ? (
-              <span className="flex items-center gap-1.5 text-status-warning">
-                <i className="fas fa-clock" /> {dueCount} due
-              </span>
-            ) : (
-              <span className="flex items-center gap-1.5 text-status-success">
-                <i className="fas fa-check-circle" /> Done
-              </span>
-            )}
-          </div>
-          
-          {/* Hover CTA */}
-          <button className="text-white hover:text-brand-primary transition-all opacity-0 group-hover:opacity-100 flex items-center gap-1.5">
-            <i className="fas fa-play text-[8px]" /> Study
+          {/* Menu */}
+          <button className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center bg-black/60 rounded-lg text-gray-300 hover:text-white opacity-0 group-hover:opacity-100 transition-all duration-300 backdrop-blur-md border border-white/5">
+            <i className="fas fa-ellipsis-h" />
           </button>
         </div>
+
+        {/* Content */}
+        <div className="p-5 pt-3">
+          <h3 className="text-base font-bold text-white leading-tight mb-4 group-hover:text-brand-primary transition-colors truncate">
+            {title}
+          </h3>
+
+          {/* Progress Bar */}
+          <div className="w-full h-1 bg-app-bg rounded-full mb-5 overflow-hidden">
+            <div
+              className={cn(
+                "h-full transition-all duration-1000 ease-out",
+                isPurchased ? "bg-brand-secondary shadow-[0_0_8px_rgba(59,130,246,0.5)]" : "bg-brand-primary shadow-[0_0_8px_rgba(139,92,246,0.5)]"
+              )}
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+
+          {/* Footer */}
+          <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-gray-500 pt-4 border-t border-white/5">
+            <div className="flex gap-4">
+              <span className="flex items-center gap-1.5 transition-colors group-hover:text-gray-300">
+                <i className="fas fa-clone text-brand-primary" /> {cardCount}
+              </span>
+              {dueCount > 0 ? (
+                <span className="flex items-center gap-1.5 text-status-warning">
+                  <i className="fas fa-clock" /> {dueCount} due
+                </span>
+              ) : (
+                <span className="flex items-center gap-1.5 text-status-success">
+                  <i className="fas fa-check-circle" /> Done
+                </span>
+              )}
+            </div>
+
+            {/* Hover CTA */}
+            <button className="text-white hover:text-brand-primary transition-all opacity-0 group-hover:opacity-100 flex items-center gap-1.5">
+              <i className="fas fa-play text-[8px]" /> Study
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
+    </Link>
   )
 }

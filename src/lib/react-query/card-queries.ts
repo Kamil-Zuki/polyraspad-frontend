@@ -19,6 +19,14 @@ export function useCard(id: string) {
   });
 }
 
+export function useCardsByDeck(deckId: string) {
+  return useQuery({
+    queryKey: [...cardQueryKeys.cards, "by-deck", deckId],
+    queryFn: () => apiClient.cards.searchCards("", { deckId }),
+    enabled: !!deckId,
+  });
+}
+
 export function useSearchCards(
   query: string,
   options?: {
