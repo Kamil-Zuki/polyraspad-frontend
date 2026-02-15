@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/utils"
 import Link from "next/link"
+import { ReactNode } from "react"
 
 interface FolderItemProps {
   title: string
@@ -9,10 +10,12 @@ interface FolderItemProps {
   cardCount: number
   icon: string
   color: "secondary" | "pink" | "primary"
+  onClick?: () => void
+  children?: ReactNode
 }
 
-export function FolderItem({ title, deckCount, cardCount, icon, color }: FolderItemProps) {
-  // Note: onClick is handled by parent component
+export function FolderItem({ title, deckCount, cardCount, icon, color, onClick, children }: FolderItemProps) {
+  // Note: onClick can be passed by parent component
   const colorClasses = {
     secondary: "group-hover:text-brand-secondary group-hover:border-brand-secondary/50",
     pink: "group-hover:text-brand-pink group-hover:border-brand-pink/50",
@@ -26,22 +29,34 @@ export function FolderItem({ title, deckCount, cardCount, icon, color }: FolderI
   }
 
   return (
-    <div className="glass-panel p-5 rounded-2xl flex items-center gap-5 cursor-pointer group transition-all duration-300 hover:-translate-y-1">
-      <div className={cn(
-        "w-12 h-12 bg-app-bg border border-app-border rounded-xl flex items-center justify-center text-gray-500 transition-all duration-300",
-        colorClasses[color]
-      )}>
-        <i className={cn(icon, "text-xl")} />
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="text-sm font-bold text-gray-200 group-hover:text-white truncate transition-colors">
-          {title}
+    <div className="relative group">
+      <div
+        onClick={onClick}
+        className="glass-panel p-5 rounded-2xl flex items-center gap-5 cursor-pointer transition-all duration-300 hover:-translate-y-1"
+      >
+        <div className={cn(
+          "w-12 h-12 bg-app-bg border border-app-border rounded-xl flex items-center justify-center text-gray-500 transition-all duration-300",
+          colorClasses[color]
+        )}>
+          <i className={cn(icon, "text-xl")} />
         </div>
-        <div className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mt-1">
-          {deckCount} decks • {cardCount} cards
+        <div className="flex-1 min-w-0">
+          <div className="text-sm font-bold text-gray-200 group-hover:text-white truncate transition-colors">
+            {title}
+          </div>
+          <div className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mt-1">
+            {deckCount} decks • {cardCount} cards
+          </div>
         </div>
+        <i className="fas fa-chevron-right text-[10px] text-gray-700 group-hover:text-white transition-colors" />
       </div>
-      <i className="fas fa-chevron-right text-[10px] text-gray-700 group-hover:text-white transition-colors" />
+
+      {/* Action slot rendered on top-right of the folder card (shown on hover) */}
+      {children && (
+        <div className="absolute top-3 right-3 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+          {children}
+        </div>
+      )}
     </div>
   )
 }
@@ -89,10 +104,10 @@ export function LibraryDeckCard({
             </div>
           )}
 
-          {/* Menu */}
-          <button className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center bg-black/60 rounded-lg text-gray-300 hover:text-white opacity-0 group-hover:opacity-100 transition-all duration-300 backdrop-blur-md border border-white/5">
-            <i className="fas fa-ellipsis-h" />
-          </button>
+          {/* Space for action buttons - will be added by parent component */}
+          <div className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center opacity-0">
+            <i className="fas fa-ellipsis-h text-transparent" />
+          </div>
         </div>
 
         {/* Content */}
@@ -130,9 +145,11 @@ export function LibraryDeckCard({
             </div>
 
             {/* Hover CTA */}
-            <button className="text-white hover:text-brand-primary transition-all opacity-0 group-hover:opacity-100 flex items-center gap-1.5">
-              <i className="fas fa-play text-[8px]" /> Study
-            </button>
+            <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+              <button className="text-white hover:text-brand-primary transition-all flex items-center gap-1.5 text-xs font-bold">
+                <i className="fas fa-play text-[8px]" /> Study
+              </button>
+            </div>
           </div>
         </div>
       </div>
