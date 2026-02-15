@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
+import Link from "next/link"
 import { ProjectStatsBanner } from "@/components/library/project-stats-banner"
 import { FolderItem, LibraryDeckCard } from "@/components/library/library-items"
 import { ProtectedRoute } from "@/components/auth/protected-route"
@@ -315,7 +316,9 @@ export default function LibraryPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
                   {filteredDecks.map((deck) => (
                     <div key={deck.id} className="relative group">
-                      <LibraryDeckCard {...deck} />
+                      <Link href={`/study/${deck.id}`}>
+                        <LibraryDeckCard {...deck} />
+                      </Link>
                       {/* Action buttons for deck - positioned on top of the card */}
                       <div className="absolute top-3 right-3 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                         <button 
