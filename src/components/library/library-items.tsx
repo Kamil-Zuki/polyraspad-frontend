@@ -23,20 +23,14 @@ export function FolderItem({ title, deckCount, cardCount, icon, color, onClick, 
     primary: "group-hover:text-brand-primary group-hover:border-brand-primary/50",
   }
 
-  const iconColorClasses = {
-    secondary: "text-brand-secondary",
-    pink: "text-brand-pink",
-    primary: "text-brand-primary",
-  }
-
   return (
     <div className="relative group">
       <div
         onClick={onClick}
-        className="glass-panel p-5 rounded-2xl flex items-center gap-5 cursor-pointer transition-all duration-300 hover:-translate-y-1"
+        className="glass-panel p-4 rounded-xl flex items-center gap-4 cursor-pointer transition-all duration-200 border border-app-border"
       >
         <div className={cn(
-          "w-12 h-12 bg-app-bg border border-app-border rounded-xl flex items-center justify-center text-gray-500 transition-all duration-300",
+          "w-11 h-11 bg-app-bg border border-app-border rounded-lg flex items-center justify-center text-gray-500 transition-all duration-200",
           colorClasses[color]
         )}>
           <i className={cn(icon, "text-xl")} />
@@ -84,77 +78,65 @@ export function LibraryDeckCard({
   const router = useRouter()
 
   return (
-    <div 
-      className="glass-panel rounded-2xl overflow-hidden hover:-translate-y-1.5 transition-all duration-300 border-app-border hover:border-brand-primary/50 group cursor-pointer shadow-xl"
+    <div
+      className="glass-panel rounded-xl overflow-hidden hover:-translate-y-1 transition-all duration-300 border border-app-border hover:border-brand-primary/50 group cursor-pointer flex flex-col aspect-[4/3]"
       onClick={() => router.push(`/study/${id}`)}
     >
-      {/* Cover */}
-      <div className="h-36 bg-app-bg relative overflow-hidden">
+      {/* Cover - top ~half of card */}
+      <div className="flex-[0_0_50%] min-h-0 bg-app-bg relative overflow-hidden">
         {image ? (
           <img
             src={image}
-            className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-all duration-700 group-hover:scale-110"
+            className="w-full h-full object-cover opacity-70 group-hover:opacity-90 transition-all duration-500 group-hover:scale-105"
             alt={title}
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-brand-primary/20 to-brand-secondary/20 flex items-center justify-center">
-            <i className="fas fa-clone text-4xl text-brand-primary/30" />
+            <i className="fas fa-clone text-3xl text-brand-primary/30" />
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-app-surface to-transparent opacity-80" />
+        <div className="absolute inset-0 bg-gradient-to-t from-app-surface/90 via-transparent to-transparent" />
 
         {isPurchased && (
-          <div className="absolute top-3 left-3 bg-brand-secondary text-white text-[9px] font-bold px-2 py-1 rounded-lg backdrop-blur-md shadow-lg uppercase tracking-widest border border-white/10">
-            Purchased
+          <div className="absolute top-2 left-2 bg-brand-secondary text-white text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-widest">
+            PURCHASED
           </div>
         )}
 
-        {/* Space for action buttons - will be added by parent component */}
-        <div className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center opacity-0">
-          <i className="fas fa-ellipsis-h text-transparent" />
-        </div>
+        <div className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center opacity-0 pointer-events-none" aria-hidden />
       </div>
 
-      {/* Content */}
-      <div className="p-5 pt-3">
-        <h3 className="text-base font-bold text-white leading-tight mb-4 group-hover:text-brand-primary transition-colors truncate">
+      {/* Content: title, progress bar, meta */}
+      <div className="flex-1 min-h-0 flex flex-col p-3">
+        <h3 className="text-sm font-bold text-white leading-tight mb-2 group-hover:text-brand-primary transition-colors truncate">
           {title}
         </h3>
 
-        {/* Progress Bar */}
-        <div className="w-full h-1 bg-app-bg rounded-full mb-5 overflow-hidden">
+        {/* Progress Bar - thin strip under title */}
+        <div className="w-full h-0.5 bg-app-bg rounded-full mb-3 overflow-hidden flex-shrink-0">
           <div
             className={cn(
               "h-full transition-all duration-1000 ease-out",
-              isPurchased ? "bg-brand-secondary shadow-[0_0_8px_rgba(59,130,246,0.5)]" : "bg-brand-primary shadow-[0_0_8px_rgba(139,92,246,0.5)]"
+              isPurchased ? "bg-brand-secondary" : "bg-brand-primary"
             )}
             style={{ width: `${progress}%` }}
           />
         </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-gray-500 pt-4 border-t border-white/5">
-          <div className="flex gap-4">
-            <span className="flex items-center gap-1.5 transition-colors group-hover:text-gray-300">
-              <i className="fas fa-clone text-brand-primary" /> {cardCount}
+        {/* Meta: card count + due/done */}
+        <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-widest text-gray-500 mt-auto">
+          <span className="flex items-center gap-1.5">
+            <i className="fas fa-layer-group text-gray-500" /> {cardCount}
+          </span>
+          {dueCount > 0 ? (
+            <span className="flex items-center gap-1.5 text-status-warning">
+              <i className="fas fa-clock" /> {dueCount} due
             </span>
-            {dueCount > 0 ? (
-              <span className="flex items-center gap-1.5 text-status-warning">
-                <i className="fas fa-clock" /> {dueCount} due
-              </span>
-            ) : (
-              <span className="flex items-center gap-1.5 text-status-success">
-                <i className="fas fa-check-circle" /> Done
-              </span>
-            )}
-          </div>
-
-          {/* Hover CTA */}
-          <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-            <button className="text-white hover:text-brand-primary transition-all flex items-center gap-1.5 text-xs font-bold">
-              <i className="fas fa-play text-[8px]" /> Study
-            </button>
-          </div>
+          ) : (
+            <span className="flex items-center gap-1.5 text-status-success">
+              <i className="fas fa-check-circle" /> Done
+            </span>
+          )}
         </div>
       </div>
     </div>

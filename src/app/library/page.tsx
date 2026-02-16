@@ -95,9 +95,7 @@ export default function LibraryPage() {
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false)
   const [editingDeck, setEditingDeck] = useState<DeckTreeItemDto | null>(null)
   const { currentProject } = useProjectContext()
-  const { data: deckTree, isLoading, error, refetch } = useDeckTree(currentProject?.id || "", {
-    enabled: !!currentProject?.id,
-  })
+  const { data: deckTree, isLoading, error, refetch } = useDeckTree(currentProject?.id ?? "")
   
   // Mutation hooks for deck operations
   const createDeckMutation = useCreateDeck()
@@ -178,15 +176,35 @@ export default function LibraryPage() {
           {/* Actions Bar - First element in scrollable content */}
           <div className="h-14 glass-panel border-b border-app-border flex items-center justify-between px-8 sticky top-0 z-20 bg-app-bg/95 backdrop-blur-sm">
             <div className="flex items-center gap-4">
-              {/* Breadcrumbs */}
+              {/* Breadcrumbs: Project > English C1 > Library (with optional folder path) */}
               <div className="flex items-center gap-2 text-sm">
-                <button
-                  onClick={() => handleBreadcrumbClick(null)}
+                <Link
+                  href="/projects"
                   className="text-gray-400 hover:text-white transition-colors flex items-center gap-1.5"
                 >
-                  <i className="fas fa-home" />
+                  <i className="fas fa-folder-open" />
+                  <span>Project</span>
+                </Link>
+                <i className="fas fa-chevron-right text-[10px] text-gray-600" />
+                {currentProject ? (
+                  <Link
+                    href={`/projects/${currentProject.id}`}
+                    className="text-gray-400 hover:text-white transition-colors flex items-center gap-1.5"
+                  >
+                    <i className="fas fa-book" />
+                    <span>{currentProject.title}</span>
+                  </Link>
+                ) : (
+                  <span className="text-gray-500 flex items-center gap-1.5">
+                    <i className="fas fa-book" />
+                    <span>Project</span>
+                  </span>
+                )}
+                <i className="fas fa-chevron-right text-[10px] text-gray-600" />
+                <span className="text-gray-300 flex items-center gap-1.5">
+                  <i className="fas fa-th-large" />
                   <span>Library</span>
-                </button>
+                </span>
                 {breadcrumbPath.map((node, index) => (
                   <div key={node.id} className="flex items-center gap-2">
                     <i className="fas fa-chevron-right text-[10px] text-gray-600" />
@@ -202,29 +220,28 @@ export default function LibraryPage() {
             </div>
 
             {/* Search & Add */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               <div className="relative group">
-                <i className="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-brand-primary transition-colors" />
+                <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-brand-primary transition-colors text-xs" />
                 <input
                   type="text"
                   placeholder="Filter decks..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="bg-app-bg border border-app-border rounded-xl pl-10 pr-4 py-2 text-sm text-white focus:border-brand-primary focus:outline-none w-48 transition-all focus:w-72"
+                  className="bg-app-bg border border-app-border rounded-lg pl-8 pr-3 py-1.5 text-xs text-white focus:border-brand-primary focus:outline-none w-40 transition-all focus:w-56"
                 />
               </div>
-              <div className="h-6 w-px bg-app-border mx-1" />
               <button
                 onClick={handleCreateFolder}
-                className="bg-app-surface hover:bg-white/5 text-white px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest border border-app-border transition-all active:scale-95"
+                className="bg-app-surface hover:bg-white/5 text-white px-3 py-1.5 rounded-lg text-xs font-medium border border-app-border transition-all active:scale-95 flex items-center gap-1.5"
               >
-                <i className="fas fa-folder-plus mr-2" /> New Folder
+                <i className="fas fa-folder-plus text-[10px]" /> New Folder
               </button>
               <button
                 onClick={handleCreateDeck}
-                className="btn-primary flex items-center gap-2 text-[10px] uppercase tracking-widest py-2"
+                className="btn-primary flex items-center gap-1.5 text-xs py-1.5 px-3 rounded-lg"
               >
-                <i className="fas fa-plus" /> New Deck
+                <i className="fas fa-plus text-[10px]" /> New Deck
               </button>
             </div>
           </div>
@@ -243,12 +260,12 @@ export default function LibraryPage() {
               <section className="mb-12">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] flex items-center gap-2.5">
-                    <i className="fas fa-folder text-brand-secondary" /> Folders
+                    <i className="fas fa-hexagon text-brand-primary" /> FOLDERS
                   </h2>
                 </div>
 
                 {isLoading ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                     {[1, 2, 3].map((i) => (
                       <div key={i} className="h-24 rounded-xl bg-app-surface/50 border border-app-border animate-pulse" />
                     ))}
@@ -258,7 +275,7 @@ export default function LibraryPage() {
                     <div className="text-red-400">Error loading folders: {error instanceof Error ? error.message : "Unknown error"}</div>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                     {filteredFolders.map((folder) => (
                       <FolderItem
                         key={folder.id}
@@ -297,15 +314,15 @@ export default function LibraryPage() {
             <section>
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] flex items-center gap-2.5">
-                  <i className="fas fa-clone text-brand-primary" />
-                  {selectedFolderId ? "Decks" : "Root Decks"}
+                  <i className="fas fa-hexagon text-brand-primary" />
+                  {selectedFolderId ? "DECKS" : "ROOT DECKS"}
                 </h2>
               </div>
 
               {isLoading ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                   {[1, 2, 3, 4].map((i) => (
-                    <div key={i} className="h-[320px] rounded-2xl bg-app-surface/50 border border-app-border animate-pulse" />
+                    <div key={i} className="aspect-[4/3] rounded-xl bg-app-surface/50 border border-app-border animate-pulse" />
                   ))}
                 </div>
               ) : error ? (
@@ -313,11 +330,24 @@ export default function LibraryPage() {
                   <div className="text-red-400">Error loading decks: {error instanceof Error ? error.message : "Unknown error"}</div>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                  {filteredDecks.map((deck) => (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {filteredDecks.map((deck, index) => {
+                    // Mock data for cover, progress, due, and purchased badge (until API provides)
+                    const mockCoverUrls = [
+                      "https://picsum.photos/seed/business/400/300",
+                      "https://picsum.photos/seed/finance/400/300",
+                    ]
+                    const deckWithMock = {
+                      ...deck,
+                      image: mockCoverUrls[index % mockCoverUrls.length],
+                      progress: [30, 100][index % 2] ?? 30,
+                      dueCount: index === 0 ? 15 : 0,
+                      isPurchased: index === 1,
+                    }
+                    return (
                     <div key={deck.id} className="relative group">
-                      <Link href={`/study/${deck.id}`}>
-                        <LibraryDeckCard {...deck} />
+                      <Link href={`/study/${deck.id}`} className="block">
+                        <LibraryDeckCard {...deckWithMock} />
                       </Link>
                       {/* Action buttons for deck - positioned on top of the card */}
                       <div className="absolute top-3 right-3 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity z-10">
@@ -341,13 +371,13 @@ export default function LibraryPage() {
                         </button>
                       </div>
                     </div>
-                  ))}
+                  )})}
 
                   {/* Empty State / Add New Placeholder */}
                   {filteredDecks.length === 0 && !searchQuery ? (
                     <button
                       onClick={handleCreateDeck}
-                      className="bg-app-surface/30 border-2 border-dashed border-white/5 rounded-2xl h-[320px] flex flex-col items-center justify-center gap-4 group hover:border-brand-primary/40 hover:bg-app-surface/50 transition-all duration-300"
+                      className="bg-app-surface/30 border-2 border-dashed border-white/5 rounded-xl aspect-[4/3] min-h-[180px] flex flex-col items-center justify-center gap-4 group hover:border-brand-primary/40 hover:bg-app-surface/50 transition-all duration-300"
                     >
                       <div className="w-16 h-16 rounded-2xl bg-app-bg border border-white/5 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                         <i className="fas fa-plus text-gray-600 group-hover:text-brand-primary transition-colors text-2xl" />
@@ -364,7 +394,7 @@ export default function LibraryPage() {
                   ) : (
                     <button
                       onClick={handleCreateDeck}
-                      className="bg-app-surface/30 border-2 border-dashed border-white/5 rounded-2xl h-[320px] flex flex-col items-center justify-center gap-4 group hover:border-brand-primary/40 hover:bg-app-surface/50 transition-all duration-300"
+                      className="bg-app-surface/30 border-2 border-dashed border-white/5 rounded-xl aspect-[4/3] min-h-[180px] flex flex-col items-center justify-center gap-4 group hover:border-brand-primary/40 hover:bg-app-surface/50 transition-all duration-300"
                     >
                       <div className="w-16 h-16 rounded-2xl bg-app-bg border border-white/5 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                         <i className="fas fa-plus text-gray-600 group-hover:text-brand-primary transition-colors text-2xl" />
@@ -396,7 +426,7 @@ export default function LibraryPage() {
                 try {
                   await updateDeckMutation.mutateAsync({
                     id: editingDeck.id,
-                    data: { title: formData.title, projectId: currentProject.id }
+                    data: { title: formData.title }
                   })
                   handleDeckDialogClose()
                 } catch (error) {
