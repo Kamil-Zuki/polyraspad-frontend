@@ -334,6 +334,7 @@ export default function LibraryPage() {
                   {filteredDecks.map((deck, index) => {
                     // Mock data for cover, progress, due, and purchased badge (until API provides)
                     const mockCoverUrls = [
+                      "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=800&q=80",
                       "https://picsum.photos/seed/business/400/300",
                       "https://picsum.photos/seed/finance/400/300",
                     ]
@@ -347,29 +348,12 @@ export default function LibraryPage() {
                     return (
                     <div key={deck.id} className="relative group">
                       <Link href={`/study/${deck.id}`} className="block">
-                        <LibraryDeckCard {...deckWithMock} />
+                        <LibraryDeckCard
+                          {...deckWithMock}
+                          onEdit={() => handleDeckEdit(findNodeById(deckTree || [], deck.id)!)}
+                          onDelete={() => handleDeckDelete(deck.id)}
+                        />
                       </Link>
-                      {/* Action buttons for deck - positioned on top of the card */}
-                      <div className="absolute top-3 right-3 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleDeckEdit(findNodeById(deckTree || [], deck.id)!)
-                          }}
-                          className="w-7 h-7 rounded-md bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center text-xs text-gray-300 hover:text-white hover:bg-white/20 transition-all duration-200 shadow-sm"
-                        >
-                          <i className="fas fa-edit" />
-                        </button>
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleDeckDelete(deck.id)
-                          }}
-                          className="w-7 h-7 rounded-md bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center text-xs text-gray-300 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200 shadow-sm"
-                        >
-                          <i className="fas fa-trash-alt" />
-                        </button>
-                      </div>
                     </div>
                   )})}
 

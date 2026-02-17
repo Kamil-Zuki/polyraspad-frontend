@@ -1,3 +1,18 @@
 ---
-alwaysApply: true
+description: "Standards for React components, Tailwind styling, and UI patterns"
+globs: ["app/**/*.tsx", "components/**/*.tsx"]
+alwaysApply: false
 ---
+
+# UI & Styling Rules
+- **Tailwind CSS:** Use exclusively. Avoid CSS modules unless for complex animations.
+  - Colors: `bg-app-bg`, `bg-app-surface`, `text-brand-primary`, `text-status-success`.
+  - Effects: Use `glass` or `glass-panel` utilities for transparency.
+- **Icons:** Use `lucide-react`. If you see legacy `<i class="fas...">`, replace with Lucide equivalent.
+- **Component Structure:**
+  - Use Functional Components.
+  - Props must be typed via interface (e.g., `interface DeckCardProps`).
+  - separate "container" logic from "presentational" UI where possible.
+
+# Mocking
+- If backend data is missing, create a realistic mock object inside the component file to visualize the UI immediately.
