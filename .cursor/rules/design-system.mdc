@@ -1,0 +1,60 @@
+---
+description: "PVS Design System: Colors, Typography, Layouts, and User Flows"
+globs: ["tailwind.config.ts", "app/**/*.tsx", "components/**/*.tsx"]
+alwaysApply: true
+---
+
+# PVS Design System & Architecture
+
+## 1. Visual Style ("Deep Immersion")
+
+- **Concept:** Leonardo.ai for Languages. Dark, professional, immersive.
+- **Base Colors:**
+  - Background: `#0B0F15` (`bg-app-bg`) - _Deep Space_.
+  - Surface: `#131927` (`bg-app-surface`) - _Card/Sidebar_.
+  - Hover: `#1C2438` (`hover:bg-app-hover`).
+  - Border: `rgba(255, 255, 255, 0.08)` (`border-white/10`).
+- **Accents:**
+  - Primary: `#8B5CF6` (Violet).
+  - Secondary: `#3B82F6` (Blue).
+  - Gradient: `from-violet-600 to-blue-600`.
+- **Semantic Colors (SRS):**
+  - Again (Fail): `text-rose-400`, `bg-rose-500/10`.
+  - Hard: `text-amber-400`, `bg-amber-500/10`.
+  - Good: `text-emerald-400`, `bg-emerald-500/10`.
+  - Easy: `text-cyan-400`, `bg-cyan-500/10`.
+
+## 2. Core Components (CSS Patterns)
+
+- **Glass Panel:** `bg-[#131927]/70 backdrop-blur-md border border-white/10`.
+- **Inputs:** Background `#0B0F15`, border white/5. Focus: Violet border.
+- **Buttons:**
+  - _Primary:_ Gradient background + Glow (`shadow-[0_0_20px_rgba(139,92,246,0.3)]`).
+  - _Secondary:_ Ghost style, transparent with white/10 border.
+
+## 3. Sitemap & Routing
+
+- **Launcher:** `/projects` (Grid of languages).
+- **Workspace (Sidebar required):**
+  - `/dashboard` (Hero, Streak, Heatmap, Recent Decks).
+  - `/library` (Folder tree, Decks).
+  - `/browser` (Card table).
+  - `/editor` (Create Card - Split view).
+  - `/marketplace` (Store).
+- **Focus Mode (No Sidebar):**
+  - `/study/[deckId]` (Session interface).
+
+## 4. Key User Flows
+
+- **Manual Mining (Editor):**
+  1. Input Sentence -> 2. Click word to set Target -> 3. Input Translation.
+  2. Optional: Record Audio / Paste Image.
+- **AI Mining (Editor):**
+  1. Input Target Word -> 2. AI Assistant "Generate Context" -> 3. Select sentence.
+- **Study Session:**
+  1. Dashboard "Study Now" -> 2. Fullscreen Interface -> 3. Summary Screen.
+
+## 5. Layout Structure
+
+- **Global Layout:** Sidebar (Fixed 260px) + Header (64px) + Main Content (Scrollable).
+- **Sidebar Groups:** Learning, Studio, Community.

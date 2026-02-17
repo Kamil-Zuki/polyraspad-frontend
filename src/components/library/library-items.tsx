@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
+import { createPortal } from "react-dom"
 import { cn } from "@/lib/utils"
 import { MoreHorizontal, Layers, Clock, Play, Pencil, Trash2 } from "lucide-react"
 import { ReactNode } from "react"
@@ -91,7 +92,9 @@ export function LibraryDeckCard({
   onDelete,
 }: LibraryDeckCardProps) {
   const [menuOpen, setMenuOpen] = useState(false)
-  const menuRef = useRef<HTMLDivElement>(null)
+  const [menuPosition, setMenuPosition] = useState<{ top: number; right: number } | null>(null)
+  const buttonRef = useRef<HTMLButtonElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
   const imgSrc = image ?? imageUrl
   const total = totalCards ?? cardCount
@@ -100,10 +103,22 @@ export function LibraryDeckCard({
   useEffect(() => {
     if (!menuOpen) return
     const close = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false)
+      const target = e.target as Node
+      if (
+        buttonRef.current?.contains(target) ||
+        dropdownRef.current?.contains(target)
+      ) return
+      setMenuOpen(false)
+      setMenuPosition(null)
     }
     document.addEventListener("click", close)
     return () => document.removeEventListener("click", close)
+  }, [menuOpen])
+
+  useEffect(() => {
+    if (!menuOpen || typeof document === "undefined") return
+    const rect = buttonRef.current?.getBoundingClientRect()
+    if (rect) setMenuPosition({ top: rect.top, right: window.innerWidth - rect.right })
   }, [menuOpen])
 
   const handleMenuClick = (e: React.MouseEvent) => {
@@ -116,6 +131,7 @@ export function LibraryDeckCard({
     e.preventDefault()
     e.stopPropagation()
     setMenuOpen(false)
+    setMenuPosition(null)
     onEdit?.()
   }
 
@@ -123,6 +139,7 @@ export function LibraryDeckCard({
     e.preventDefault()
     e.stopPropagation()
     setMenuOpen(false)
+    setMenuPosition(null)
     onDelete?.()
   }
 
@@ -157,8 +174,9 @@ export function LibraryDeckCard({
             PURCHASED
           </div>
         )}
-        <div ref={menuRef} className="absolute top-2 right-2 z-20">
+        <div className="absolute top-2 right-2 z-20">
           <button
+            ref={buttonRef}
             type="button"
             onClick={handleMenuClick}
             className="w-8 h-8 rounded-md bg-black/40 border border-white/20 flex items-center justify-center text-white/90 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/60"
@@ -167,33 +185,6 @@ export function LibraryDeckCard({
           >
             <MoreHorizontal className="w-4 h-4" />
           </button>
-          {menuOpen && (onEdit != null || onDelete != null) && (
-            <div
-              className="absolute right-0 bottom-full mb-1 min-w-[120px] py-1 rounded-lg bg-app-surface border border-white/10 shadow-xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {onEdit != null && (
-                <button
-                  type="button"
-                  onClick={handleEdit}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-gray-300 hover:bg-white/5 hover:text-white"
-                >
-                  <Pencil className="w-3.5 h-3.5" />
-                  Edit
-                </button>
-              )}
-              {onDelete != null && (
-                <button
-                  type="button"
-                  onClick={handleDelete}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-gray-300 hover:bg-red-500/10 hover:text-red-400"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  Delete
-                </button>
-              )}
-            </div>
-          )}
         </div>
       </div>
 
@@ -230,6 +221,47 @@ export function LibraryDeckCard({
           </div>
         </div>
       </div>
+
+      {/* Dropdown rendered in portal so it is not clipped by overflow-hidden */}
+      {menuOpen &&
+        menuPosition != null &&
+        (onEdit != null || onDelete != null) &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            ref={dropdownRef}
+            className="min-w-[120px] py-1 rounded-lg bg-app-surface border border-white/10 shadow-xl z-[100]"
+            style={{
+              position: "fixed",
+              top: menuPosition.top,
+              right: menuPosition.right,
+              transform: "translateY(-100%) translateY(-8px)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {onEdit != null && (
+              <button
+                type="button"
+                onClick={handleEdit}
+                className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-gray-300 hover:bg-white/5 hover:text-white"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+                Edit
+              </button>
+            )}
+            {onDelete != null && (
+              <button
+                type="button"
+                onClick={handleDelete}
+                className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-gray-300 hover:bg-red-500/10 hover:text-red-400"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Delete
+              </button>
+            )}
+          </div>,
+          document.body
+        )}
     </div>
   )
 }
