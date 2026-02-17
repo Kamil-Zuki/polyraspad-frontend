@@ -1,0 +1,17 @@
+---
+description: "Core tech stack and architectural principles for the frontend"
+globs: ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"]
+alwaysApply: true
+---
+
+# Project Context
+We are building "PVS" (Personal Vocabulary Service) frontend.
+- **Stack:** Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS.
+- **State:** React Query (TanStack Query) for server state.
+- **Backend:** .NET 9 API (external repo).
+
+# Core Principles
+- **Next.js 15:** Distinguish strictly between Server Components (default) and Client Components (`"use client"`).
+- **React 19:** Use modern hooks where applicable, but prefer React Query for data fetching.
+- **Preserve Logic:** Never remove existing business logic (navigation, handlers) when refactoring UI.
+- **Pixel Perfect:** Design must match the provided mocks strictly.

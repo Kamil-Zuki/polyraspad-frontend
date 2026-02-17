@@ -1,0 +1,15 @@
+---
+description: "Rules for API clients, React Query, and DTOs"
+globs: ["lib/api/**/*.ts", "hooks/**/*.ts"]
+alwaysApply: false
+---
+
+# Data Fetching Rules
+- **Caching:** Be aware that Next.js 15 `fetch` defaults to `no-store`. Use `force-cache` only for static content.
+- **Type Safety:** 
+  - Frontend interfaces **must** match Backend DTOs exactly.
+  - Do not use `any`. Define types in `@/lib/types`.
+- **React Query:**
+  - Use `useQuery` for GET requests.
+  - Use `useMutation` for POST/PUT/DELETE.
+  - Invalidate queries after mutations using `queryClient.invalidateQueries`.
