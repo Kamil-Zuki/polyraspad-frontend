@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { useProjectContext } from "@/contexts/project-context"
@@ -11,22 +11,46 @@ import { CreateCardDto } from "@/lib/api/types"
 export function EditorForm() {
   const router = useRouter()
   const { currentProject } = useProjectContext()
-  const { data: deckTree } = useDeckTree(currentProject?.id || "", {
-    enabled: !!currentProject?.id,
-  })
+  const { data: deckTree } = useDeckTree(currentProject?.id || "")
   const createCard = useCreateCard()
 
   const [sentence, setSentence] = useState("")
   const [targetWord, setTargetWord] = useState("")
   const [translation, setTranslation] = useState("")
+  const [imageUrl, setImageUrl] = useState("")
+  const [audioUrl, setAudioUrl] = useState("")
   const [selectedDeckId, setSelectedDeckId] = useState<string>("")
   const [error, setError] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isTranslating, setIsTranslating] = useState(false)
+  const [showImageUrlInput, setShowImageUrlInput] = useState(false)
+  const [showAudioUrlInput, setShowAudioUrlInput] = useState(false)
+  const [imagePreviewError, setImagePreviewError] = useState(false)
 
-  // Get first available deck as default
-  const firstDeck = deckTree && deckTree.length > 0 ? findFirstDeck(deckTree) : null
-  if (firstDeck && !selectedDeckId) {
-    setSelectedDeckId(firstDeck.id)
+  // Get first available deck as default (after data loads)
+  useEffect(() => {
+    if (selectedDeckId) return
+    if (!deckTree || deckTree.length === 0) return
+
+    const firstDeck = findFirstDeck(deckTree)
+    if (firstDeck?.id) setSelectedDeckId(firstDeck.id)
+  }, [deckTree, selectedDeckId])
+
+  useEffect(() => {
+    setImagePreviewError(false)
+  }, [imageUrl])
+
+  const handleAiTranslate = async () => {
+    if (isTranslating) return
+
+    setIsTranslating(true)
+    try {
+      await new Promise((r) => setTimeout(r, 1000))
+      const word = targetWord.trim() || "TargetWord"
+      setTranslation(`AI Translation: ${word} means...`)
+    } finally {
+      setIsTranslating(false)
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -50,6 +74,8 @@ export function EditorForm() {
         sentence,
         targetWord,
         translation,
+        ...(imageUrl.trim() ? { imageUrl: imageUrl.trim() } : {}),
+        ...(audioUrl.trim() ? { audioUrl: audioUrl.trim() } : {}),
       }
 
       await createCard.mutateAsync(cardData)
@@ -58,6 +84,11 @@ export function EditorForm() {
       setSentence("")
       setTargetWord("")
       setTranslation("")
+      setImageUrl("")
+      setAudioUrl("")
+      setShowImageUrlInput(false)
+      setShowAudioUrlInput(false)
+      setImagePreviewError(false)
       
       // Show success message (could use a toast library)
       alert("Card created successfully!")
@@ -77,19 +108,24 @@ export function EditorForm() {
       {deckTree && deckTree.length > 0 && (
         <section className="glass-panel p-6 rounded-2xl border-app-border">
           <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Select Deck</label>
-          <select
-            value={selectedDeckId}
-            onChange={(e) => setSelectedDeckId(e.target.value)}
-            className="input-dark w-full"
-            required
-          >
-            <option value="">Choose a deck...</option>
-            {flattenDeckTree(deckTree).map((deck) => (
-              <option key={deck.id} value={deck.id}>
-                {deck.title} ({deck.cardCount} cards)
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <select
+              value={selectedDeckId}
+              onChange={(e) => setSelectedDeckId(e.target.value)}
+              className="input-dark w-full appearance-none cursor-pointer pr-10"
+              required
+            >
+              <option value="">Choose a deck...</option>
+              {flattenDeckTree(deckTree).map((deck) => (
+                <option key={deck.id} value={deck.id}>
+                  {deck.title} ({deck.cardCount} cards)
+                </option>
+              ))}
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-gray-500">
+              <i className="fas fa-chevron-down text-xs opacity-70" />
+            </div>
+          </div>
         </section>
       )}
 
@@ -142,9 +178,12 @@ export function EditorForm() {
             <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest">Back (Meaning)</label>
             <button 
               type="button"
+              onClick={handleAiTranslate}
+              disabled={isTranslating}
               className="text-[10px] font-bold uppercase tracking-widest text-brand-primary hover:text-white transition-colors flex items-center gap-1.5"
             >
-              <i className="fas fa-magic" /> AI Translate
+              <i className={cn("fas", isTranslating ? "fa-spinner fa-spin" : "fa-magic")} />{" "}
+              {isTranslating ? "Translating..." : "AI Translate"}
             </button>
           </div>
           <input 
@@ -164,19 +203,159 @@ export function EditorForm() {
         <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-4">Media Attachments</label>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           {/* Image Dropzone */}
-          <div className="bg-app-bg border-2 border-dashed border-white/5 rounded-2xl h-36 flex flex-col items-center justify-center cursor-pointer group hover:border-brand-primary/50 hover:bg-brand-primary/5 transition-all duration-300">
-            <div className="w-12 h-12 rounded-full bg-app-surface border border-white/5 flex items-center justify-center mb-3 text-gray-600 group-hover:text-brand-primary group-hover:shadow-glow group-hover:bg-brand-primary/10 transition-all">
-              <i className="fas fa-image text-lg" />
+          <div
+            className={cn(
+              "bg-app-bg border-2 border-dashed border-white/5 rounded-2xl h-36 relative overflow-hidden group hover:border-brand-primary/50 hover:bg-brand-primary/5 transition-all duration-300",
+              showImageUrlInput ? "cursor-default" : "cursor-pointer"
+            )}
+            onClick={() => {
+              if (!showImageUrlInput) setShowImageUrlInput(true)
+            }}
+          >
+            {imageUrl.trim() && !imagePreviewError ? (
+              <img
+                src={imageUrl.trim()}
+                alt="Image preview"
+                className="absolute inset-0 w-full h-full object-cover"
+                onError={() => setImagePreviewError(true)}
+              />
+            ) : (
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <div className="w-12 h-12 rounded-full bg-app-surface border border-white/5 flex items-center justify-center mb-3 text-gray-600 group-hover:text-brand-primary group-hover:shadow-glow group-hover:bg-brand-primary/10 transition-all">
+                  <i className="fas fa-image text-lg" />
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 group-hover:text-white">
+                  {imageUrl.trim() ? "Invalid image URL" : "Drop image or Paste"}
+                </span>
+              </div>
+            )}
+
+            <div className="absolute inset-x-3 bottom-3">
+              {showImageUrlInput ? (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="url"
+                    value={imageUrl}
+                    onChange={(e) => setImageUrl(e.target.value)}
+                    placeholder="Paste image URL..."
+                    className="input-dark w-full text-xs py-2 px-3"
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => {
+                      if (e.key === "Escape") setShowImageUrlInput(false)
+                    }}
+                  />
+                  {imageUrl.trim() && (
+                    <button
+                      type="button"
+                      className="btn-secondary px-3 py-2 text-xs"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setImageUrl("")
+                        setImagePreviewError(false)
+                      }}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className="w-full py-2 bg-app-surface/80 hover:bg-app-surface border border-white/10 rounded-xl text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-white transition-all"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setShowImageUrlInput(true)
+                  }}
+                >
+                  Paste URL
+                </button>
+              )}
             </div>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 group-hover:text-white">Drop image or Paste</span>
           </div>
 
           {/* Audio Dropzone */}
-          <div className="bg-app-bg border-2 border-dashed border-white/5 rounded-2xl h-36 flex flex-col items-center justify-center cursor-pointer group hover:border-brand-secondary/50 hover:bg-brand-secondary/5 transition-all duration-300 relative">
-            <div className="w-12 h-12 rounded-full bg-app-surface border border-white/5 flex items-center justify-center mb-3 text-gray-600 group-hover:text-brand-secondary group-hover:shadow-glow group-hover:bg-brand-secondary/10 transition-all">
-              <i className="fas fa-microphone text-lg" />
+          <div
+            className={cn(
+              "bg-app-bg border-2 border-dashed border-white/5 rounded-2xl h-36 relative overflow-hidden group hover:border-brand-secondary/50 hover:bg-brand-secondary/5 transition-all duration-300",
+              showAudioUrlInput ? "cursor-default" : "cursor-pointer"
+            )}
+            onClick={() => {
+              if (!showAudioUrlInput) setShowAudioUrlInput(true)
+            }}
+          >
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              {audioUrl.trim() ? (
+                <>
+                  <div className="w-12 h-12 rounded-full bg-app-surface border border-white/5 flex items-center justify-center mb-3 text-gray-600 group-hover:text-brand-secondary group-hover:shadow-glow group-hover:bg-brand-secondary/10 transition-all">
+                    <i className="fas fa-play text-lg" />
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 group-hover:text-white">
+                    Audio URL attached
+                  </span>
+                </>
+              ) : (
+                <>
+                  <div className="w-12 h-12 rounded-full bg-app-surface border border-white/5 flex items-center justify-center mb-3 text-gray-600 group-hover:text-brand-secondary group-hover:shadow-glow group-hover:bg-brand-secondary/10 transition-all">
+                    <i className="fas fa-microphone text-lg" />
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 group-hover:text-white">
+                    Upload or Record
+                  </span>
+                </>
+              )}
             </div>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 group-hover:text-white">Upload or Record</span>
+
+            <div className="absolute inset-x-3 bottom-3">
+              {showAudioUrlInput ? (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="url"
+                    value={audioUrl}
+                    onChange={(e) => setAudioUrl(e.target.value)}
+                    placeholder="Paste audio URL..."
+                    className="input-dark w-full text-xs py-2 px-3"
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => {
+                      if (e.key === "Escape") setShowAudioUrlInput(false)
+                    }}
+                  />
+                  {audioUrl.trim() && (
+                    <button
+                      type="button"
+                      className="btn-secondary px-3 py-2 text-xs"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setAudioUrl("")
+                      }}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className="w-full py-2 bg-app-surface/80 hover:bg-app-surface border border-white/10 rounded-xl text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-white transition-all"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setShowAudioUrlInput(true)
+                  }}
+                >
+                  Paste URL
+                </button>
+              )}
+            </div>
+
+            {audioUrl.trim() && (
+              <div className="absolute left-3 right-3 top-3">
+                <audio
+                  src={audioUrl.trim()}
+                  controls
+                  className="w-full h-8 opacity-90"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </div>
+            )}
             
             {/* Auto TTS Toggle */}
             <label className="absolute top-3 right-3 flex items-center gap-2 cursor-pointer bg-app-surface px-2.5 py-1.5 rounded-lg border border-white/5 shadow-lg group/tts">

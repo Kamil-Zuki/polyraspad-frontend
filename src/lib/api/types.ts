@@ -224,6 +224,8 @@ export interface CreateCardDto {
   sentence: string
   targetWord: string
   translation: string
+  imageUrl?: string | null
+  audioUrl?: string | null
   sourceMeta?: SourceMetaDto | null
 }
 
