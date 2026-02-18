@@ -10,9 +10,7 @@ import { CardResponseDto } from "@/lib/api/types"
 export default function BrowserPage() {
   const { currentProject } = useProjectContext()
   const { data: projects, isLoading: projectsLoading } = useProjects()
-  const { data: deckTree } = useDeckTree(currentProject?.id || "", {
-    enabled: !!currentProject?.id,
-  })
+  const { data: deckTree } = useDeckTree(currentProject?.id || "")
 
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>(currentProject?.id)

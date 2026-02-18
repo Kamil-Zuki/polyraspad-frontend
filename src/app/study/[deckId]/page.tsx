@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import { useMemo } from "react"
-import Link from "next/link"
-import { useParams, useRouter } from "next/navigation"
+import { useMemo } from "react";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
 import {
   ChevronRight,
   Settings,
@@ -10,30 +10,30 @@ import {
   Plus,
   LayoutGrid,
   BarChart3,
-} from "lucide-react"
-import { useDeck, useDeckTree } from "@/lib/react-query/queries"
-import { ProtectedRoute } from "@/components/auth/protected-route"
-import { DeckTreeItemDto } from "@/lib/api/types"
+} from "lucide-react";
+import { useDeck, useDeckTree } from "@/lib/react-query/queries";
+import { ProtectedRoute } from "@/components/auth/protected-route";
+import { DeckTreeItemDto } from "@/lib/api/types";
 
 function getBreadcrumbPath(
   tree: DeckTreeItemDto[],
   targetId: string,
-  path: DeckTreeItemDto[] = []
+  path: DeckTreeItemDto[] = [],
 ): DeckTreeItemDto[] | null {
   for (const node of tree) {
-    const currentPath = [...path, node]
-    if (node.id === targetId) return currentPath
+    const currentPath = [...path, node];
+    if (node.id === targetId) return currentPath;
     if (node.children?.length) {
-      const found = getBreadcrumbPath(node.children, targetId, currentPath)
-      if (found) return found
+      const found = getBreadcrumbPath(node.children, targetId, currentPath);
+      if (found) return found;
     }
   }
-  return null
+  return null;
 }
 
 // Stats placeholder until API provides SRS counts per deck
-const DEFAULT_STATS = { newCount: 10, learningCount: 5, toReviewCount: 15 }
-const DUE_TODAY = 25
+const DEFAULT_STATS = { newCount: 10, learningCount: 5, toReviewCount: 15 };
+const DUE_TODAY = 25;
 
 function DeckOverviewSkeleton() {
   return (
@@ -58,27 +58,34 @@ function DeckOverviewSkeleton() {
           </div>
           <div className="flex gap-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-10 w-28 bg-app-surface rounded-lg animate-pulse" />
+              <div
+                key={i}
+                className="h-10 w-28 bg-app-surface rounded-lg animate-pulse"
+              />
             ))}
           </div>
         </div>
       </main>
     </div>
-  )
+  );
 }
 
 export default function DeckOverviewPage() {
-  const { deckId } = useParams()
-  const router = useRouter()
-  const id = Array.isArray(deckId) ? deckId[0] : deckId ?? ""
+  const { deckId } = useParams();
+  const router = useRouter();
+  const id = Array.isArray(deckId) ? deckId[0] : (deckId ?? "");
 
-  const { data: deck, isLoading: isDeckLoading, error: deckError } = useDeck(id)
-  const { data: deckTree } = useDeckTree(deck?.projectId ?? "")
+  const {
+    data: deck,
+    isLoading: isDeckLoading,
+    error: deckError,
+  } = useDeck(id);
+  const { data: deckTree } = useDeckTree(deck?.projectId ?? "");
 
   const breadcrumbPath = useMemo(() => {
-    if (!deckTree?.length || !id) return []
-    return getBreadcrumbPath(deckTree, id) ?? []
-  }, [deckTree, id])
+    if (!deckTree?.length || !id) return [];
+    return getBreadcrumbPath(deckTree, id) ?? [];
+  }, [deckTree, id]);
 
   const stats = useMemo(
     () =>
@@ -90,15 +97,15 @@ export default function DeckOverviewPage() {
             dueToday: DUE_TODAY,
           }
         : null,
-    [deck]
-  )
+    [deck],
+  );
 
   if (isDeckLoading) {
     return (
       <ProtectedRoute>
         <DeckOverviewSkeleton />
       </ProtectedRoute>
-    )
+    );
   }
 
   if (deckError || !deck) {
@@ -106,9 +113,13 @@ export default function DeckOverviewPage() {
       <ProtectedRoute>
         <div className="flex-1 flex flex-col h-full bg-app-bg items-center justify-center p-8">
           <div className="glass-panel border border-app-border rounded-2xl p-8 max-w-md text-center">
-            <h2 className="text-xl font-bold text-white mb-2">Deck not found</h2>
+            <h2 className="text-xl font-bold text-white mb-2">
+              Deck not found
+            </h2>
             <p className="text-gray-400 mb-6">
-              {deckError instanceof Error ? deckError.message : "This deck doesn't exist or you don't have access."}
+              {deckError instanceof Error
+                ? deckError.message
+                : "This deck doesn't exist or you don't have access."}
             </p>
             <Link
               href="/library"
@@ -119,10 +130,10 @@ export default function DeckOverviewPage() {
           </div>
         </div>
       </ProtectedRoute>
-    )
+    );
   }
 
-  const sessionHref = `/study/${id}/session`
+  const sessionHref = `/study/${id}/session`;
 
   return (
     <ProtectedRoute>
@@ -142,7 +153,9 @@ export default function DeckOverviewPage() {
                 <div key={node.id} className="flex items-center gap-2 shrink-0">
                   <ChevronRight className="w-4 h-4 text-gray-600 shrink-0" />
                   {index === breadcrumbPath.length - 1 ? (
-                    <span className="text-white font-medium truncate">{node.title}</span>
+                    <span className="text-white font-medium truncate">
+                      {node.title}
+                    </span>
                   ) : (
                     <Link
                       href={`/study/${node.id}`}
@@ -245,5 +258,5 @@ export default function DeckOverviewPage() {
         </main>
       </div>
     </ProtectedRoute>
-  )
+  );
 }

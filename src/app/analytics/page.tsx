@@ -16,8 +16,7 @@ export default function AnalyticsPage() {
 
   // Fetch real data from API
   const { data: vocabularyData, isLoading: vocabularyLoading, error: vocabularyError } = useVocabularyStats(
-    currentProject?.id || '',
-    { enabled: !!currentProject?.id }
+    currentProject?.id || ''
   );
 
   const { data: heatmapData, isLoading: heatmapLoading, error: heatmapError } = useHeatmap(

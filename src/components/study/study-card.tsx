@@ -27,7 +27,7 @@ export function StudyCard({
   const highlightedSentence = sentence.split(targetWord).reduce((acc, part, i, arr) => {
     if (i === 0) return [part];
     return [...acc, <span key={i} className="text-brand-primary border-b-2 border-brand-primary/50 pb-0.5">{targetWord}</span>, part];
-  }, [] as (string | JSX.Element)[]);
+  }, [] as (string | React.ReactNode)[]);
 
   return (
     <div 

@@ -14,9 +14,7 @@ function getRootDecks(tree: DeckTreeItemDto[]): DeckTreeItemDto[] {
 
 export function RecentDecks() {
   const { currentProject } = useProjectContext()
-  const { data: deckTree, isLoading } = useDeckTree(currentProject?.id || "", {
-    enabled: !!currentProject?.id,
-  })
+  const { data: deckTree, isLoading } = useDeckTree(currentProject?.id || "")
 
   const rootDecks = useMemo(() => {
     if (!deckTree || deckTree.length === 0) return []
