@@ -1,73 +1,73 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { cn } from "@/lib/utils"
-import { useProjectContext } from "@/contexts/project-context"
-import { useDeckTree } from "@/lib/react-query/queries"
-import { useCreateCard } from "@/lib/react-query/queries"
-import { CreateCardDto } from "@/lib/api/types"
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
+import { useProjectContext } from "@/contexts/project-context";
+import { useDeckTree } from "@/lib/react-query/queries";
+import { useCreateCard } from "@/lib/react-query/queries";
+import { CreateCardDto } from "@/lib/api/types";
 
 export function EditorForm() {
-  const router = useRouter()
-  const { currentProject } = useProjectContext()
-  const { data: deckTree } = useDeckTree(currentProject?.id || "")
-  const createCard = useCreateCard()
+  const router = useRouter();
+  const { currentProject } = useProjectContext();
+  const { data: deckTree } = useDeckTree(currentProject?.id || "");
+  const createCard = useCreateCard();
 
-  const [sentence, setSentence] = useState("")
-  const [targetWord, setTargetWord] = useState("")
-  const [translation, setTranslation] = useState("")
-  const [imageUrl, setImageUrl] = useState("")
-  const [audioUrl, setAudioUrl] = useState("")
-  const [selectedDeckId, setSelectedDeckId] = useState<string>("")
-  const [error, setError] = useState("")
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isTranslating, setIsTranslating] = useState(false)
-  const [showImageUrlInput, setShowImageUrlInput] = useState(false)
-  const [showAudioUrlInput, setShowAudioUrlInput] = useState(false)
-  const [imagePreviewError, setImagePreviewError] = useState(false)
+  const [sentence, setSentence] = useState("");
+  const [targetWord, setTargetWord] = useState("");
+  const [translation, setTranslation] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+  const [audioUrl, setAudioUrl] = useState("");
+  const [selectedDeckId, setSelectedDeckId] = useState<string>("");
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [showImageUrlInput, setShowImageUrlInput] = useState(false);
+  const [showAudioUrlInput, setShowAudioUrlInput] = useState(false);
+  const [imagePreviewError, setImagePreviewError] = useState(false);
 
   // Get first available deck as default (after data loads)
   useEffect(() => {
-    if (selectedDeckId) return
-    if (!deckTree || deckTree.length === 0) return
+    if (selectedDeckId) return;
+    if (!deckTree || deckTree.length === 0) return;
 
-    const firstDeck = findFirstDeck(deckTree)
-    if (firstDeck?.id) setSelectedDeckId(firstDeck.id)
-  }, [deckTree, selectedDeckId])
+    const firstDeck = findFirstDeck(deckTree);
+    if (firstDeck?.id) setSelectedDeckId(firstDeck.id);
+  }, [deckTree, selectedDeckId]);
 
   useEffect(() => {
-    setImagePreviewError(false)
-  }, [imageUrl])
+    setImagePreviewError(false);
+  }, [imageUrl]);
 
   const handleAiTranslate = async () => {
-    if (isTranslating) return
+    if (isTranslating) return;
 
-    setIsTranslating(true)
+    setIsTranslating(true);
     try {
-      await new Promise((r) => setTimeout(r, 1000))
-      const word = targetWord.trim() || "TargetWord"
-      setTranslation(`AI Translation: ${word} means...`)
+      await new Promise((r) => setTimeout(r, 1000));
+      const word = targetWord.trim() || "TargetWord";
+      setTranslation(`AI Translation: ${word} means...`);
     } finally {
-      setIsTranslating(false)
+      setIsTranslating(false);
     }
-  }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError("")
+    e.preventDefault();
+    setError("");
 
     if (!selectedDeckId) {
-      setError("Please select a deck")
-      return
+      setError("Please select a deck");
+      return;
     }
 
     if (!sentence || !targetWord || !translation) {
-      setError("Please fill in all required fields")
-      return
+      setError("Please fill in all required fields");
+      return;
     }
 
-    setIsSubmitting(true)
+    setIsSubmitting(true);
     try {
       const cardData: CreateCardDto = {
         deckId: selectedDeckId,
@@ -76,38 +76,43 @@ export function EditorForm() {
         translation,
         ...(imageUrl.trim() ? { imageUrl: imageUrl.trim() } : {}),
         ...(audioUrl.trim() ? { audioUrl: audioUrl.trim() } : {}),
-      }
+      };
 
-      await createCard.mutateAsync(cardData)
-      
+      await createCard.mutateAsync(cardData);
+
       // Reset form
-      setSentence("")
-      setTargetWord("")
-      setTranslation("")
-      setImageUrl("")
-      setAudioUrl("")
-      setShowImageUrlInput(false)
-      setShowAudioUrlInput(false)
-      setImagePreviewError(false)
-      
+      setSentence("");
+      setTargetWord("");
+      setTranslation("");
+      setImageUrl("");
+      setAudioUrl("");
+      setShowImageUrlInput(false);
+      setShowAudioUrlInput(false);
+      setImagePreviewError(false);
+
       // Show success message (could use a toast library)
-      alert("Card created successfully!")
-      
+      alert("Card created successfully!");
+
       // Optionally navigate back
       // router.push("/library")
     } catch (err: any) {
-      setError(err.message || "Failed to create card")
+      setError(err.message || "Failed to create card");
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-3xl mx-auto space-y-8 relative z-10 py-12 px-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <form
+      onSubmit={handleSubmit}
+      className="max-w-3xl mx-auto space-y-8 relative z-10 py-12 px-6 animate-in fade-in slide-in-from-bottom-4 duration-700"
+    >
       {/* Deck Selection */}
       {deckTree && deckTree.length > 0 && (
         <section className="glass-panel p-6 rounded-2xl border-app-border">
-          <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Select Deck</label>
+          <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">
+            Select Deck
+          </label>
           <div className="relative">
             <select
               value={selectedDeckId}
@@ -140,12 +145,14 @@ export function EditorForm() {
 
       {/* 1. Sentence (Front) */}
       <section className="glass-panel p-8 rounded-3xl border-app-border">
-        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Front (Sentence)</label>
+        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">
+          Front (Sentence)
+        </label>
         <div className="relative group">
-          <textarea 
+          <textarea
             value={sentence}
             onChange={(e) => setSentence(e.target.value)}
-            className="input-dark w-full p-5 rounded-2xl text-xl min-h-[140px] resize-none leading-relaxed" 
+            className="input-dark w-full p-5 rounded-2xl text-xl min-h-[140px] resize-none leading-relaxed"
             placeholder="Type or paste your sentence here..."
             required
           />
@@ -154,62 +161,79 @@ export function EditorForm() {
           </div>
         </div>
         <p className="text-xs text-gray-500 mt-4 leading-relaxed">
-          Example: "He decided to <strong className="text-brand-primary font-bold">address</strong> the issue."
+          Example: "He decided to{" "}
+          <strong className="text-brand-primary font-bold">address</strong> the
+          issue."
         </p>
       </section>
 
       {/* 2. Target & Translation */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <section className="glass-panel p-8 rounded-3xl border-app-border">
-          <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Target Word</label>
-          <input 
-            type="text" 
+          <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">
+            Target Word
+          </label>
+          <input
+            type="text"
             value={targetWord}
             onChange={(e) => setTargetWord(e.target.value)}
-            className="input-dark w-full p-4 rounded-xl font-bold text-white" 
-            placeholder="Auto-filled..." 
+            className="input-dark w-full p-4 rounded-xl font-bold text-white"
+            placeholder="Auto-filled..."
             required
           />
-          <p className="text-[10px] text-gray-500 mt-3 font-medium uppercase tracking-wider">Focus word for this card</p>
+          <p className="text-[10px] text-gray-500 mt-3 font-medium uppercase tracking-wider">
+            Focus word for this card
+          </p>
         </section>
-        
+
         <section className="glass-panel p-8 rounded-3xl border-app-border">
           <div className="flex justify-between items-center mb-3">
-            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest">Back (Meaning)</label>
-            <button 
+            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+              Back (Meaning)
+            </label>
+            <button
               type="button"
               onClick={handleAiTranslate}
               disabled={isTranslating}
               className="text-[10px] font-bold uppercase tracking-widest text-brand-primary hover:text-white transition-colors flex items-center gap-1.5"
             >
-              <i className={cn("fas", isTranslating ? "fa-spinner fa-spin" : "fa-magic")} />{" "}
+              <i
+                className={cn(
+                  "fas",
+                  isTranslating ? "fa-spinner fa-spin" : "fa-magic",
+                )}
+              />{" "}
               {isTranslating ? "Translating..." : "AI Translate"}
             </button>
           </div>
-          <input 
-            type="text" 
+          <input
+            type="text"
             value={translation}
             onChange={(e) => setTranslation(e.target.value)}
-            className="input-dark w-full p-4 rounded-xl text-white" 
-            placeholder="Translation..." 
+            className="input-dark w-full p-4 rounded-xl text-white"
+            placeholder="Translation..."
             required
           />
-          <p className="text-[10px] text-gray-500 mt-3 font-medium uppercase tracking-wider">Translation in context</p>
+          <p className="text-[10px] text-gray-500 mt-3 font-medium uppercase tracking-wider">
+            Translation in context
+          </p>
         </section>
       </div>
 
       {/* 3. Media (Anki Style) */}
       <section className="glass-panel p-8 rounded-3xl border-app-border">
-        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-4">Media Attachments</label>
+        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-4">
+          Media Attachments
+        </label>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           {/* Image Dropzone */}
           <div
             className={cn(
               "bg-app-bg border-2 border-dashed border-white/5 rounded-2xl h-36 relative overflow-hidden group hover:border-brand-primary/50 hover:bg-brand-primary/5 transition-all duration-300",
-              showImageUrlInput ? "cursor-default" : "cursor-pointer"
+              showImageUrlInput ? "cursor-default" : "cursor-pointer",
             )}
             onClick={() => {
-              if (!showImageUrlInput) setShowImageUrlInput(true)
+              if (!showImageUrlInput) setShowImageUrlInput(true);
             }}
           >
             {imageUrl.trim() && !imagePreviewError ? (
@@ -225,7 +249,9 @@ export function EditorForm() {
                   <i className="fas fa-image text-lg" />
                 </div>
                 <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 group-hover:text-white">
-                  {imageUrl.trim() ? "Invalid image URL" : "Drop image or Paste"}
+                  {imageUrl.trim()
+                    ? "Invalid image URL"
+                    : "Drop image or Paste"}
                 </span>
               </div>
             )}
@@ -241,7 +267,7 @@ export function EditorForm() {
                     className="input-dark w-full text-xs py-2 px-3"
                     onClick={(e) => e.stopPropagation()}
                     onKeyDown={(e) => {
-                      if (e.key === "Escape") setShowImageUrlInput(false)
+                      if (e.key === "Escape") setShowImageUrlInput(false);
                     }}
                   />
                   {imageUrl.trim() && (
@@ -249,9 +275,9 @@ export function EditorForm() {
                       type="button"
                       className="btn-secondary px-3 py-2 text-xs"
                       onClick={(e) => {
-                        e.stopPropagation()
-                        setImageUrl("")
-                        setImagePreviewError(false)
+                        e.stopPropagation();
+                        setImageUrl("");
+                        setImagePreviewError(false);
                       }}
                     >
                       Clear
@@ -263,8 +289,8 @@ export function EditorForm() {
                   type="button"
                   className="w-full py-2 bg-app-surface/80 hover:bg-app-surface border border-white/10 rounded-xl text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-white transition-all"
                   onClick={(e) => {
-                    e.stopPropagation()
-                    setShowImageUrlInput(true)
+                    e.stopPropagation();
+                    setShowImageUrlInput(true);
                   }}
                 >
                   Paste URL
@@ -277,10 +303,10 @@ export function EditorForm() {
           <div
             className={cn(
               "bg-app-bg border-2 border-dashed border-white/5 rounded-2xl h-36 relative overflow-hidden group hover:border-brand-secondary/50 hover:bg-brand-secondary/5 transition-all duration-300",
-              showAudioUrlInput ? "cursor-default" : "cursor-pointer"
+              showAudioUrlInput ? "cursor-default" : "cursor-pointer",
             )}
             onClick={() => {
-              if (!showAudioUrlInput) setShowAudioUrlInput(true)
+              if (!showAudioUrlInput) setShowAudioUrlInput(true);
             }}
           >
             <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -316,7 +342,7 @@ export function EditorForm() {
                     className="input-dark w-full text-xs py-2 px-3"
                     onClick={(e) => e.stopPropagation()}
                     onKeyDown={(e) => {
-                      if (e.key === "Escape") setShowAudioUrlInput(false)
+                      if (e.key === "Escape") setShowAudioUrlInput(false);
                     }}
                   />
                   {audioUrl.trim() && (
@@ -324,8 +350,8 @@ export function EditorForm() {
                       type="button"
                       className="btn-secondary px-3 py-2 text-xs"
                       onClick={(e) => {
-                        e.stopPropagation()
-                        setAudioUrl("")
+                        e.stopPropagation();
+                        setAudioUrl("");
                       }}
                     >
                       Clear
@@ -337,8 +363,8 @@ export function EditorForm() {
                   type="button"
                   className="w-full py-2 bg-app-surface/80 hover:bg-app-surface border border-white/10 rounded-xl text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-white transition-all"
                   onClick={(e) => {
-                    e.stopPropagation()
-                    setShowAudioUrlInput(true)
+                    e.stopPropagation();
+                    setShowAudioUrlInput(true);
                   }}
                 >
                   Paste URL
@@ -356,12 +382,18 @@ export function EditorForm() {
                 />
               </div>
             )}
-            
+
             {/* Auto TTS Toggle */}
             <label className="absolute top-3 right-3 flex items-center gap-2 cursor-pointer bg-app-surface px-2.5 py-1.5 rounded-lg border border-white/5 shadow-lg group/tts">
-              <span className="text-[9px] font-bold text-gray-500 uppercase tracking-wider group-hover/tts:text-brand-primary transition-colors">Auto TTS</span>
+              <span className="text-[9px] font-bold text-gray-500 uppercase tracking-wider group-hover/tts:text-brand-primary transition-colors">
+                Auto TTS
+              </span>
               <div className="relative">
-                <input type="checkbox" defaultChecked className="peer sr-only" />
+                <input
+                  type="checkbox"
+                  defaultChecked
+                  className="peer sr-only"
+                />
                 <div className="w-7 h-4 bg-gray-700 rounded-full peer peer-checked:bg-brand-primary transition-colors" />
                 <div className="absolute left-1 top-1 w-2 h-2 bg-white rounded-full transition-transform peer-checked:translate-x-3" />
               </div>
@@ -372,16 +404,24 @@ export function EditorForm() {
 
       {/* 4. Source Information */}
       <section className="glass-panel p-8 rounded-3xl border-app-border">
-        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-4">Source Information</label>
+        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-4">
+          Source Information
+        </label>
         <div className="space-y-4">
           <div className="bg-app-bg p-5 rounded-2xl border border-white/5 flex items-center gap-4 group">
             <div className="w-12 h-12 bg-red-600/10 text-red-500 rounded-xl flex items-center justify-center border border-red-500/20 shadow-lg">
               <i className="fab fa-youtube text-2xl" />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-[9px] text-gray-500 uppercase font-bold tracking-widest mb-1">YouTube Video</div>
-              <div className="text-sm text-white font-bold truncate">Kurzgesagt – In a Nutshell: Why we do what we do</div>
-              <div className="text-[10px] text-gray-400 font-medium">Timestamp: 04:20</div>
+              <div className="text-[9px] text-gray-500 uppercase font-bold tracking-widest mb-1">
+                YouTube Video
+              </div>
+              <div className="text-sm text-white font-bold truncate">
+                Kurzgesagt – In a Nutshell: Why we do what we do
+              </div>
+              <div className="text-[10px] text-gray-400 font-medium">
+                Timestamp: 04:20
+              </div>
             </div>
             <button className="text-gray-600 hover:text-white transition-colors p-2">
               <i className="fas fa-times" />
@@ -411,28 +451,28 @@ export function EditorForm() {
         </button>
       </div>
     </form>
-  )
+  );
 }
 
 // Helper functions
 function findFirstDeck(tree: any[]): any | null {
   for (const node of tree) {
     if (!node.children || node.children.length === 0) {
-      return node
+      return node;
     }
-    const found = findFirstDeck(node.children)
-    if (found) return found
+    const found = findFirstDeck(node.children);
+    if (found) return found;
   }
-  return null
+  return null;
 }
 
 function flattenDeckTree(tree: any[]): any[] {
-  const result: any[] = []
+  const result: any[] = [];
   for (const node of tree) {
-    result.push(node)
+    result.push(node);
     if (node.children && node.children.length > 0) {
-      result.push(...flattenDeckTree(node.children))
+      result.push(...flattenDeckTree(node.children));
     }
   }
-  return result
+  return result;
 }
