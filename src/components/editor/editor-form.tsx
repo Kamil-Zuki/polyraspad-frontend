@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useProjectContext } from "@/contexts/project-context";
+import { useEditorCard } from "@/contexts/editor-card-context";
 import { useDeckTree } from "@/lib/react-query/queries";
 import { useCreateCard } from "@/lib/react-query/queries";
 import { CreateCardDto } from "@/lib/api/types";
@@ -11,14 +12,21 @@ import { CreateCardDto } from "@/lib/api/types";
 export function EditorForm() {
   const router = useRouter();
   const { currentProject } = useProjectContext();
+  const {
+    sentence,
+    setSentence,
+    targetWord,
+    setTargetWord,
+    translation,
+    setTranslation,
+    imageUrl,
+    setImageUrl,
+    audioUrl,
+    setAudioUrl,
+  } = useEditorCard();
   const { data: deckTree } = useDeckTree(currentProject?.id || "");
   const createCard = useCreateCard();
 
-  const [sentence, setSentence] = useState("");
-  const [targetWord, setTargetWord] = useState("");
-  const [translation, setTranslation] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
-  const [audioUrl, setAudioUrl] = useState("");
   const [selectedDeckId, setSelectedDeckId] = useState<string>("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
