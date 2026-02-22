@@ -6,8 +6,9 @@ import { ProjectStatsBanner } from "@/components/library/project-stats-banner"
 import { FolderItem, LibraryDeckCard } from "@/components/library/library-items"
 import { ProtectedRoute } from "@/components/auth/protected-route"
 import { CreateDeckDialog } from "@/components/decks/create-deck-dialog"
+import { DeckSettingsDialog } from "@/components/decks/deck-settings-dialog"
 import { useProjectContext } from "@/contexts/project-context"
-import { useDeckTree, useCreateDeck, useUpdateDeck, useDeleteDeck } from "@/lib/react-query/queries"
+import { useDeckTree, useDeck, useCreateDeck, useUpdateDeck, useDeleteDeck, useVocabularyStats } from "@/lib/react-query/queries"
 import { DeckTreeItemDto } from "@/lib/api/types"
 
 // Helper function to calculate total cards in a tree node (including children)
@@ -79,13 +80,48 @@ function processDeckTree(
         id: node.id,
         title: node.title,
         cardCount: node.cardCount,
-        dueCount: 0, // TODO: Calculate from card SRS status
-        progress: 0, // TODO: Calculate from card maturity
+        dueCount: 0, // Deck stats (cards due) not yet in API; use deck stats endpoint when available
+        progress: 0, // Maturity progress not yet in API; use deck stats endpoint when available
       })
     }
   })
 
   return { folders, decks }
+}
+
+// Fetches full deck (coverImageUrl, forkedFromId) via useDeck and renders card. Progress and dueCount are 0 until deck stats API exists.
+function DeckCardWithDetails({
+  deck,
+  deckTree,
+  onEdit,
+  onSettings,
+  onDelete,
+}: {
+  deck: { id: string; title: string; cardCount: number; dueCount: number; progress: number }
+  deckTree: DeckTreeItemDto[] | undefined
+  onEdit: () => void
+  onSettings: () => void
+  onDelete: () => void
+}) {
+  const { data: deckData } = useDeck(deck.id)
+  return (
+    <div className="relative group">
+      <Link href={`/study/${deck.id}`} className="block">
+        <LibraryDeckCard
+          id={deck.id}
+          title={deck.title}
+          cardCount={deck.cardCount}
+          dueCount={deck.dueCount}
+          progress={deck.progress}
+          image={deckData?.coverImageUrl ?? undefined}
+          isPurchased={!!deckData?.forkedFromId}
+          onEdit={onEdit}
+          onSettings={onSettings}
+          onDelete={onDelete}
+        />
+      </Link>
+    </div>
+  )
 }
 
 export default function LibraryPage() {
@@ -94,9 +130,14 @@ export default function LibraryPage() {
   const [isCreateDeckOpen, setIsCreateDeckOpen] = useState(false)
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false)
   const [editingDeck, setEditingDeck] = useState<DeckTreeItemDto | null>(null)
+  const [settingsDeckId, setSettingsDeckId] = useState<string | null>(null)
+  // Filter: Мои / Скачанные / Публичные. Backend DeckTreeItemDto has no ownerId/isPublic/forkedFromId yet — all tabs show same tree until API is extended.
+  const [libraryFilter, setLibraryFilter] = useState<"mine" | "downloaded" | "public">("mine")
   const { currentProject } = useProjectContext()
-  const { data: deckTree, isLoading, error, refetch } = useDeckTree(currentProject?.id ?? "")
-  
+  const projectId = currentProject?.id ?? ""
+  const { data: deckTree, isLoading, error, refetch } = useDeckTree(projectId)
+  const { data: vocabularyStats, isLoading: statsLoading } = useVocabularyStats(projectId)
+
   // Mutation hooks for deck operations
   const createDeckMutation = useCreateDeck()
   const updateDeckMutation = useUpdateDeck()
@@ -150,6 +191,12 @@ export default function LibraryPage() {
     setIsCreateFolderOpen(false)
     setEditingDeck(null)
     refetch() // Refresh deck tree after creation
+  }
+
+  const handleDeckSettings = (deckId: string) => setSettingsDeckId(deckId)
+  const handleDeckSettingsClose = () => {
+    setSettingsDeckId(null)
+    refetch()
   }
 
   const handleDeckEdit = (deck: DeckTreeItemDto) => {
@@ -217,6 +264,27 @@ export default function LibraryPage() {
                   </div>
                 ))}
               </div>
+              {/* Library filters (IA). Filtering applies when tree API includes ownerId, isPublic, forkedFromId. */}
+              <div className="flex items-center rounded-lg border border-app-border bg-app-surface/50 p-0.5">
+                {[
+                  { value: "mine" as const, label: "Мои" },
+                  { value: "downloaded" as const, label: "Скачанные" },
+                  { value: "public" as const, label: "Публичные" },
+                ].map(({ value, label }) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setLibraryFilter(value)}
+                    className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                      libraryFilter === value
+                        ? "bg-brand-primary/20 text-brand-primary border border-brand-primary/30"
+                        : "text-gray-400 hover:text-white border border-transparent"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Search & Add */}
@@ -253,7 +321,12 @@ export default function LibraryPage() {
           <div className="p-8 relative z-10">
             <div className="max-w-6xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
             {/* Project Stats Banner */}
-            <ProjectStatsBanner />
+            <ProjectStatsBanner
+              totalLemmas={vocabularyStats?.totalLemmas}
+              matureLemmas={vocabularyStats?.matureCount}
+              learningLemmas={vocabularyStats?.learningCount}
+              isLoading={statsLoading}
+            />
 
             {/* Folders Section - Only show if there are folders */}
             {filteredFolders.length > 0 && (
@@ -331,31 +404,16 @@ export default function LibraryPage() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                  {filteredDecks.map((deck, index) => {
-                    // Mock data for cover, progress, due, and purchased badge (until API provides)
-                    const mockCoverUrls = [
-                      "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=800&q=80",
-                      "https://picsum.photos/seed/business/400/300",
-                      "https://picsum.photos/seed/finance/400/300",
-                    ]
-                    const deckWithMock = {
-                      ...deck,
-                      image: mockCoverUrls[index % mockCoverUrls.length],
-                      progress: [30, 100][index % 2] ?? 30,
-                      dueCount: index === 0 ? 15 : 0,
-                      isPurchased: index === 1,
-                    }
-                    return (
-                    <div key={deck.id} className="relative group">
-                      <Link href={`/study/${deck.id}`} className="block">
-                        <LibraryDeckCard
-                          {...deckWithMock}
-                          onEdit={() => handleDeckEdit(findNodeById(deckTree || [], deck.id)!)}
-                          onDelete={() => handleDeckDelete(deck.id)}
-                        />
-                      </Link>
-                    </div>
-                  )})}
+                  {filteredDecks.map((deck) => (
+                    <DeckCardWithDetails
+                      key={deck.id}
+                      deck={deck}
+                      deckTree={deckTree ?? undefined}
+                      onEdit={() => handleDeckEdit(findNodeById(deckTree || [], deck.id)!)}
+                      onSettings={() => handleDeckSettings(deck.id)}
+                      onDelete={() => handleDeckDelete(deck.id)}
+                    />
+                  ))}
 
                   {/* Empty State / Add New Placeholder */}
                   {filteredDecks.length === 0 && !searchQuery ? (
@@ -424,6 +482,12 @@ export default function LibraryPage() {
               projectId={currentProject.id}
               parentDeckId={selectedFolderId}
               isFolder={true}
+            />
+            <DeckSettingsDialog
+              deckId={settingsDeckId}
+              isOpen={settingsDeckId !== null}
+              onClose={handleDeckSettingsClose}
+              onSuccess={handleDeckSettingsClose}
             />
           </>
         )}

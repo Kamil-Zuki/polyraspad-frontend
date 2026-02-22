@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react"
 import { createPortal } from "react-dom"
 import { cn } from "@/lib/utils"
-import { MoreHorizontal, Layers, Clock, Play, Pencil, Trash2 } from "lucide-react"
+import { MoreHorizontal, Layers, Clock, Play, Pencil, Trash2, Settings } from "lucide-react"
 import { ReactNode } from "react"
 
 interface FolderItemProps {
@@ -73,6 +73,8 @@ export interface LibraryDeckCardProps {
   isPurchased?: boolean
   /** Called when user chooses Edit in the deck menu. */
   onEdit?: () => void
+  /** Called when user chooses Settings in the deck menu. */
+  onSettings?: () => void
   /** Called when user chooses Delete in the deck menu. */
   onDelete?: () => void
 }
@@ -89,6 +91,7 @@ export function LibraryDeckCard({
   progress,
   isPurchased = false,
   onEdit,
+  onSettings,
   onDelete,
 }: LibraryDeckCardProps) {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -133,6 +136,14 @@ export function LibraryDeckCard({
     setMenuOpen(false)
     setMenuPosition(null)
     onEdit?.()
+  }
+
+  const handleSettings = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setMenuOpen(false)
+    setMenuPosition(null)
+    onSettings?.()
   }
 
   const handleDelete = (e: React.MouseEvent) => {
@@ -225,7 +236,7 @@ export function LibraryDeckCard({
       {/* Dropdown rendered in portal so it is not clipped by overflow-hidden */}
       {menuOpen &&
         menuPosition != null &&
-        (onEdit != null || onDelete != null) &&
+        (onEdit != null || onSettings != null || onDelete != null) &&
         typeof document !== "undefined" &&
         createPortal(
           <div
@@ -247,6 +258,16 @@ export function LibraryDeckCard({
               >
                 <Pencil className="w-3.5 h-3.5" />
                 Edit
+              </button>
+            )}
+            {onSettings != null && (
+              <button
+                type="button"
+                onClick={handleSettings}
+                className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm text-gray-300 hover:bg-white/5 hover:text-white"
+              >
+                <Settings className="w-3.5 h-3.5" />
+                Settings
               </button>
             )}
             {onDelete != null && (
