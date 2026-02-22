@@ -37,6 +37,9 @@ export const API_ENDPOINTS = {
     UPDATE: (id: string) => `/api/Cards/${id}`,
     BULK_CREATE: "/api/Cards/import",
   },
+  MEDIA: {
+    UPLOAD_IMAGE: "/api/Media/upload-image",
+  },
   USER_SETTINGS: {
     GET: "/api/settings",
     UPDATE: "/api/settings",

@@ -5,6 +5,8 @@ export { DeckClient } from "./deck-client";
 export { CardClient } from "./card-client";
 export { UserSettingsClient } from "./user-settings-client";
 export { AnalyticsClient } from "./analytics-client";
+export { uploadImage } from "./media-client";
+export type { UploadImageResponse } from "./media-client";
 
 // Combined client for backward compatibility
 import { AuthClient } from "./auth-client";

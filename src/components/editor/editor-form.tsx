@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useProjectContext } from "@/contexts/project-context";
@@ -8,6 +8,7 @@ import { useEditorCard } from "@/contexts/editor-card-context";
 import { useDeckTree } from "@/lib/react-query/queries";
 import { useCreateCard } from "@/lib/react-query/queries";
 import { CreateCardDto } from "@/lib/api/types";
+import { uploadImage } from "@/lib/api/media-client";
 
 export function EditorForm() {
   const router = useRouter();
@@ -32,8 +33,12 @@ export function EditorForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
   const [showImageUrlInput, setShowImageUrlInput] = useState(false);
+  const [showImageActionChoice, setShowImageActionChoice] = useState(false);
   const [showAudioUrlInput, setShowAudioUrlInput] = useState(false);
   const [imagePreviewError, setImagePreviewError] = useState(false);
+  const [isImageUploading, setIsImageUploading] = useState(false);
+  const [imageUploadError, setImageUploadError] = useState("");
+  const imageFileInputRef = useRef<HTMLInputElement>(null);
 
   // Get first available deck as default (after data loads)
   useEffect(() => {
@@ -60,6 +65,77 @@ export function EditorForm() {
       setIsTranslating(false);
     }
   };
+
+  const uploadImageAndSetUrl = useCallback(
+    async (file: File | Blob) => {
+      setImageUploadError("");
+      setIsImageUploading(true);
+      try {
+        const { url } = await uploadImage(file);
+        setImageUrl(url);
+        setImagePreviewError(false);
+        setShowImageActionChoice(false);
+      } catch (err: unknown) {
+        const message = err && typeof err === "object" && "message" in err ? String((err as { message: string }).message) : "Upload failed";
+        setImageUploadError(message);
+      } finally {
+        setIsImageUploading(false);
+      }
+    },
+    [setImageUrl]
+  );
+
+  const handlePasteFromClipboard = useCallback(async () => {
+    try {
+      const items = await navigator.clipboard.read();
+      for (const item of items) {
+        for (const type of item.types) {
+          if (type.startsWith("image/")) {
+            const blob = await item.getType(type);
+            await uploadImageAndSetUrl(blob);
+            return;
+          }
+        }
+      }
+      setImageUploadError("No image in clipboard");
+    } catch (e) {
+      setImageUploadError("Clipboard access denied or no image");
+    }
+  }, [uploadImageAndSetUrl]);
+
+  const handleImageFileSelect = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file && file.type.startsWith("image/")) {
+        uploadImageAndSetUrl(file);
+      }
+      e.target.value = "";
+    },
+    [uploadImageAndSetUrl]
+  );
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "v") {
+        const target = e.target as HTMLElement;
+        if (target.closest('input[type="url"]') || target.closest("textarea") || target.closest('input[type="text"]')) return;
+        if (isImageUploading) return;
+        navigator.clipboard.read().then((items) => {
+          for (const item of items) {
+            for (const type of item.types) {
+              if (type.startsWith("image/")) {
+                e.preventDefault();
+                item.getType(type).then((blob) => uploadImageAndSetUrl(blob));
+                return;
+              }
+            }
+          }
+        });
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [uploadImageAndSetUrl, isImageUploading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -238,12 +314,26 @@ export function EditorForm() {
           <div
             className={cn(
               "bg-app-bg border-2 border-dashed border-white/5 rounded-2xl h-36 relative overflow-hidden group hover:border-brand-primary/50 hover:bg-brand-primary/5 transition-all duration-300",
-              showImageUrlInput ? "cursor-default" : "cursor-pointer",
+              showImageUrlInput || showImageActionChoice ? "cursor-default" : "cursor-pointer",
             )}
             onClick={() => {
-              if (!showImageUrlInput) setShowImageUrlInput(true);
+              if (!showImageUrlInput && !showImageActionChoice && !imageUrl.trim()) {
+                setImageUploadError("");
+                setShowImageActionChoice(true);
+              }
             }}
+            onDrop={(e) => {
+              e.preventDefault();
+              const file = e.dataTransfer.files?.[0];
+              if (file && file.type.startsWith("image/") && !isImageUploading) uploadImageAndSetUrl(file);
+            }}
+            onDragOver={(e) => e.preventDefault()}
           >
+            {isImageUploading && (
+              <div className="absolute inset-0 bg-app-bg/90 flex items-center justify-center z-20">
+                <i className="fas fa-spinner fa-spin text-2xl text-brand-primary" />
+              </div>
+            )}
             {imageUrl.trim() && !imagePreviewError ? (
               <img
                 src={imageUrl.trim()}
@@ -259,13 +349,75 @@ export function EditorForm() {
                 <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 group-hover:text-white">
                   {imageUrl.trim()
                     ? "Invalid image URL"
-                    : "Drop image or Paste"}
+                    : "Drop image or Paste (Ctrl+V)"}
                 </span>
               </div>
             )}
 
+            {imageUploadError && (
+              <div className="absolute top-2 left-2 right-2 text-[10px] text-red-400 truncate" title={imageUploadError}>
+                {imageUploadError}
+              </div>
+            )}
+
+            <input
+              ref={imageFileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleImageFileSelect}
+            />
+
             <div className="absolute inset-x-3 bottom-3">
-              {showImageUrlInput ? (
+              {showImageActionChoice ? (
+                <div className="flex flex-col gap-2">
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      className="flex-1 py-2 bg-app-surface/80 hover:bg-app-surface border border-white/10 rounded-xl text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-white transition-all flex items-center justify-center gap-1.5"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handlePasteFromClipboard();
+                      }}
+                      disabled={isImageUploading}
+                    >
+                      <i className="fas fa-paste text-xs" /> From clipboard
+                    </button>
+                    <button
+                      type="button"
+                      className="flex-1 py-2 bg-app-surface/80 hover:bg-app-surface border border-white/10 rounded-xl text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-white transition-all flex items-center justify-center gap-1.5"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        imageFileInputRef.current?.click();
+                      }}
+                      disabled={isImageUploading}
+                    >
+                      <i className="fas fa-folder-open text-xs" /> From device
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    className="w-full py-2 bg-app-surface/80 hover:bg-app-surface border border-white/10 rounded-xl text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-white transition-all"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowImageActionChoice(false);
+                      setShowImageUrlInput(true);
+                    }}
+                  >
+                    Paste URL
+                  </button>
+                  <button
+                    type="button"
+                    className="w-full py-1.5 text-[10px] text-gray-500 hover:text-white"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowImageActionChoice(false);
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : showImageUrlInput ? (
                 <div className="flex items-center gap-2">
                   <input
                     type="url"
@@ -298,10 +450,10 @@ export function EditorForm() {
                   className="w-full py-2 bg-app-surface/80 hover:bg-app-surface border border-white/10 rounded-xl text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-white transition-all"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setShowImageUrlInput(true);
+                    setShowImageActionChoice(true);
                   }}
                 >
-                  Paste URL
+                  Add image
                 </button>
               )}
             </div>
