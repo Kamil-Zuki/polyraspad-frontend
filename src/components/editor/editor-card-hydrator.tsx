@@ -25,6 +25,7 @@ export function EditorCardHydrator() {
       targetWord: card.targetWord ?? "",
       translation: card.translation ?? "",
       imageUrl: card.media?.imageUrl ?? "",
+      imageId: card.media?.imageId ?? "",
       audioUrl: card.media?.audioUrl ?? "",
     })
   }, [cardId, isSuccess, card, setCardState])

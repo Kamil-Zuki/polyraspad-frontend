@@ -1,10 +1,13 @@
 "use client"
 
-import React, { useState, useEffect, useCallback } from "react"
+import React, { useState, useEffect, useCallback, useRef } from "react"
 import { cn } from "@/lib/utils"
 import { useEditorCard } from "@/contexts/editor-card-context"
+import { getPreviewImageSrc } from "@/lib/utils/media-preview-url"
 
-function PreviewImage({
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+
+export function PreviewImage({
   src,
   alt = "Card",
   className,
@@ -16,6 +19,44 @@ function PreviewImage({
   imgClassName?: string
 }) {
   const [error, setError] = useState(false)
+  // Do not set resolvedSrc to serve-image URL: <img> would request it without Authorization and get 401
+  const [resolvedSrc, setResolvedSrc] = useState(() =>
+    src && !src.includes("/api/Media/serve-image") ? src : ""
+  )
+  const objectUrlRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (!src) {
+      setResolvedSrc("")
+      setError(false)
+      return
+    }
+    setError(false)
+    if (src.includes("/api/Media/serve-image")) {
+      const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null
+      fetch(src, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
+        .then((r) => {
+          if (!r.ok) throw new Error()
+          return r.blob()
+        })
+        .then((blob) => {
+          if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current)
+          objectUrlRef.current = URL.createObjectURL(blob)
+          setResolvedSrc(objectUrlRef.current)
+        })
+        .catch(() => setError(true))
+      return () => {
+        if (objectUrlRef.current) {
+          URL.revokeObjectURL(objectUrlRef.current)
+          objectUrlRef.current = null
+        }
+      }
+    }
+    setResolvedSrc(src)
+  }, [src])
+
   if (error) {
     return (
       <div
@@ -34,10 +75,11 @@ function PreviewImage({
       </div>
     )
   }
+  if (!resolvedSrc) return null
   return (
     <div className={cn("rounded-xl overflow-hidden border border-app-border bg-app-bg", className)}>
       <img
-        src={src}
+        src={resolvedSrc}
         alt={alt}
         className={cn("w-full h-full min-h-[140px] max-h-48 object-contain", imgClassName)}
         onError={() => setError(true)}
@@ -52,8 +94,14 @@ export function CardPreview() {
     targetWord,
     translation,
     imageUrl,
+    imageId,
     audioUrl,
   } = useEditorCard()
+  const previewImageSrc = getPreviewImageSrc({
+    imageId: imageId?.trim() || undefined,
+    imageUrl: imageUrl?.trim() || undefined,
+    apiBaseUrl: API_BASE_URL,
+  })
   const [side, setSide] = useState<"FRONT" | "BACK">("FRONT")
   const [isFullScreenOpen, setIsFullScreenOpen] = useState(false)
 
@@ -135,11 +183,12 @@ export function CardPreview() {
           <button
             type="button"
             onClick={() => setIsFullScreenOpen(true)}
-            className="p-2 rounded-lg border border-app-border text-gray-500 hover:text-white hover:border-brand-primary/50 transition-all"
+            className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg border border-app-border text-brand-primary hover:text-white hover:bg-brand-primary/20 hover:border-brand-primary/50 transition-all"
             title="Expand to full size"
             aria-label="Expand preview to full size"
           >
-            <i className="fas fa-expand text-sm" />
+            <i className="fas fa-expand text-base" />
+            <span className="text-[10px] font-bold uppercase tracking-wider hidden sm:inline">Full size</span>
           </button>
         )}
       </div>
@@ -164,7 +213,7 @@ export function CardPreview() {
               &ldquo;{highlightedSentence ?? (sentence || "—")}&rdquo;
             </h2>
             {imageUrl.trim() && (
-              <PreviewImage src={imageUrl.trim()} className="w-full min-h-[140px] max-h-48" />
+              <PreviewImage src={previewImageSrc} className="w-full min-h-[140px] max-h-48" />
             )}
           </div>
         ) : (
@@ -181,7 +230,7 @@ export function CardPreview() {
               </p>
             )}
             {imageUrl.trim() && (
-              <PreviewImage src={imageUrl.trim()} className="w-full min-h-[140px] max-h-48" />
+              <PreviewImage src={previewImageSrc} className="w-full min-h-[140px] max-h-48" />
             )}
             {audioUrl.trim() && (
               <div className="space-y-1">
@@ -268,7 +317,7 @@ export function CardPreview() {
                   </h2>
                   {imageUrl.trim() && (
                     <PreviewImage
-                      src={imageUrl.trim()}
+                      src={previewImageSrc}
                       className="w-full min-h-[200px] max-h-80"
                       imgClassName="min-h-[200px] max-h-80"
                     />
@@ -289,7 +338,7 @@ export function CardPreview() {
                   )}
                   {imageUrl.trim() && (
                     <PreviewImage
-                      src={imageUrl.trim()}
+                      src={previewImageSrc}
                       className="w-full min-h-[200px] max-h-80"
                       imgClassName="min-h-[200px] max-h-80"
                     />

@@ -5,6 +5,10 @@ import { cn } from "@/lib/utils"
 import { useCard } from "@/lib/react-query/queries"
 import type { CardResponseDto } from "@/lib/api/types"
 import Link from "next/link"
+import { getPreviewImageSrc } from "@/lib/utils/media-preview-url"
+import { PreviewImage } from "@/components/editor/card-preview"
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
 
 type CardViewModalProps = {
   cardId: string
@@ -42,6 +46,11 @@ export function CardViewModal({ cardId, onClose, initialCard }: CardViewModalPro
   const c = initialCard ?? card
   const imageUrl = c?.media?.imageUrl ?? ""
   const audioUrl = c?.media?.audioUrl ?? ""
+  const previewImageSrc = getPreviewImageSrc({
+    imageId: c?.media?.imageId ?? undefined,
+    imageUrl: imageUrl || undefined,
+    apiBaseUrl: API_BASE_URL,
+  })
 
   if (!c && isLoading) {
     return (
@@ -62,7 +71,7 @@ export function CardViewModal({ cardId, onClose, initialCard }: CardViewModalPro
     )
   }
 
-  const hasContent = c.sentence?.trim() || c.translation?.trim() || c.targetWord?.trim() || imageUrl || audioUrl
+  const hasContent = c.sentence?.trim() || c.translation?.trim() || c.targetWord?.trim() || previewImageSrc || imageUrl || audioUrl
 
   return (
     <div
@@ -127,15 +136,12 @@ export function CardViewModal({ cardId, onClose, initialCard }: CardViewModalPro
               <p className="text-lg leading-relaxed text-white">
                 &ldquo;{highlightTarget(c.sentence ?? "", c.targetWord ?? "")}&rdquo;
               </p>
-              {imageUrl && (
+              {previewImageSrc && (
                 <div className="rounded-xl overflow-hidden border border-app-border bg-app-bg">
-                  <img
-                    src={imageUrl}
+                  <PreviewImage
+                    src={previewImageSrc}
                     alt="Card"
-                    className="w-full max-h-48 object-contain"
-                    onError={(e) => {
-                      e.currentTarget.style.display = "none"
-                    }}
+                    imgClassName="w-full max-h-48 object-contain"
                   />
                 </div>
               )}

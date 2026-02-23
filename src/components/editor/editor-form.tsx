@@ -9,6 +9,10 @@ import { useDeckTree } from "@/lib/react-query/queries";
 import { useCreateCard } from "@/lib/react-query/queries";
 import { CreateCardDto } from "@/lib/api/types";
 import { uploadImage } from "@/lib/api/media-client";
+import { getPreviewImageSrc } from "@/lib/utils/media-preview-url";
+import { PreviewImage } from "@/components/editor/card-preview";
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 export function EditorForm() {
   const router = useRouter();
@@ -22,9 +26,16 @@ export function EditorForm() {
     setTranslation,
     imageUrl,
     setImageUrl,
+    imageId,
+    setImageId,
     audioUrl,
     setAudioUrl,
   } = useEditorCard();
+  const previewImageSrc = getPreviewImageSrc({
+    imageId: imageId?.trim() || undefined,
+    imageUrl: imageUrl?.trim() || undefined,
+    apiBaseUrl: API_BASE_URL,
+  });
   const { data: deckTree } = useDeckTree(currentProject?.id || "");
   const createCard = useCreateCard();
 
@@ -71,8 +82,9 @@ export function EditorForm() {
       setImageUploadError("");
       setIsImageUploading(true);
       try {
-        const { url } = await uploadImage(file);
+        const { url, imageId: uploadedImageId } = await uploadImage(file);
         setImageUrl(url);
+        if (uploadedImageId) setImageId(uploadedImageId);
         setImagePreviewError(false);
         setShowImageActionChoice(false);
       } catch (err: unknown) {
@@ -82,7 +94,7 @@ export function EditorForm() {
         setIsImageUploading(false);
       }
     },
-    [setImageUrl]
+    [setImageUrl, setImageId]
   );
 
   const handlePasteFromClipboard = useCallback(async () => {
@@ -169,6 +181,7 @@ export function EditorForm() {
       setTargetWord("");
       setTranslation("");
       setImageUrl("");
+      setImageId("");
       setAudioUrl("");
       setShowImageUrlInput(false);
       setShowAudioUrlInput(false);
@@ -335,11 +348,11 @@ export function EditorForm() {
               </div>
             )}
             {imageUrl.trim() && !imagePreviewError ? (
-              <img
-                src={imageUrl.trim()}
+              <PreviewImage
+                src={previewImageSrc}
                 alt="Image preview"
-                className="absolute inset-0 w-full h-full object-cover"
-                onError={() => setImagePreviewError(true)}
+                className="absolute inset-0 rounded-2xl overflow-hidden border-0"
+                imgClassName="w-full h-full min-h-0 max-h-none object-cover"
               />
             ) : (
               <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -437,6 +450,7 @@ export function EditorForm() {
                       onClick={(e) => {
                         e.stopPropagation();
                         setImageUrl("");
+                        setImageId("");
                         setImagePreviewError(false);
                       }}
                     >

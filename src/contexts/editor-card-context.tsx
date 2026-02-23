@@ -13,6 +13,7 @@ export interface EditorCardState {
   targetWord: string
   translation: string
   imageUrl: string
+  imageId: string
   audioUrl: string
 }
 
@@ -21,6 +22,7 @@ interface EditorCardContextType extends EditorCardState {
   setTargetWord: (v: string) => void
   setTranslation: (v: string) => void
   setImageUrl: (v: string) => void
+  setImageId: (v: string) => void
   setAudioUrl: (v: string) => void
   setCardState: (patch: Partial<EditorCardState>) => void
 }
@@ -34,6 +36,7 @@ export function EditorCardProvider({ children }: { children: ReactNode }) {
   const [targetWord, setTargetWord] = useState("")
   const [translation, setTranslation] = useState("")
   const [imageUrl, setImageUrl] = useState("")
+  const [imageId, setImageId] = useState("")
   const [audioUrl, setAudioUrl] = useState("")
 
   const setCardState = useCallback((patch: Partial<EditorCardState>) => {
@@ -41,6 +44,7 @@ export function EditorCardProvider({ children }: { children: ReactNode }) {
     if (patch.targetWord !== undefined) setTargetWord(patch.targetWord)
     if (patch.translation !== undefined) setTranslation(patch.translation)
     if (patch.imageUrl !== undefined) setImageUrl(patch.imageUrl)
+    if (patch.imageId !== undefined) setImageId(patch.imageId)
     if (patch.audioUrl !== undefined) setAudioUrl(patch.audioUrl)
   }, [])
 
@@ -51,11 +55,13 @@ export function EditorCardProvider({ children }: { children: ReactNode }) {
         targetWord,
         translation,
         imageUrl,
+        imageId,
         audioUrl,
         setSentence,
         setTargetWord,
         setTranslation,
         setImageUrl,
+        setImageId,
         setAudioUrl,
         setCardState,
       }}
