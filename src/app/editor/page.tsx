@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion"
 import { EditorHeader } from "@/components/editor/editor-header"
 import { EditorForm } from "@/components/editor/editor-form"
 import { CardPreview } from "@/components/editor/card-preview"
+import { EditorCardHydrator } from "@/components/editor/editor-card-hydrator"
 import { AiAssistant } from "@/components/editor/ai-assistant"
 import { ProtectedRoute } from "@/components/auth/protected-route"
 import { EditorCardProvider } from "@/contexts/editor-card-context"
@@ -15,6 +16,7 @@ export default function EditorPage() {
   return (
     <ProtectedRoute>
       <EditorCardProvider>
+        <EditorCardHydrator />
         <div className="flex flex-col h-screen overflow-hidden bg-app-bg">
           <EditorHeader
             isPreviewMode={isPreviewMode}
