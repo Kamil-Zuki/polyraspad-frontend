@@ -1,55 +1,81 @@
 "use client"
 
-import { useState } from "react"
-import { useProjects } from "@/lib/react-query/queries"
-import { useSearchCards } from "@/lib/react-query/queries"
+import { useState, useMemo } from "react"
+import { useProjects, useSearchCards, useDeckTree } from "@/lib/react-query/queries"
 import { useProjectContext } from "@/contexts/project-context"
-import { useDeckTree } from "@/lib/react-query/queries"
-import { CardResponseDto } from "@/lib/api/types"
+import type { CardResponseDto } from "@/lib/api/types"
+import { CardViewModal } from "@/components/browser/card-view-modal"
+
+const PAGE_SIZE = 20
+const TRUNCATE_LEN = 60
+
+function truncate(s: string, len: number) {
+  if (!s) return ""
+  return s.length <= len ? s : s.slice(0, len) + "\u2026"
+}
+
+function flattenDeckTree(tree: { id: string; title: string; children?: unknown[] }[]): { id: string; title: string }[] {
+  const result: { id: string; title: string }[] = []
+  for (const node of tree) {
+    result.push({ id: node.id, title: node.title })
+    if (node.children && node.children.length > 0) {
+      result.push(...flattenDeckTree(node.children as { id: string; title: string; children?: unknown[] }[]))
+    }
+  }
+  return result
+}
 
 export default function BrowserPage() {
   const { currentProject } = useProjectContext()
   const { data: projects, isLoading: projectsLoading } = useProjects()
-  const { data: deckTree } = useDeckTree(currentProject?.id || "")
-
-  const [searchQuery, setSearchQuery] = useState("")
   const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>(currentProject?.id)
   const [selectedDeckId, setSelectedDeckId] = useState<string | undefined>()
+  const [searchQuery, setSearchQuery] = useState("")
   const [selectedSrsStatuses, setSelectedSrsStatuses] = useState<string[]>([])
   const [pageNumber, setPageNumber] = useState(1)
-  const pageSize = 20
+  const [viewCardId, setViewCardId] = useState<string | null>(null)
+
+  const projectIdForTree = selectedProjectId || currentProject?.id || ""
+  const { data: deckTree } = useDeckTree(projectIdForTree)
+
+  const hasSearch = searchQuery.trim().length >= 2
+  const hasDeck = !!selectedDeckId
+  const hasProject = !!selectedProjectId
+  const hasSrs = selectedSrsStatuses.length > 0
+  const shouldFetch = hasSearch || hasDeck || hasProject || hasSrs
+  const effectiveQuery = hasSearch ? searchQuery.trim() : ""
 
   const { data: searchResults, isLoading: searchLoading, error: searchError } = useSearchCards(
-    searchQuery,
+    effectiveQuery,
     {
       projectId: selectedProjectId,
       deckId: selectedDeckId,
       srsStatuses: selectedSrsStatuses.length > 0 ? selectedSrsStatuses : undefined,
       pageNumber,
-      pageSize,
+      pageSize: PAGE_SIZE,
     },
-    !!searchQuery && searchQuery.length >= 2
+    true,
   )
+
+  const availableDecks = useMemo(
+    () => (deckTree ? flattenDeckTree(deckTree) : []),
+    [deckTree],
+  )
+  const deckTitleById = useMemo(() => {
+    const map: Record<string, string> = {}
+    availableDecks.forEach((d) => {
+      map[d.id] = d.title
+    })
+    return map
+  }, [availableDecks])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    if (searchQuery.length >= 2) {
-      setPageNumber(1)
-    }
+    if (shouldFetch) setPageNumber(1)
   }
 
-  const flattenDeckTree = (tree: any[]): any[] => {
-    const result: any[] = []
-    for (const node of tree) {
-      result.push(node)
-      if (node.children && node.children.length > 0) {
-        result.push(...flattenDeckTree(node.children))
-      }
-    }
-    return result
-  }
-
-  const availableDecks = deckTree ? flattenDeckTree(deckTree) : []
+  const showResults = shouldFetch
+  const showEmptyPrompt = !showResults && !projectsLoading
 
   if (projectsLoading) {
     return (
@@ -62,14 +88,13 @@ export default function BrowserPage() {
   return (
     <div className="flex-1 overflow-y-auto p-8 relative custom-scroll">
       <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-brand-primary/5 to-transparent pointer-events-none" />
-      
+
       <div className="max-w-6xl mx-auto space-y-6 relative z-10">
         <div>
           <h1 className="text-3xl font-bold text-white mb-2">Card Browser</h1>
-          <p className="text-gray-400">Browse and search your vocabulary cards</p>
+          <p className="text-gray-400">Browse cards by deck or search. Click a card to view front/back.</p>
         </div>
 
-        {/* Search Form */}
         <form onSubmit={handleSearch} className="glass-panel rounded-xl p-6 space-y-4">
           <div className="flex gap-4">
             <div className="flex-1 relative">
@@ -78,17 +103,15 @@ export default function BrowserPage() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search cards..."
+                placeholder="Search cards (min 2 chars) or leave empty and select a deck"
                 className="input-dark w-full pl-12"
-                minLength={2}
               />
             </div>
-            <button type="submit" className="btn-primary" disabled={searchQuery.length < 2}>
-              Search
+            <button type="submit" className="btn-primary">
+              {hasSearch ? "Search" : "Apply"}
             </button>
           </div>
 
-          {/* Filters */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-app-border">
             <div>
               <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">
@@ -98,7 +121,7 @@ export default function BrowserPage() {
                 value={selectedProjectId || ""}
                 onChange={(e) => {
                   setSelectedProjectId(e.target.value || undefined)
-                  setSelectedDeckId(undefined) // Reset deck when project changes
+                  setSelectedDeckId(undefined)
                 }}
                 className="input-dark w-full"
               >
@@ -137,8 +160,8 @@ export default function BrowserPage() {
               <select
                 value={selectedSrsStatuses.join(",")}
                 onChange={(e) => {
-                  const value = e.target.value
-                  setSelectedSrsStatuses(value ? value.split(",") : [])
+                  const v = e.target.value
+                  setSelectedSrsStatuses(v ? v.split(",") : [])
                 }}
                 className="input-dark w-full"
               >
@@ -152,8 +175,7 @@ export default function BrowserPage() {
           </div>
         </form>
 
-        {/* Search Results */}
-        {searchQuery.length >= 2 && (
+        {showResults && (
           <div className="glass-panel rounded-xl p-6">
             {searchLoading ? (
               <div className="flex items-center justify-center py-12">
@@ -161,13 +183,16 @@ export default function BrowserPage() {
               </div>
             ) : searchError ? (
               <div className="text-red-400 text-center py-12">
-                Error: {searchError instanceof Error ? searchError.message : "Unknown error"}
+                {searchError instanceof Error ? searchError.message : "Unknown error"}
               </div>
             ) : searchResults ? (
               <>
-                <div className="mb-4 flex items-center justify-between">
+                <div className="mb-4 flex items-center justify-between flex-wrap gap-2">
                   <div className="text-sm text-gray-400">
-                    Found {searchResults.totalCount} card{searchResults.totalCount !== 1 ? "s" : ""}
+                    {searchResults.totalCount} card{searchResults.totalCount !== 1 ? "s" : ""}
+                    {hasDeck && !hasSearch && " in deck"}
+                    {hasProject && !hasDeck && !hasSearch && " in project"}
+                    {hasSearch && " found"}
                   </div>
                   <div className="flex gap-2">
                     <button
@@ -189,32 +214,39 @@ export default function BrowserPage() {
 
                 {searchResults.items.length === 0 ? (
                   <div className="text-center py-12 text-gray-500">
-                    No cards found matching your search
+                    {hasDeck && !hasSearch ? "No cards in this deck" : "No cards found"}
                   </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {searchResults.items.map((card: CardResponseDto) => (
-                      <div
+                      <button
                         key={card.id}
-                        className="bg-app-surface rounded-xl p-6 border border-app-border hover:border-brand-primary/30 transition-all"
+                        type="button"
+                        className="w-full text-left bg-app-surface rounded-xl p-4 border border-app-border hover:border-brand-primary/30 transition-all"
+                        onClick={() => setViewCardId(card.id)}
                       >
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex-1">
-                            <div className="text-sm text-gray-500 mb-2">
-                              <span className="text-[10px] uppercase tracking-wider">SRS: </span>
-                              <span className="text-brand-primary font-bold">{card.srsStatus}</span>
-                            </div>
-                            <div className="text-lg text-white mb-2">{card.sentence}</div>
-                            <div className="text-gray-400">{card.translation}</div>
+                        <div className="flex flex-wrap items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-white truncate" title={card.sentence}>
+                              {truncate(card.sentence ?? "", TRUNCATE_LEN)}
+                            </p>
+                            <p className="text-gray-400 text-sm truncate mt-0.5" title={card.translation}>
+                              {truncate(card.translation ?? "", TRUNCATE_LEN)}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            {card.targetWord && (
+                              <span className="text-xs text-brand-primary font-semibold px-2 py-0.5 rounded bg-brand-primary/10">
+                                {card.targetWord}
+                              </span>
+                            )}
+                            <span className="text-[10px] text-gray-500 uppercase">
+                              {deckTitleById[card.deckId] ?? card.deckId}
+                            </span>
+                            <span className="text-[10px] text-gray-500">{card.srsStatus}</span>
                           </div>
                         </div>
-                        {card.targetWord && (
-                          <div className="mt-3 pt-3 border-t border-app-border">
-                            <span className="text-xs text-gray-500 uppercase tracking-wider">Target: </span>
-                            <span className="text-brand-primary font-bold">{card.targetWord}</span>
-                          </div>
-                        )}
-                      </div>
+                      </button>
                     ))}
                   </div>
                 )}
@@ -223,19 +255,22 @@ export default function BrowserPage() {
           </div>
         )}
 
-        {searchQuery.length < 2 && (
+        {showEmptyPrompt && (
           <div className="glass-panel rounded-xl p-12 text-center">
             <div className="mb-4">
-              <i className="fas fa-search text-6xl text-gray-600" />
+              <i className="fas fa-layer-group text-6xl text-gray-600" />
             </div>
-            <h2 className="text-2xl font-bold text-white mb-2">Start Searching</h2>
+            <h2 className="text-2xl font-bold text-white mb-2">Browse or search</h2>
             <p className="text-gray-400">
-              Enter at least 2 characters to search for cards
+              Select a project to see all cards in it, choose a deck to see only that deck, or enter at least 2 characters to search.
             </p>
           </div>
         )}
       </div>
+
+      {viewCardId && (
+        <CardViewModal cardId={viewCardId} onClose={() => setViewCardId(null)} />
+      )}
     </div>
   )
 }
-

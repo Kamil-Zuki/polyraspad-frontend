@@ -38,10 +38,15 @@ export function useSearchCards(
   },
   enabled = true
 ) {
+  const hasQuery = query.trim().length >= 2;
+  const hasDeck = !!(options?.deckId);
+  const hasProject = !!(options?.projectId);
+  const hasSrs = (options?.srsStatuses?.length ?? 0) > 0;
+  const shouldFetch = enabled && (hasQuery || hasDeck || hasProject || hasSrs);
   return useQuery({
-    queryKey: cardQueryKeys.searchCards(query, options),
-    queryFn: () => apiClient.cards.searchCards(query, options),
-    enabled: enabled && !!query,
+    queryKey: cardQueryKeys.searchCards(query.trim() || "", options),
+    queryFn: () => apiClient.cards.searchCards(query.trim() || "", options),
+    enabled: shouldFetch,
   });
 }
 

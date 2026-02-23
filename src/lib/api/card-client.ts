@@ -35,7 +35,8 @@ export class CardClient extends BaseApiClient {
     }
   ): Promise<SearchCardsResponseDto> {
     const params = new URLSearchParams();
-    params.append('query', query);
+    // Always send query (empty string allowed when filtering by deck/project only)
+    params.append('query', query ?? '');
     if (options?.projectId) params.append('projectId', options.projectId);
     if (options?.deckId) params.append('deckId', options.deckId);
     if (options?.pageNumber) params.append('pageNumber', options.pageNumber.toString());

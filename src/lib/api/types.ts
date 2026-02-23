@@ -203,6 +203,8 @@ export interface CardResponseDto {
 export interface CardMediaDto {
   imageId?: string | null;
   audioId?: string | null;
+  imageUrl?: string | null;
+  audioUrl?: string | null;
 }
 
 export interface SourceMetaDto {
