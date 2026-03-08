@@ -64,6 +64,20 @@ export const API_ENDPOINTS = {
     SUBMIT_REVIEW: (sessionId: string) => `/api/study/session/${sessionId}/review`,
     UNDO: (sessionId: string) => `/api/study/session/${sessionId}/undo`,
   },
+  AUTOMATION: {
+    AUTOPILOT: "/api/automation/autopilot",
+    RECOMMENDATIONS: "/api/automation/recommendations",
+    NOTIFICATION_PREFERENCES: "/api/automation/notifications/preferences",
+    JOBS: "/api/automation/jobs",
+    JOB: (id: string) => `/api/automation/jobs/${id}`,
+    JOB_RETRY: (id: string) => `/api/automation/jobs/${id}/retry`,
+    JOB_RESUME: (id: string) => `/api/automation/jobs/${id}/resume`,
+    MINING_SUGGEST: "/api/automation/mining/suggest",
+    MINING_APPROVE: "/api/automation/mining/approve",
+    COPILOT_REVIEW_FEEDBACK: "/api/automation/copilot/review-feedback",
+    EXPERIMENT_ASSIGNMENT: "/api/automation/experiments/assignment",
+    EXPERIMENT_EVENTS: "/api/automation/experiments/events",
+  },
 } as const
 
 export const ROUTES = {

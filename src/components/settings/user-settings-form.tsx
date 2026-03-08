@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { useUserSettings, useUpdateUserSettings } from "@/lib/react-query/queries"
-import type { UpdateUserSettingsDto } from "@/lib/api/types"
+import { apiClient } from "@/lib/api"
+import type { NotificationPreferencesDto, UpdateUserSettingsDto } from "@/lib/api/types"
 
 export function UserSettingsForm() {
   const { data: settings, isLoading, error } = useUserSettings()
@@ -14,6 +15,8 @@ export function UserSettingsForm() {
   const [interfaceLanguage, setInterfaceLanguage] = useState("en")
   const [isEditing, setIsEditing] = useState(false)
   const [errorMessage, setErrorMessage] = useState("")
+  const [notificationPrefs, setNotificationPrefs] = useState<NotificationPreferencesDto | null>(null)
+  const [initialNotificationPrefs, setInitialNotificationPrefs] = useState<NotificationPreferencesDto | null>(null)
 
   useEffect(() => {
     if (settings) {
@@ -23,6 +26,26 @@ export function UserSettingsForm() {
       setInterfaceLanguage(settings.interfaceLanguage)
     }
   }, [settings])
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const prefs = await apiClient.automation.getNotificationPreferences()
+        if (!cancelled) {
+          setNotificationPrefs(prefs)
+          setInitialNotificationPrefs(prefs)
+        }
+      } catch {
+        if (!cancelled) {
+          setNotificationPrefs(null)
+        }
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   if (isLoading) {
     return (
@@ -56,6 +79,22 @@ export function UserSettingsForm() {
 
     try {
       await updateSettings.mutateAsync(updateData)
+      if (notificationPrefs) {
+        const updatedPrefs = await apiClient.automation.updateNotificationPreferences({
+          enableStudyReminders: notificationPrefs.enableStudyReminders,
+          enableStreakRiskAlerts: notificationPrefs.enableStreakRiskAlerts,
+          enableBacklogAlerts: notificationPrefs.enableBacklogAlerts,
+          enableContributionEvents: notificationPrefs.enableContributionEvents,
+          enableMarketplaceEvents: notificationPrefs.enableMarketplaceEvents,
+          pushEnabled: notificationPrefs.pushEnabled,
+          emailEnabled: notificationPrefs.emailEnabled,
+          inAppEnabled: notificationPrefs.inAppEnabled,
+          quietHoursStart: notificationPrefs.quietHoursStart,
+          quietHoursEnd: notificationPrefs.quietHoursEnd,
+        })
+        setNotificationPrefs(updatedPrefs)
+        setInitialNotificationPrefs(updatedPrefs)
+      }
       setIsEditing(false)
     } catch (err: any) {
       setErrorMessage(err.message || "Failed to update settings")
@@ -67,6 +106,9 @@ export function UserSettingsForm() {
     setDailyGoalNew(settings.dailyGoalNew)
     setDailyGoalReview(settings.dailyGoalReview)
     setInterfaceLanguage(settings.interfaceLanguage)
+    if (initialNotificationPrefs) {
+      setNotificationPrefs({ ...initialNotificationPrefs })
+    }
     setIsEditing(false)
     setErrorMessage("")
   }
@@ -204,6 +246,69 @@ export function UserSettingsForm() {
                 <p className="text-white font-medium text-2xl">{settings.maxStreak} days</p>
               </div>
             </div>
+          </div>
+
+          {/* Notification Preferences */}
+          <div>
+            <h3 className="text-lg font-semibold text-white mb-4">Notification Preferences</h3>
+            {notificationPrefs ? (
+              <div className="grid grid-cols-2 gap-4">
+                <label className="flex items-center gap-3 text-sm text-gray-300">
+                  <input
+                    type="checkbox"
+                    disabled={!isEditing}
+                    checked={notificationPrefs.enableStudyReminders}
+                    onChange={(e) =>
+                      setNotificationPrefs((prev) =>
+                        prev ? { ...prev, enableStudyReminders: e.target.checked } : prev
+                      )
+                    }
+                  />
+                  Study reminders
+                </label>
+                <label className="flex items-center gap-3 text-sm text-gray-300">
+                  <input
+                    type="checkbox"
+                    disabled={!isEditing}
+                    checked={notificationPrefs.enableStreakRiskAlerts}
+                    onChange={(e) =>
+                      setNotificationPrefs((prev) =>
+                        prev ? { ...prev, enableStreakRiskAlerts: e.target.checked } : prev
+                      )
+                    }
+                  />
+                  Streak risk alerts
+                </label>
+                <label className="flex items-center gap-3 text-sm text-gray-300">
+                  <input
+                    type="checkbox"
+                    disabled={!isEditing}
+                    checked={notificationPrefs.pushEnabled}
+                    onChange={(e) =>
+                      setNotificationPrefs((prev) =>
+                        prev ? { ...prev, pushEnabled: e.target.checked } : prev
+                      )
+                    }
+                  />
+                  Push channel
+                </label>
+                <label className="flex items-center gap-3 text-sm text-gray-300">
+                  <input
+                    type="checkbox"
+                    disabled={!isEditing}
+                    checked={notificationPrefs.emailEnabled}
+                    onChange={(e) =>
+                      setNotificationPrefs((prev) =>
+                        prev ? { ...prev, emailEnabled: e.target.checked } : prev
+                      )
+                    }
+                  />
+                  Email channel
+                </label>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400">Notification preferences are temporarily unavailable.</p>
+            )}
           </div>
 
           {isEditing && (

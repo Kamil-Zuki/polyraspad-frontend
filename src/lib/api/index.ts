@@ -6,6 +6,7 @@ export { CardClient } from "./card-client";
 export { UserSettingsClient } from "./user-settings-client";
 export { AnalyticsClient } from "./analytics-client";
 export { StudyClient } from "./study-client";
+export { AutomationClient } from "./automation-client";
 export { uploadImage } from "./media-client";
 export type { UploadImageResponse } from "./media-client";
 
@@ -17,6 +18,7 @@ import { CardClient } from "./card-client";
 import { UserSettingsClient } from "./user-settings-client";
 import { AnalyticsClient } from "./analytics-client";
 import { StudyClient } from "./study-client";
+import { AutomationClient } from "./automation-client";
 
 class ApiClient {
   auth = new AuthClient();
@@ -26,6 +28,7 @@ class ApiClient {
   userSettings = new UserSettingsClient();
   analytics = new AnalyticsClient();
   study = new StudyClient();
+  automation = new AutomationClient();
 }
 
 export const apiClient = new ApiClient();

@@ -5,7 +5,12 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useDeck } from "@/lib/react-query/queries";
 import { apiClient } from "@/lib/api";
-import type { CardStudyDto, StudySessionDto, QueueStatsDto } from "@/lib/api/types";
+import type {
+  CardStudyDto,
+  CopilotReviewFeedbackDto,
+  QueueStatsDto,
+  StudySessionDto,
+} from "@/lib/api/types";
 import { StudyHeader } from "@/components/study/study-header";
 import { StudyCard } from "@/components/study/study-card";
 import { StudyControls } from "@/components/study/study-controls";
@@ -56,6 +61,8 @@ export default function StudySessionPage() {
   const [error, setError] = useState<string | null>(null);
   const [isStarting, setIsStarting] = useState(true);
   const [isLoadingNext, setIsLoadingNext] = useState(false);
+  const [copilotFeedback, setCopilotFeedback] = useState<CopilotReviewFeedbackDto | null>(null);
+  const [experimentVariant, setExperimentVariant] = useState<string>("control");
   const cardShownAtRef = useRef<number>(0);
 
   const {
@@ -93,6 +100,16 @@ export default function StudySessionPage() {
 
     (async () => {
       try {
+        const assignment = await apiClient.automation.getExperimentAssignment("study-copilot-2026");
+        setExperimentVariant(assignment.variant);
+        await apiClient.automation.trackExperimentEvent({
+          key: assignment.key,
+          variant: assignment.variant,
+          eventName: "study_session_started",
+          projectId: deck.projectId,
+          deckId: id,
+        });
+
         const started = await apiClient.study.startSession({
           projectId: deck.projectId,
           deckId: id,
@@ -125,6 +142,25 @@ export default function StudySessionPage() {
         rating,
         durationMs,
       });
+      const feedback = await apiClient.automation.getCopilotReviewFeedback({
+        cardId: currentCard.id,
+        sentence: currentCard.content.sentence,
+        targetWord:
+          currentCard.content.sentence.slice(
+            currentCard.content.targetIndex.start,
+            currentCard.content.targetIndex.start + currentCard.content.targetIndex.len
+          ) || currentCard.content.targetLemma || "",
+        translation: currentCard.content.translation,
+        rating,
+      });
+      setCopilotFeedback(feedback);
+      await apiClient.automation.trackExperimentEvent({
+        key: "study-copilot-2026",
+        variant: experimentVariant,
+        eventName: `review_rating_${rating}`,
+        projectId: deck?.projectId,
+        deckId: id,
+      });
       setSession((prev) =>
         prev
           ? { ...prev, cardsReviewed: prev.cardsReviewed + 1 }
@@ -143,6 +179,7 @@ export default function StudySessionPage() {
     setIsLoadingNext(true);
     try {
       await apiClient.study.undoReview(session.id);
+      setCopilotFeedback(null);
       setSession((prev) =>
         prev
           ? { ...prev, cardsReviewed: Math.max(0, prev.cardsReviewed - 1) }
@@ -255,11 +292,20 @@ export default function StudySessionPage() {
 
       <main className="flex-1 flex flex-col items-center justify-center p-6 relative z-10">
         {currentCard ? (
-          <StudyCard
-            {...cardStudyToStudyCardProps(currentCard)}
-            isRevealed={isRevealed}
-            onReveal={handleReveal}
-          />
+          <div className="w-full max-w-3xl">
+            <StudyCard
+              {...cardStudyToStudyCardProps(currentCard)}
+              isRevealed={isRevealed}
+              onReveal={handleReveal}
+            />
+            {copilotFeedback && (
+              <div className="mt-4 rounded-xl border border-brand-primary/30 bg-brand-primary/10 p-4">
+                <p className="text-sm font-semibold text-brand-secondary">Study Copilot</p>
+                <p className="text-sm text-gray-200 mt-1">{copilotFeedback.explanation}</p>
+                <p className="text-xs text-gray-300 mt-2">{copilotFeedback.actionHint}</p>
+              </div>
+            )}
+          </div>
         ) : (
           <div className="w-8 h-8 border-4 border-brand-primary border-t-transparent rounded-full animate-spin" />
         )}

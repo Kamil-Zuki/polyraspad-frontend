@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import {
   ChevronRight,
   Settings,
@@ -13,7 +13,8 @@ import {
 } from "lucide-react";
 import { useDeck, useDeckTree } from "@/lib/react-query/queries";
 import { ProtectedRoute } from "@/components/auth/protected-route";
-import { DeckTreeItemDto } from "@/lib/api/types";
+import { apiClient } from "@/lib/api";
+import { AutomationJobDto, DailyAutopilotDto, DeckTreeItemDto, ZeroTouchMiningResponseDto } from "@/lib/api/types";
 
 function getBreadcrumbPath(
   tree: DeckTreeItemDto[],
@@ -69,7 +70,6 @@ function DeckOverviewSkeleton() {
 
 export default function DeckOverviewPage() {
   const { deckId } = useParams();
-  const router = useRouter();
   const id = Array.isArray(deckId) ? deckId[0] : (deckId ?? "");
 
   const {
@@ -96,6 +96,71 @@ export default function DeckOverviewPage() {
         : null,
     [deck],
   );
+
+  const [autopilot, setAutopilot] = useState<DailyAutopilotDto | null>(null);
+  const [autoImportJob, setAutoImportJob] = useState<AutomationJobDto | null>(null);
+  const [miningDrafts, setMiningDrafts] = useState<ZeroTouchMiningResponseDto | null>(null);
+
+  useEffect(() => {
+    if (!deck?.projectId || !id) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const [plan, assignment] = await Promise.all([
+          apiClient.automation.getDailyAutopilot(deck.projectId, id),
+          apiClient.automation.getExperimentAssignment("autopilot-2026"),
+        ]);
+        if (cancelled) return;
+        setAutopilot(plan);
+        await apiClient.automation.trackExperimentEvent({
+          key: assignment.key,
+          variant: assignment.variant,
+          eventName: "deck_overview_opened",
+          projectId: deck.projectId,
+          deckId: id,
+        });
+      } catch {
+        if (!cancelled) {
+          setAutopilot(null);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [deck?.projectId, id]);
+
+  const runAutomatedImport = async () => {
+    if (!deck?.projectId) return;
+    const job = await apiClient.automation.createJob({
+      type: "IMPORT",
+      projectId: deck.projectId,
+      deckId: id,
+      itemsCount: 25,
+    });
+    setAutoImportJob(job);
+    const poll = async () => {
+      let current = job;
+      for (let i = 0; i < 5; i += 1) {
+        await new Promise((resolve) => setTimeout(resolve, 450));
+        current = await apiClient.automation.getJob(job.id);
+        setAutoImportJob(current);
+        if (current.status === "COMPLETED") break;
+      }
+    };
+    void poll();
+  };
+
+  const runZeroTouchMining = async () => {
+    if (!deck?.projectId) return;
+    const drafts = await apiClient.automation.suggestMiningDrafts({
+      projectId: deck.projectId,
+      sourceTitle: deck.title,
+      sourceText:
+        "I finally managed to understand this tricky expression in context. The explanation was short, but memorable. Tomorrow I want to revisit it in another sentence.",
+    });
+    setMiningDrafts(drafts);
+  };
 
   if (isDeckLoading) {
     return (
@@ -196,6 +261,16 @@ export default function DeckOverviewPage() {
                 <p className="mt-3 text-gray-400 text-sm">
                   {stats?.dueToday ?? 0} cards due today
                 </p>
+                {autopilot && (
+                  <div className="mt-4 w-full max-w-xl rounded-xl border border-brand-primary/30 bg-brand-primary/10 p-4 text-left">
+                    <p className="text-sm text-brand-secondary font-semibold">
+                      Daily Autopilot: {autopilot.suggestedMinutes} min, {autopilot.suggestedReviews} reviews
+                    </p>
+                    <p className="text-xs text-gray-300 mt-1">
+                      {autopilot.nextBestActions[0]?.title}: {autopilot.nextBestActions[0]?.description}
+                    </p>
+                  </div>
+                )}
               </section>
 
               {/* Stats Grid */}
@@ -230,17 +305,19 @@ export default function DeckOverviewPage() {
               <section className="flex flex-wrap justify-center gap-3">
                 <button
                   type="button"
+                  onClick={runZeroTouchMining}
                   className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-app-surface hover:bg-app-hover border border-app-border text-white text-sm font-medium transition-colors"
                 >
                   <Plus className="w-4 h-4" />
-                  Add Card
+                  Auto Mine
                 </button>
                 <button
                   type="button"
+                  onClick={runAutomatedImport}
                   className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-app-surface hover:bg-app-hover border border-app-border text-white text-sm font-medium transition-colors"
                 >
                   <LayoutGrid className="w-4 h-4" />
-                  Browse Cards
+                  Run Import Job
                 </button>
                 <button
                   type="button"
@@ -250,6 +327,16 @@ export default function DeckOverviewPage() {
                   Statistics
                 </button>
               </section>
+              {autoImportJob && (
+                <p className="mt-4 text-xs text-gray-300">
+                  Job {autoImportJob.type}: {autoImportJob.status} ({autoImportJob.progressPercent}%)
+                </p>
+              )}
+              {miningDrafts && (
+                <p className="mt-2 text-xs text-gray-300">
+                  Zero-touch mining created {miningDrafts.totalDrafts} drafts.
+                </p>
+              )}
             </div>
           </div>
         </main>

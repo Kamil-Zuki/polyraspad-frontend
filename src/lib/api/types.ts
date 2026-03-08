@@ -364,3 +364,131 @@ export interface UndoResponseDto {
   message?: string | null;
 }
 
+// Automation / Autonomy
+export interface NextBestActionDto {
+  id: string;
+  type: string;
+  title: string;
+  description: string;
+  priority: number;
+  deckId?: string | null;
+}
+
+export interface DailyAutopilotDto {
+  userId: string;
+  projectId: string;
+  deckId?: string | null;
+  planDate: string;
+  suggestedMinutes: number;
+  suggestedNewCards: number;
+  suggestedReviews: number;
+  backlogRiskScore: number;
+  sessionMode: string;
+  nextBestActions: NextBestActionDto[];
+}
+
+export interface NotificationPreferencesDto {
+  enableStudyReminders: boolean;
+  enableStreakRiskAlerts: boolean;
+  enableBacklogAlerts: boolean;
+  enableContributionEvents: boolean;
+  enableMarketplaceEvents: boolean;
+  pushEnabled: boolean;
+  emailEnabled: boolean;
+  inAppEnabled: boolean;
+  quietHoursStart: number;
+  quietHoursEnd: number;
+}
+
+export interface UpdateNotificationPreferencesDto {
+  enableStudyReminders?: boolean | null;
+  enableStreakRiskAlerts?: boolean | null;
+  enableBacklogAlerts?: boolean | null;
+  enableContributionEvents?: boolean | null;
+  enableMarketplaceEvents?: boolean | null;
+  pushEnabled?: boolean | null;
+  emailEnabled?: boolean | null;
+  inAppEnabled?: boolean | null;
+  quietHoursStart?: number | null;
+  quietHoursEnd?: number | null;
+}
+
+export interface AutomationJobDto {
+  id: string;
+  type: string;
+  status: string;
+  progressPercent: number;
+  lastError?: string | null;
+  createdAtUtc: string;
+  updatedAtUtc?: string | null;
+}
+
+export interface CreateAutomationJobDto {
+  type: string;
+  projectId?: string | null;
+  deckId?: string | null;
+  itemsCount?: number | null;
+}
+
+export interface MiningDraftCardDto {
+  draftId: string;
+  sentence: string;
+  targetWord: string;
+  translation: string;
+  lemma: string;
+  confidence: number;
+}
+
+export interface ZeroTouchMiningRequestDto {
+  projectId: string;
+  sourceText: string;
+  sourceTitle?: string | null;
+}
+
+export interface ZeroTouchMiningResponseDto {
+  projectId: string;
+  totalDrafts: number;
+  drafts: MiningDraftCardDto[];
+}
+
+export interface ApproveMiningDraftsRequestDto {
+  deckId: string;
+  drafts: MiningDraftCardDto[];
+}
+
+export interface CopilotReviewFeedbackRequestDto {
+  cardId: string;
+  sentence: string;
+  targetWord: string;
+  translation: string;
+  userAnswer?: string | null;
+  rating: number;
+}
+
+export interface CopilotRemedialCardDto {
+  sentence: string;
+  targetWord: string;
+  translation: string;
+}
+
+export interface CopilotReviewFeedbackDto {
+  tone: string;
+  explanation: string;
+  actionHint: string;
+  suggestRemedialCards: boolean;
+  remedialCards: CopilotRemedialCardDto[];
+}
+
+export interface ExperimentAssignmentDto {
+  key: string;
+  variant: string;
+}
+
+export interface TrackExperimentEventDto {
+  key: string;
+  variant: string;
+  eventName: string;
+  projectId?: string | null;
+  deckId?: string | null;
+}
+
