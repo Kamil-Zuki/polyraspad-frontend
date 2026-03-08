@@ -3,7 +3,9 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { useDeck } from "@/lib/react-query/queries";
+import { useQueryClient } from "@tanstack/react-query";
+import { useDeck, useUserSettings, useDailySummary } from "@/lib/react-query/queries";
+import { userQueryKeys, analyticsQueryKeys, deckQueryKeys } from "@/lib/react-query/constants";
 import { apiClient } from "@/lib/api";
 import type {
   CardStudyDto,
@@ -51,8 +53,15 @@ function initialQueueTotal(stats: QueueStatsDto) {
 export default function StudySessionPage() {
   const { deckId } = useParams();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { currentProject } = useProjectContext();
   const id = Array.isArray(deckId) ? deckId[0] : deckId ?? "";
+
+  const { data: deck, isLoading: isDeckLoading, error: deckError } = useDeck(id);
+  const { data: userSettings } = useUserSettings();
+  const { data: dailySummary } = useDailySummary(deck?.projectId, {
+    enabled: !!deck?.projectId,
+  });
 
   const [session, setSession] = useState<StudySessionDto | null>(null);
   const [currentCard, setCurrentCard] = useState<CardStudyDto | null>(null);
@@ -64,12 +73,6 @@ export default function StudySessionPage() {
   const [copilotFeedback, setCopilotFeedback] = useState<CopilotReviewFeedbackDto | null>(null);
   const [experimentVariant, setExperimentVariant] = useState<string>("control");
   const cardShownAtRef = useRef<number>(0);
-
-  const {
-    data: deck,
-    isLoading: isDeckLoading,
-    error: deckError,
-  } = useDeck(id);
 
   const deckName = deck?.title ?? "Unknown Deck";
   const projectName = currentProject?.title ?? "Unknown Project";
@@ -130,6 +133,15 @@ export default function StudySessionPage() {
       cancelled = true;
     };
   }, [deck?.projectId, id, fetchNextCard]);
+
+  // Invalidate cached data when session completes so dashboard/deck show fresh stats
+  useEffect(() => {
+    if (!sessionComplete || !deck?.projectId) return;
+    void queryClient.invalidateQueries({ queryKey: userQueryKeys.userSettings });
+    void queryClient.invalidateQueries({ queryKey: analyticsQueryKeys.dailySummary(deck.projectId) });
+    void queryClient.invalidateQueries({ queryKey: deckQueryKeys.deck(id) });
+    void queryClient.invalidateQueries({ queryKey: deckQueryKeys.deckTree(deck.projectId) });
+  }, [sessionComplete, deck?.projectId, id, queryClient]);
 
   const handleRate = async (rating: number) => {
     if (!session || !currentCard) return;
@@ -250,26 +262,73 @@ export default function StudySessionPage() {
   }
 
   if (sessionComplete) {
+    const streak = userSettings?.currentStreak ?? dailySummary?.currentStreak ?? 0;
+    const reviews = dailySummary?.reviews || { current: 0, target: 0, isCompleted: false };
+    const newCards = dailySummary?.newCards || { current: 0, target: 0, isCompleted: false };
+    const dailyGoalsDone = reviews.isCompleted && newCards.isCompleted;
+
     return (
       <div className="flex-1 flex flex-col items-center justify-center bg-app-bg p-8">
-        <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-app-surface/90 p-8 text-center shadow-xl">
-          <div className="w-14 h-14 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-4">
-            <i className="fas fa-check text-2xl text-emerald-400" />
+        <div className="w-full max-w-md rounded-2xl border border-white/10 bg-app-surface/90 p-8 text-center shadow-xl">
+          <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-4">
+            <i className="fas fa-check text-3xl text-emerald-400" />
           </div>
-          <h2 className="text-xl font-bold text-white mb-1">Session complete</h2>
-          <p className="text-gray-400 text-sm mb-6">
+          <h2 className="text-2xl font-bold text-white mb-1">Session complete</h2>
+          <p className="text-gray-400 text-sm mb-2">
             {cardsReviewed} card{cardsReviewed !== 1 ? "s" : ""} reviewed
           </p>
+
+          {/* Streak & daily progress (Summary per IA) */}
+          {(streak > 0 || reviews.target > 0 || newCards.target > 0) && (
+            <div className="mt-6 mb-6 space-y-3 text-left">
+              {streak > 0 && (
+                <div className="flex items-center justify-between py-2 px-4 rounded-xl bg-brand-primary/10 border border-brand-primary/20">
+                  <span className="text-sm text-gray-400">Streak</span>
+                  <span className="text-brand-primary font-bold">
+                    {streak} day{streak !== 1 ? "s" : ""}
+                  </span>
+                </div>
+              )}
+              {reviews.target > 0 && (
+                <div className="flex items-center justify-between py-2 px-4 rounded-xl bg-white/5 border border-white/10">
+                  <span className="text-sm text-gray-400">Reviews today</span>
+                  <span className={reviews.isCompleted ? "text-emerald-400 font-medium" : "text-white"}>
+                    {reviews.current} / {reviews.target}
+                  </span>
+                </div>
+              )}
+              {newCards.target > 0 && (
+                <div className="flex items-center justify-between py-2 px-4 rounded-xl bg-white/5 border border-white/10">
+                  <span className="text-sm text-gray-400">New cards today</span>
+                  <span className={newCards.isCompleted ? "text-emerald-400 font-medium" : "text-white"}>
+                    {newCards.current} / {newCards.target}
+                  </span>
+                </div>
+              )}
+              {dailyGoalsDone && (
+                <p className="text-center text-sm text-emerald-400 font-medium">
+                  Daily goals completed! 🎉
+                </p>
+              )}
+            </div>
+          )}
+
           <div className="flex flex-col gap-2">
             <Link
-              href={`/study/${id}`}
+              href="/dashboard"
               className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-brand-primary text-white font-medium hover:opacity-90 transition"
+            >
+              Back to Dashboard
+            </Link>
+            <Link
+              href={`/study/${id}`}
+              className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-white/10 text-gray-300 font-medium hover:bg-white/5 transition"
             >
               Back to deck
             </Link>
             <Link
               href="/library"
-              className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-white/10 text-gray-300 font-medium hover:bg-white/5 transition"
+              className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-white/10 text-gray-500 font-medium hover:bg-white/5 transition text-sm"
             >
               Library
             </Link>

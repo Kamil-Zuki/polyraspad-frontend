@@ -110,7 +110,25 @@ export abstract class BaseApiClient {
       throw ApiError.fromResponse(error, response.status);
     }
 
-    return response.json();
+    const text = await response.text();
+    // 202 Accepted / 204 No Content may have no body
+    if (!text || !text.trim()) {
+      if (response.status === 202 || response.status === 204) {
+        return {} as T;
+      }
+      throw ApiError.fromResponse(
+        { detail: `Server returned empty response (${response.status})` },
+        response.status
+      );
+    }
+    try {
+      return JSON.parse(text) as T;
+    } catch {
+      throw ApiError.fromResponse(
+        { detail: `Invalid JSON in response (${response.status})` },
+        response.status
+      );
+    }
   }
 
   /**

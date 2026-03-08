@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import {
   ChevronRight,
   Settings,
@@ -10,9 +10,11 @@ import {
   Plus,
   LayoutGrid,
   BarChart3,
+  FolderOpen,
 } from "lucide-react";
 import { useDeck, useDeckTree } from "@/lib/react-query/queries";
 import { ProtectedRoute } from "@/components/auth/protected-route";
+import { DeckSettingsDialog } from "@/components/decks/deck-settings-dialog";
 import { apiClient } from "@/lib/api";
 import { AutomationJobDto, DailyAutopilotDto, DeckTreeItemDto, ZeroTouchMiningResponseDto } from "@/lib/api/types";
 
@@ -70,6 +72,7 @@ function DeckOverviewSkeleton() {
 
 export default function DeckOverviewPage() {
   const { deckId } = useParams();
+  const router = useRouter();
   const id = Array.isArray(deckId) ? deckId[0] : (deckId ?? "");
 
   const {
@@ -83,6 +86,13 @@ export default function DeckOverviewPage() {
     if (!deckTree?.length || !id) return [];
     return getBreadcrumbPath(deckTree, id) ?? [];
   }, [deckTree, id]);
+
+  const childDecks = useMemo(() => {
+    const current = breadcrumbPath.at(-1);
+    return current?.children ?? [];
+  }, [breadcrumbPath]);
+
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const stats = useMemo(
     () =>
@@ -231,12 +241,20 @@ export default function DeckOverviewPage() {
             </div>
             <button
               type="button"
-              aria-label="Options"
+              aria-label="Deck options"
               className="p-2 rounded-lg bg-app-surface hover:bg-app-hover border border-app-border text-gray-400 hover:text-white transition-colors shrink-0"
+              onClick={() => setSettingsOpen(true)}
             >
               <Settings className="w-5 h-5" />
             </button>
           </header>
+
+          <DeckSettingsDialog
+            deckId={id}
+            isOpen={settingsOpen}
+            onClose={() => setSettingsOpen(false)}
+            onSuccess={() => setSettingsOpen(false)}
+          />
 
           {/* Background decor */}
           <div className="absolute top-0 left-0 w-full h-80 bg-linear-to-b from-brand-primary/5 to-transparent pointer-events-none" />
@@ -245,15 +263,22 @@ export default function DeckOverviewPage() {
           <div className="relative z-10 p-8">
             <div className="max-w-2xl mx-auto flex flex-col items-center animate-in fade-in slide-in-from-bottom-4 duration-500">
               {/* Title */}
-              <h1 className="text-3xl font-bold text-white text-center mb-10 mt-4">
-                {deck.title}
-              </h1>
+              <div className="text-center mb-10 mt-4">
+                <h1 className="text-3xl font-bold text-white mb-4">
+                  {deck.title}
+                </h1>
+                {deck.description?.trim() && (
+                  <p className="text-gray-400 text-sm max-w-xl mx-auto">
+                    {deck.description}
+                  </p>
+                )}
+              </div>
 
               {/* Hero: Study Now CTA */}
               <section className="w-full flex flex-col items-center mb-10">
                 <Link
                   href={sessionHref}
-                  className="relative inline-flex items-center justify-center gap-2 px-10 py-5 rounded-2xl text-lg font-semibold text-white shadow-lg transition-transform active:scale-[0.98] min-w-[240px] animate-pulse bg-linear-to-r from-brand-primary via-brand-primary to-brand-secondary bg-[length_200%_100%] hover:bg-right"
+                  className="relative inline-flex items-center justify-center gap-2 px-10 py-5 rounded-2xl text-lg font-semibold text-white shadow-lg transition-transform active:scale-[0.98] min-w-[240px] bg-linear-to-r from-brand-primary via-brand-primary to-brand-secondary bg-[length_200%_100%] hover:bg-right"
                 >
                   <BookOpen className="w-6 h-6" />
                   Study Now
@@ -321,12 +346,66 @@ export default function DeckOverviewPage() {
                 </button>
                 <button
                   type="button"
+                  onClick={() => router.push("/analytics")}
                   className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-app-surface hover:bg-app-hover border border-app-border text-white text-sm font-medium transition-colors"
                 >
                   <BarChart3 className="w-4 h-4" />
                   Statistics
                 </button>
               </section>
+
+              {/* Empty state */}
+              {(stats?.newCount ?? 0) === 0 &&
+                (stats?.learningCount ?? 0) === 0 &&
+                (stats?.toReviewCount ?? 0) === 0 &&
+                (deck.stats?.totalCardsCount ?? 0) === 0 && (
+                <section className="mt-8 w-full max-w-md rounded-xl border border-dashed border-app-border bg-app-surface/50 p-6 text-center">
+                  <p className="text-gray-400 text-sm mb-3">
+                    No cards yet. Add cards manually or import to get started.
+                  </p>
+                  <div className="flex justify-center gap-3">
+                    <Link
+                      href={`/editor?deckId=${id}`}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-primary/20 hover:bg-brand-primary/30 border border-brand-primary/50 text-brand-secondary text-sm font-medium transition-colors"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add card
+                    </Link>
+                    <Link
+                      href="/import"
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-app-surface hover:bg-app-hover border border-app-border text-gray-300 text-sm font-medium transition-colors"
+                    >
+                      <LayoutGrid className="w-4 h-4" />
+                      Import
+                    </Link>
+                  </div>
+                </section>
+              )}
+
+              {/* Child decks */}
+              {childDecks.length > 0 && (
+                <section className="mt-10 w-full max-w-md">
+                  <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+                    <FolderOpen className="w-4 h-4" />
+                    Sub-decks
+                  </h2>
+                  <div className="grid gap-2">
+                    {childDecks.map((child) => (
+                      <Link
+                        key={child.id}
+                        href={`/study/${child.id}`}
+                        className="flex items-center justify-between gap-3 p-3 rounded-xl bg-app-surface hover:bg-app-hover border border-app-border text-white transition-colors"
+                      >
+                        <span className="font-medium truncate min-w-0">{child.title}</span>
+                        <span className="text-xs text-gray-500 shrink-0">
+                          {child.cardCount} cards
+                        </span>
+                        <ChevronRight className="w-4 h-4 text-gray-500 shrink-0" />
+                      </Link>
+                    ))}
+                  </div>
+                </section>
+              )}
               {autoImportJob && (
                 <p className="mt-4 text-xs text-gray-300">
                   Job {autoImportJob.type}: {autoImportJob.status} ({autoImportJob.progressPercent}%)
