@@ -12,7 +12,7 @@ import { StudyControls } from "@/components/study/study-controls";
 import { useProjectContext } from "@/contexts/project-context";
 
 function cardStudyToStudyCardProps(card: CardStudyDto) {
-  const { content } = card;
+  const { content, srsState } = card;
   const targetWord =
     content.sentence.slice(
       content.targetIndex.start,
@@ -26,7 +26,17 @@ function cardStudyToStudyCardProps(card: CardStudyDto) {
     sourceType: undefined,
     sourceTitle: undefined,
     sourceTimestamp: undefined,
+    srsState: { state: srsState.state, currentInterval: srsState.currentInterval },
   };
+}
+
+/** Format interval for display (e.g. 21 → "21d", 0 → "1m" for learning) */
+function formatGoodInterval(state: string, currentInterval: number): string {
+  if (state === "NEW" || state === "LEARNING" || currentInterval < 1) return "1d";
+  if (currentInterval >= 365) return `${Math.round(currentInterval / 365)}y`;
+  if (currentInterval >= 30) return `${Math.round(currentInterval / 30)}mo`;
+  if (currentInterval >= 7) return `${Math.round(currentInterval / 7)}w`;
+  return `${currentInterval}d`;
 }
 
 function initialQueueTotal(stats: QueueStatsDto) {
@@ -128,7 +138,33 @@ export default function StudySessionPage() {
     }
   };
 
+  const handleUndo = async () => {
+    if (!session || session.cardsReviewed === 0 || isLoadingNext) return;
+    setIsLoadingNext(true);
+    try {
+      await apiClient.study.undoReview(session.id);
+      setSession((prev) =>
+        prev
+          ? { ...prev, cardsReviewed: Math.max(0, prev.cardsReviewed - 1) }
+          : null
+      );
+      await fetchNextCard(session.id);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to undo");
+    } finally {
+      setIsLoadingNext(false);
+    }
+  };
+
   const handleReveal = () => setIsRevealed(true);
+
+  const goodInterval =
+    currentCard?.srsState != null
+      ? formatGoodInterval(
+          currentCard.srsState.state,
+          currentCard.srsState.currentInterval
+        )
+      : "5d";
 
   if (isDeckLoading || isStarting) {
     return (
@@ -179,21 +215,24 @@ export default function StudySessionPage() {
   if (sessionComplete) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center bg-app-bg p-8">
-        <div className="glass-panel border border-app-border rounded-2xl p-8 max-w-md text-center">
-          <h2 className="text-2xl font-bold text-white mb-2">Session complete</h2>
-          <p className="text-gray-400 mb-6">
-            You reviewed {cardsReviewed} card{cardsReviewed !== 1 ? "s" : ""}.
+        <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-app-surface/90 p-8 text-center shadow-xl">
+          <div className="w-14 h-14 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-4">
+            <i className="fas fa-check text-2xl text-emerald-400" />
+          </div>
+          <h2 className="text-xl font-bold text-white mb-1">Session complete</h2>
+          <p className="text-gray-400 text-sm mb-6">
+            {cardsReviewed} card{cardsReviewed !== 1 ? "s" : ""} reviewed
           </p>
-          <div className="flex flex-wrap justify-center gap-3">
+          <div className="flex flex-col gap-2">
             <Link
               href={`/study/${id}`}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-primary text-white font-medium hover:opacity-90"
+              className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-brand-primary text-white font-medium hover:opacity-90 transition"
             >
-              Back to Deck
+              Back to deck
             </Link>
             <Link
               href="/library"
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-app-surface border border-app-border text-white font-medium hover:bg-app-hover"
+              className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-white/10 text-gray-300 font-medium hover:bg-white/5 transition"
             >
               Library
             </Link>
@@ -230,7 +269,10 @@ export default function StudySessionPage() {
         isRevealed={isRevealed}
         onReveal={handleReveal}
         onRate={handleRate}
+        onUndo={handleUndo}
+        canUndo={session != null && session.cardsReviewed > 0 && !isLoadingNext}
         disabled={!currentCard || isLoadingNext}
+        goodInterval={goodInterval}
       />
     </div>
   );

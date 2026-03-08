@@ -4,27 +4,47 @@ interface StudyControlsProps {
   onRate: (rating: 1 | 2 | 3 | 4) => void;
   isRevealed: boolean;
   onReveal: () => void;
+  onUndo?: () => void;
+  canUndo?: boolean;
   disabled?: boolean;
+  /** Interval shown on Good button (e.g. "5d") from FSRS */
+  goodInterval?: string;
 }
 
-export function StudyControls({ onRate, isRevealed, onReveal, disabled }: StudyControlsProps) {
+const DEFAULT_GOOD_INTERVAL = "5d";
+
+export function StudyControls({
+  onRate,
+  isRevealed,
+  onReveal,
+  onUndo,
+  canUndo = false,
+  disabled,
+  goodInterval = DEFAULT_GOOD_INTERVAL,
+}: StudyControlsProps) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key === "z") {
+        e.preventDefault();
+        if (isRevealed && canUndo && onUndo) onUndo();
+        return;
+      }
       if (!isRevealed) {
-        if (e.code === 'Space' || e.code === 'Enter') {
+        if (e.code === "Space" || e.code === "Enter") {
+          e.preventDefault();
           onReveal();
         }
       } else {
-        if (e.key === '1') onRate(1);
-        if (e.key === '2') onRate(2);
-        if (e.key === '3') onRate(3);
-        if (e.key === '4') onRate(4);
+        if (e.key === "1") { e.preventDefault(); onRate(1); }
+        if (e.key === "2") { e.preventDefault(); onRate(2); }
+        if (e.key === "3") { e.preventDefault(); onRate(3); }
+        if (e.key === "4") { e.preventDefault(); onRate(4); }
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isRevealed, onRate, onReveal]);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isRevealed, onRate, onReveal, onUndo, canUndo]);
 
   if (!isRevealed) {
     return (
@@ -69,14 +89,14 @@ export function StudyControls({ onRate, isRevealed, onReveal, disabled }: StudyC
           <span className="text-[10px] text-gray-600 mt-1 uppercase tracking-tighter">Key: 2</span>
         </button>
 
-        {/* Good */}
-        <button 
+        {/* Good - default choice, interval from FSRS when available */}
+        <button
           onClick={() => onRate(3)}
           disabled={disabled}
           className="bg-brand-primary/10 border border-brand-primary/20 hover:bg-status-good/10 hover:border-status-good/30 p-3 rounded-xl flex flex-col items-center group transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none"
         >
           <span className="text-xs font-bold text-gray-500 uppercase mb-1 group-hover:text-status-good transition">Good</span>
-          <span className="text-lg font-bold text-status-good text-emerald-400">5d</span>
+          <span className="text-lg font-bold text-emerald-400">{goodInterval}</span>
           <span className="text-[10px] text-gray-600 mt-1 uppercase tracking-tighter">Key: 3</span>
         </button>
 
@@ -92,10 +112,17 @@ export function StudyControls({ onRate, isRevealed, onReveal, disabled }: StudyC
         </button>
       </div>
 
-      {/* Undo Action */}
-      <button className="mt-4 text-gray-500 hover:text-white text-xs flex items-center gap-2 transition opacity-50 hover:opacity-100">
-        <i className="fas fa-undo" /> Undo last action (Ctrl+Z)
-      </button>
+      {/* Undo - Anki style */}
+      {onUndo && (
+        <button
+          type="button"
+          onClick={onUndo}
+          disabled={!canUndo || disabled}
+          className="mt-4 text-gray-500 hover:text-white text-xs flex items-center gap-2 transition disabled:opacity-30 disabled:pointer-events-none"
+        >
+          <i className="fas fa-undo" /> Undo (Ctrl+Z)
+        </button>
+      )}
     </footer>
   );
 }
