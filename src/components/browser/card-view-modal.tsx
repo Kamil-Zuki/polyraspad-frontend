@@ -7,6 +7,7 @@ import type { CardResponseDto } from "@/lib/api/types"
 import Link from "next/link"
 import { getPreviewImageSrc } from "@/lib/utils/media-preview-url"
 import { PreviewImage } from "@/components/editor/card-preview"
+import { resolveCardViewModalCard } from "@/components/browser/card-view-modal-state"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
 
@@ -43,7 +44,7 @@ export function CardViewModal({ cardId, onClose, initialCard }: CardViewModalPro
   const [side, setSide] = useState<"FRONT" | "BACK">("FRONT")
   const { data: card, isLoading, error } = useCard(cardId)
 
-  const c = initialCard ?? card
+  const c = resolveCardViewModalCard(card, initialCard)
   const imageUrl = c?.media?.imageUrl ?? ""
   const audioUrl = c?.media?.audioUrl ?? ""
   const previewImageSrc = getPreviewImageSrc({
@@ -157,6 +158,16 @@ export function CardViewModal({ cardId, onClose, initialCard }: CardViewModalPro
                   <span className="text-gray-500 uppercase tracking-wider">Target: </span>
                   <span className="text-brand-primary font-semibold">{c.targetWord}</span>
                 </p>
+              )}
+              {previewImageSrc && (
+                <div className="rounded-xl overflow-hidden border border-app-border bg-app-bg">
+                  <PreviewImage
+                    src={previewImageSrc}
+                    fallbackSrc={imageUrl || undefined}
+                    alt="Card"
+                    imgClassName="w-full max-h-48 object-contain"
+                  />
+                </div>
               )}
               {audioUrl && (
                 <audio src={audioUrl} controls className="w-full h-8 opacity-90" />

@@ -34,6 +34,7 @@ export default function BrowserPage() {
   const [selectedSrsStatuses, setSelectedSrsStatuses] = useState<string[]>([])
   const [pageNumber, setPageNumber] = useState(1)
   const [viewCardId, setViewCardId] = useState<string | null>(null)
+  const [viewCard, setViewCard] = useState<CardResponseDto | null>(null)
 
   const projectIdForTree = selectedProjectId || currentProject?.id || ""
   const { data: deckTree } = useDeckTree(projectIdForTree)
@@ -223,7 +224,10 @@ export default function BrowserPage() {
                         key={card.id}
                         type="button"
                         className="w-full text-left bg-app-surface rounded-xl p-4 border border-app-border hover:border-brand-primary/30 transition-all"
-                        onClick={() => setViewCardId(card.id)}
+                        onClick={() => {
+                          setViewCard(card)
+                          setViewCardId(card.id)
+                        }}
                       >
                         <div className="flex flex-wrap items-start justify-between gap-2">
                           <div className="flex-1 min-w-0">
@@ -269,7 +273,14 @@ export default function BrowserPage() {
       </div>
 
       {viewCardId && (
-        <CardViewModal cardId={viewCardId} onClose={() => setViewCardId(null)} />
+        <CardViewModal
+          cardId={viewCardId}
+          initialCard={viewCard}
+          onClose={() => {
+            setViewCardId(null)
+            setViewCard(null)
+          }}
+        />
       )}
     </div>
   )

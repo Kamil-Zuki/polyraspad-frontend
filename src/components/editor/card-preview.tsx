@@ -87,6 +87,20 @@ export function PreviewImage({
       </div>
     )
   }
+  const isLoading = src && src.includes("/api/Media/serve-image") && !resolvedSrc
+  if (isLoading) {
+    return (
+      <div
+        className={cn(
+          "flex flex-col items-center justify-center rounded-xl border border-app-border bg-app-bg min-h-[140px] max-h-48",
+          className
+        )}
+      >
+        <div className="w-8 h-8 border-4 border-brand-primary border-t-transparent rounded-full animate-spin" />
+        <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 mt-3">Loading image</span>
+      </div>
+    )
+  }
   if (!resolvedSrc) return null
   return (
     <div className={cn("rounded-xl overflow-hidden border border-app-border bg-app-bg", className)}>
