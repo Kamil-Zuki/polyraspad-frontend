@@ -3,14 +3,32 @@
 import { useRouter } from "next/navigation"
 import { Eye } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useProjectContext } from "@/contexts/project-context"
+import { useDeckTree } from "@/lib/react-query/queries"
 
 interface EditorHeaderProps {
   isPreviewMode?: boolean
   onTogglePreview?: () => void
+  selectedDeckId: string
+  onSelectedDeckIdChange: (deckId: string) => void
 }
 
-export function EditorHeader({ isPreviewMode, onTogglePreview }: EditorHeaderProps) {
+function flattenDeckTree(tree: { id: string; title: string; cardCount?: number; children?: unknown[] }[]): { id: string; title: string; cardCount?: number }[] {
+  const result: { id: string; title: string; cardCount?: number }[] = []
+  for (const node of tree) {
+    result.push({ id: node.id, title: node.title, cardCount: node.cardCount })
+    if (node.children?.length) {
+      result.push(...flattenDeckTree(node.children as { id: string; title: string; cardCount?: number; children?: unknown[] }[]))
+    }
+  }
+  return result
+}
+
+export function EditorHeader({ isPreviewMode, onTogglePreview, selectedDeckId, onSelectedDeckIdChange }: EditorHeaderProps) {
   const router = useRouter()
+  const { currentProject } = useProjectContext()
+  const { data: deckTree } = useDeckTree(currentProject?.id ?? "")
+  const flatDecks = deckTree ? flattenDeckTree(deckTree) : []
 
   return (
     <header className="h-16 glass sticky top-0 z-20 border-b border-app-border flex items-center justify-between px-6">
@@ -34,14 +52,26 @@ export function EditorHeader({ isPreviewMode, onTogglePreview }: EditorHeaderPro
         <div className="h-6 w-px bg-app-border mx-1" />
         <h1 className="text-lg font-bold text-white tracking-tight">Create Card</h1>
         <div className="h-6 w-px bg-app-border mx-1" />
-        
+
         {/* Deck Selector */}
-        <div className="relative group">
-          <button className="flex items-center gap-2.5 text-xs font-bold uppercase tracking-widest text-gray-400 hover:text-white bg-app-bg px-4 py-2 rounded-xl border border-white/5 hover:border-brand-primary/30 transition-all">
-            <i className="fas fa-folder text-brand-primary" />
-            <span>English Vocabulary</span>
-            <i className="fas fa-chevron-down text-[10px] ml-1 opacity-50" />
-          </button>
+        <div className="flex items-center gap-2">
+          <i className="fas fa-folder text-brand-primary text-sm" aria-hidden />
+          <select
+            value={selectedDeckId}
+            onChange={(e) => onSelectedDeckIdChange(e.target.value)}
+            className="text-sm text-gray-300 hover:text-white bg-app-bg pl-4 pr-10 py-2.5 rounded-xl border border-white/10 hover:border-brand-primary/30 transition-all appearance-none cursor-pointer min-w-[180px] input-dark"
+            aria-label="Select deck"
+          >
+            {flatDecks.length === 0 ? (
+              <option value="">Choose a deck...</option>
+            ) : (
+              flatDecks.map((deck) => (
+                <option key={deck.id} value={deck.id}>
+                  {deck.title} ({deck.cardCount ?? 0})
+                </option>
+              ))
+            )}
+          </select>
         </div>
       </div>
 
@@ -65,9 +95,9 @@ export function EditorHeader({ isPreviewMode, onTogglePreview }: EditorHeaderPro
         )}
         <div className="hidden sm:flex items-center gap-2">
           <div className="w-1.5 h-1.5 rounded-full bg-status-success shadow-[0_0_8px_#10B981]" />
-          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Autosaved</span>
+          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Changes saved</span>
         </div>
-        <button className="btn-primary px-8 py-2.5 text-sm shadow-glow shadow-brand-primary/20">
+        <button type="submit" form="editor-form" className="btn-primary px-8 py-2.5 text-sm shadow-glow shadow-brand-primary/20">
           Save Card
         </button>
       </div>

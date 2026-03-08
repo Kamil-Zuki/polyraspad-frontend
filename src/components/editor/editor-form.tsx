@@ -7,14 +7,19 @@ import { useProjectContext } from "@/contexts/project-context";
 import { useEditorCard } from "@/contexts/editor-card-context";
 import { useDeckTree } from "@/lib/react-query/queries";
 import { useCreateCard } from "@/lib/react-query/queries";
-import { CreateCardDto } from "@/lib/api/types";
+import { CreateCardDto, SourceMetaDto } from "@/lib/api/types";
 import { uploadImage } from "@/lib/api/media-client";
 import { getPreviewImageSrc } from "@/lib/utils/media-preview-url";
 import { PreviewImage } from "@/components/editor/card-preview";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-export function EditorForm() {
+export interface EditorFormProps {
+  selectedDeckId?: string;
+  onSelectedDeckIdChange?: (deckId: string) => void;
+}
+
+export function EditorForm({ selectedDeckId: selectedDeckIdProp, onSelectedDeckIdChange }: EditorFormProps) {
   const router = useRouter();
   const { currentProject } = useProjectContext();
   const {
@@ -39,7 +44,9 @@ export function EditorForm() {
   const { data: deckTree } = useDeckTree(currentProject?.id || "");
   const createCard = useCreateCard();
 
-  const [selectedDeckId, setSelectedDeckId] = useState<string>("");
+  const [internalDeckId, setInternalDeckId] = useState<string>("");
+  const selectedDeckId = selectedDeckIdProp ?? internalDeckId;
+  const setSelectedDeckId = onSelectedDeckIdChange ?? setInternalDeckId;
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
@@ -48,19 +55,24 @@ export function EditorForm() {
   const [showAudioUrlInput, setShowAudioUrlInput] = useState(false);
   const [imagePreviewError, setImagePreviewError] = useState(false);
   const [imageUploadError, setImageUploadError] = useState("");
+  const [sourceMeta, setSourceMeta] = useState<SourceMetaDto | null>(null);
+  const [showAddSource, setShowAddSource] = useState(false);
+  const [sourceForm, setSourceForm] = useState<{ type: string; title: string; url: string; timestamp: number }>({ type: "youtube", title: "", url: "", timestamp: 0 });
   const imageFileInputRef = useRef<HTMLInputElement>(null);
+  const sentenceTextareaRef = useRef<HTMLTextAreaElement>(null);
   /** Pending image blob: uploaded to MinIO only when user clicks Create Card */
   const pendingImageBlobRef = useRef<Blob | null>(null);
   const previewBlobUrlRef = useRef<string | null>(null);
 
-  // Get first available deck as default (after data loads)
+  // Get first available deck as default (after data loads) when using internal state
   useEffect(() => {
+    if (onSelectedDeckIdChange != null) return;
     if (selectedDeckId) return;
     if (!deckTree || deckTree.length === 0) return;
 
     const firstDeck = findFirstDeck(deckTree);
-    if (firstDeck?.id) setSelectedDeckId(firstDeck.id);
-  }, [deckTree, selectedDeckId]);
+    if (firstDeck?.id) setInternalDeckId(firstDeck.id);
+  }, [deckTree, selectedDeckId, onSelectedDeckIdChange]);
 
   useEffect(() => {
     setImagePreviewError(false);
@@ -168,6 +180,17 @@ export function EditorForm() {
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [setPendingImageBlob]);
 
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+        e.preventDefault();
+        (document.getElementById("editor-form") as HTMLFormElement | null)?.requestSubmit();
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -185,7 +208,7 @@ export function EditorForm() {
     setIsSubmitting(true);
     try {
       let imageUrlToSend = imageUrl.trim();
-      let imageIdToSend = imageId?.trim();
+      let imageIdToSend: string | undefined = imageId?.trim() || undefined;
 
       if (pendingImageBlobRef.current) {
         const { url, imageId: uploadedImageId } = await uploadImage(pendingImageBlobRef.current);
@@ -201,6 +224,7 @@ export function EditorForm() {
         ...(imageUrlToSend ? { imageUrl: imageUrlToSend } : {}),
         ...(imageIdToSend ? { imageId: imageIdToSend } : {}),
         ...(audioUrl.trim() ? { audioUrl: audioUrl.trim() } : {}),
+        ...(sourceMeta ? { sourceMeta } : {}),
       };
 
       await createCard.mutateAsync(cardData);
@@ -214,8 +238,11 @@ export function EditorForm() {
       setShowImageUrlInput(false);
       setShowAudioUrlInput(false);
       setImagePreviewError(false);
+      setSourceMeta(null);
+      setShowAddSource(false);
 
-      alert("Card created successfully!");
+      alert("Saved!");
+      sentenceTextareaRef.current?.focus();
     } catch (err: any) {
       setError(err.message || "Failed to create card");
     } finally {
@@ -225,36 +252,10 @@ export function EditorForm() {
 
   return (
     <form
+      id="editor-form"
       onSubmit={handleSubmit}
       className="max-w-3xl mx-auto space-y-8 relative z-10 py-12 px-6 animate-in fade-in slide-in-from-bottom-4 duration-700"
     >
-      {/* Deck Selection */}
-      {deckTree && deckTree.length > 0 && (
-        <section className="glass-panel p-6 rounded-2xl border-app-border">
-          <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">
-            Select Deck
-          </label>
-          <div className="relative">
-            <select
-              value={selectedDeckId}
-              onChange={(e) => setSelectedDeckId(e.target.value)}
-              className="input-dark w-full appearance-none cursor-pointer pr-10"
-              required
-            >
-              <option value="">Choose a deck...</option>
-              {flattenDeckTree(deckTree).map((deck) => (
-                <option key={deck.id} value={deck.id}>
-                  {deck.title} ({deck.cardCount} cards)
-                </option>
-              ))}
-            </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-gray-500">
-              <i className="fas fa-chevron-down text-xs opacity-70" />
-            </div>
-          </div>
-        </section>
-      )}
-
       {error && (
         <div className="glass-panel p-4 rounded-xl border-red-500/30 bg-red-500/10">
           <div className="text-red-400 text-sm flex items-center gap-2">
@@ -271,8 +272,25 @@ export function EditorForm() {
         </label>
         <div className="relative group">
           <textarea
+            ref={sentenceTextareaRef}
             value={sentence}
             onChange={(e) => setSentence(e.target.value)}
+            onMouseUp={(e) => {
+              const ta = e.currentTarget
+              const start = ta.selectionStart
+              const end = ta.selectionEnd
+              if (start === end) return
+              const selected = sentence.slice(start, end).trim()
+              if (selected && /^\S+$/.test(selected)) setTargetWord(selected)
+            }}
+            onKeyUp={(e) => {
+              const ta = e.currentTarget
+              const start = ta.selectionStart
+              const end = ta.selectionEnd
+              if (start === end) return
+              const selected = sentence.slice(start, end).trim()
+              if (selected && /^\S+$/.test(selected)) setTargetWord(selected)
+            }}
             className="input-dark w-full p-5 rounded-2xl text-xl min-h-[140px] resize-none leading-relaxed"
             placeholder="Type or paste your sentence here..."
             required
@@ -615,28 +633,114 @@ export function EditorForm() {
           Source Information
         </label>
         <div className="space-y-4">
-          <div className="bg-app-bg p-5 rounded-2xl border border-white/5 flex items-center gap-4 group">
-            <div className="w-12 h-12 bg-red-600/10 text-red-500 rounded-xl flex items-center justify-center border border-red-500/20 shadow-lg">
-              <i className="fab fa-youtube text-2xl" />
+          {sourceMeta && (
+            <div className="bg-app-bg p-5 rounded-2xl border border-white/5 flex items-center gap-4 group">
+              <div className={cn(
+                "w-12 h-12 rounded-xl flex items-center justify-center border shadow-lg",
+                sourceMeta.type === "youtube"
+                  ? "bg-red-600/10 text-red-500 border-red-500/20"
+                  : "bg-app-surface text-gray-400 border-white/10",
+              )}>
+                {sourceMeta.type === "youtube" ? (
+                  <i className="fab fa-youtube text-2xl" />
+                ) : (
+                  <i className="fas fa-book text-xl" />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-[9px] text-gray-500 uppercase font-bold tracking-widest mb-1">
+                  {sourceMeta.type === "youtube" ? "YouTube Video" : sourceMeta.type}
+                </div>
+                <div className="text-sm text-white font-bold truncate">{sourceMeta.title}</div>
+                {(sourceMeta.timestamp != null || sourceMeta.url) && (
+                  <div className="text-[10px] text-gray-400 font-medium">
+                    {sourceMeta.timestamp != null && `Timestamp: ${Math.floor((sourceMeta.timestamp ?? 0) / 60)}:${String((sourceMeta.timestamp ?? 0) % 60).padStart(2, "0")}`}
+                    {sourceMeta.timestamp != null && sourceMeta.url && " · "}
+                    {sourceMeta.url && <span className="truncate block max-w-[200px]">{sourceMeta.url}</span>}
+                  </div>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setSourceMeta(null)}
+                className="text-gray-600 hover:text-white transition-colors p-2"
+                aria-label="Remove source"
+              >
+                <i className="fas fa-times" />
+              </button>
             </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-[9px] text-gray-500 uppercase font-bold tracking-widest mb-1">
-                YouTube Video
-              </div>
-              <div className="text-sm text-white font-bold truncate">
-                Kurzgesagt – In a Nutshell: Why we do what we do
-              </div>
-              <div className="text-[10px] text-gray-400 font-medium">
-                Timestamp: 04:20
+          )}
+          {showAddSource ? (
+            <div className="bg-app-bg p-5 rounded-2xl border border-white/5 space-y-3">
+              <select
+                value={sourceForm.type}
+                onChange={(e) => setSourceForm((s) => ({ ...s, type: e.target.value }))}
+                className="input-dark w-full py-2 px-3 rounded-lg text-sm"
+              >
+                <option value="youtube">YouTube Video</option>
+                <option value="book">Book</option>
+              </select>
+              <input
+                type="text"
+                value={sourceForm.title}
+                onChange={(e) => setSourceForm((s) => ({ ...s, title: e.target.value }))}
+                placeholder="Title"
+                className="input-dark w-full py-2 px-3 rounded-lg text-sm"
+              />
+              {sourceForm.type === "youtube" && (
+                <>
+                  <input
+                    type="url"
+                    value={sourceForm.url}
+                    onChange={(e) => setSourceForm((s) => ({ ...s, url: e.target.value }))}
+                    placeholder="URL"
+                    className="input-dark w-full py-2 px-3 rounded-lg text-sm"
+                  />
+                  <input
+                    type="number"
+                    min={0}
+                    value={sourceForm.timestamp || ""}
+                    onChange={(e) => setSourceForm((s) => ({ ...s, timestamp: e.target.value ? Number(e.target.value) : 0 }))}
+                    placeholder="Timestamp (seconds)"
+                    className="input-dark w-full py-2 px-3 rounded-lg text-sm"
+                  />
+                </>
+              )}
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const meta: SourceMetaDto = {
+                      type: sourceForm.type,
+                      title: sourceForm.title || sourceForm.type,
+                      ...(sourceForm.type === "youtube" && sourceForm.url ? { url: sourceForm.url, timestamp: sourceForm.timestamp || undefined, service: "youtube" } : {}),
+                    };
+                    setSourceMeta(meta);
+                    setShowAddSource(false);
+                    setSourceForm({ type: "youtube", title: "", url: "", timestamp: 0 });
+                  }}
+                  className="btn-primary py-2 px-4 text-sm"
+                >
+                  Add
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setShowAddSource(false); setSourceForm({ type: "youtube", title: "", url: "", timestamp: 0 }); }}
+                  className="btn-secondary py-2 px-4 text-sm"
+                >
+                  Cancel
+                </button>
               </div>
             </div>
-            <button className="text-gray-600 hover:text-white transition-colors p-2">
-              <i className="fas fa-times" />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setShowAddSource(true)}
+              className="w-full py-3.5 bg-app-bg hover:bg-app-hover border border-white/5 rounded-2xl text-[10px] font-bold uppercase tracking-widest text-gray-500 hover:text-white transition-all flex items-center justify-center gap-2"
+            >
+              <i className="fas fa-plus" /> Add Source Reference
             </button>
-          </div>
-          <button className="w-full py-3.5 bg-app-bg hover:bg-app-hover border border-white/5 rounded-2xl text-[10px] font-bold uppercase tracking-widest text-gray-500 hover:text-white transition-all flex items-center justify-center gap-2">
-            <i className="fas fa-plus" /> Add Source Reference
-          </button>
+          )}
         </div>
       </section>
 

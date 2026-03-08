@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { AnimatePresence, motion } from "framer-motion"
 import { EditorHeader } from "@/components/editor/editor-header"
 import { EditorForm } from "@/components/editor/editor-form"
@@ -9,9 +9,29 @@ import { EditorCardHydrator } from "@/components/editor/editor-card-hydrator"
 import { AiAssistant } from "@/components/editor/ai-assistant"
 import { ProtectedRoute } from "@/components/auth/protected-route"
 import { EditorCardProvider } from "@/contexts/editor-card-context"
+import { useProjectContext } from "@/contexts/project-context"
+import { useDeckTree } from "@/lib/react-query/queries"
+
+function findFirstDeckId(tree: { id: string; children?: unknown[] }[]): string | null {
+  for (const node of tree) {
+    if (!node.children?.length) return node.id
+    const found = findFirstDeckId(node.children as { id: string; children?: unknown[] }[])
+    if (found) return found
+  }
+  return null
+}
 
 export default function EditorPage() {
   const [isPreviewMode, setIsPreviewMode] = useState(false)
+  const [selectedDeckId, setSelectedDeckId] = useState("")
+  const { currentProject } = useProjectContext()
+  const { data: deckTree } = useDeckTree(currentProject?.id ?? "")
+
+  useEffect(() => {
+    if (selectedDeckId || !deckTree?.length) return
+    const first = findFirstDeckId(deckTree)
+    if (first) setSelectedDeckId(first)
+  }, [deckTree, selectedDeckId])
 
   return (
     <ProtectedRoute>
@@ -21,6 +41,8 @@ export default function EditorPage() {
           <EditorHeader
             isPreviewMode={isPreviewMode}
             onTogglePreview={() => setIsPreviewMode((v) => !v)}
+            selectedDeckId={selectedDeckId}
+            onSelectedDeckIdChange={setSelectedDeckId}
           />
           <div className="flex-1 flex overflow-hidden">
             {/* Main Area: form + optional preview (split on desktop, stack on mobile) */}
@@ -28,7 +50,10 @@ export default function EditorPage() {
               <div className="flex-1 overflow-y-auto relative custom-scroll min-w-0 flex flex-col">
                 <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-brand-primary/5 to-transparent pointer-events-none" />
                 <div className="relative z-10">
-                  <EditorForm />
+                  <EditorForm
+            selectedDeckId={selectedDeckId}
+            onSelectedDeckIdChange={setSelectedDeckId}
+          />
                   {/* Mobile: preview below form when Preview Mode is on */}
                   <AnimatePresence initial={false}>
                     {isPreviewMode && (
