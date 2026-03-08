@@ -89,6 +89,19 @@ export interface DeckResponseDto {
   createdAt: string;
 }
 
+/** Stats returned by GET /api/Decks/{id} (DeckDetailDto) */
+export interface DeckDetailStatsDto {
+  newCardsCount: number;
+  learningCardsCount: number;
+  dueCardsCount: number;
+  totalCardsCount: number;
+}
+
+/** Deck detail with SRS stats (GET /api/Decks/{id}) */
+export interface DeckDetailDto extends DeckResponseDto {
+  stats?: DeckDetailStatsDto;
+}
+
 export enum ContributionPolicyDto {
   Open = 0,
   Restricted = 1,
@@ -281,4 +294,73 @@ export interface ConfirmEmailDto {
   token: string;
 }
 
+// Study session types (SR-LRN-01, SR-LRN-02, SR-LRN-03, SR-LRN-08)
+export interface StartSessionRequestDto {
+  projectId: string;
+  deckId?: string | null;
+  mode?: string | null; // STANDARD, etc.
+}
+
+export interface QueueStatsDto {
+  new: number;
+  review: number;
+  learning: number;
+}
+
+export interface StudySessionDto {
+  id: string;
+  projectId: string;
+  status: string; // ACTIVE, COMPLETED
+  startTime: string;
+  cardsReviewed: number;
+  queueStats: QueueStatsDto;
+}
+
+export interface CardStudyContentDto {
+  sentence: string;
+  targetIndex: { start: number; len: number };
+  targetLemma?: string | null;
+  translation: string;
+}
+
+export interface SrsStateDto {
+  state: string; // NEW, LEARNING, REVIEW, MATURE
+  currentInterval: number;
+}
+
+export interface CardStudyDto {
+  id: string;
+  type: string; // SENTENCE_MINING
+  content: CardStudyContentDto;
+  media?: CardMediaDto | null;
+  srsState: SrsStateDto;
+  siblingsCount: number;
+}
+
+export interface ReviewCardRequestDto {
+  cardId: string;
+  rating: number; // 1=Again, 2=Hard, 3=Good, 4=Easy
+  durationMs: number;
+  userAnswer?: string | null;
+}
+
+export interface ReviewResponseDto {
+  cardId: string;
+  nextReviewDate: string;
+  interval: string;
+  state: string;
+  stability: number;
+  isLeech?: boolean;
+  buriedSiblingsCount?: number;
+}
+
+export interface UndoReviewRequestDto {
+  sessionId?: string | null;
+}
+
+export interface UndoResponseDto {
+  success: boolean;
+  restoredCardId: string;
+  message?: string | null;
+}
 

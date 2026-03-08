@@ -58,6 +58,12 @@ export const API_ENDPOINTS = {
       return `/api/analytics/daily${params.toString() ? `?${params.toString()}` : ''}`
     },
   },
+  STUDY: {
+    START_SESSION: "/api/study/session",
+    NEXT_CARD: (sessionId: string) => `/api/study/session/${sessionId}/next`,
+    SUBMIT_REVIEW: (sessionId: string) => `/api/study/session/${sessionId}/review`,
+    UNDO: (sessionId: string) => `/api/study/session/${sessionId}/undo`,
+  },
 } as const
 
 export const ROUTES = {

@@ -47,9 +47,11 @@ export function EditorForm() {
   const [showImageActionChoice, setShowImageActionChoice] = useState(false);
   const [showAudioUrlInput, setShowAudioUrlInput] = useState(false);
   const [imagePreviewError, setImagePreviewError] = useState(false);
-  const [isImageUploading, setIsImageUploading] = useState(false);
   const [imageUploadError, setImageUploadError] = useState("");
   const imageFileInputRef = useRef<HTMLInputElement>(null);
+  /** Pending image blob: uploaded to MinIO only when user clicks Create Card */
+  const pendingImageBlobRef = useRef<Blob | null>(null);
+  const previewBlobUrlRef = useRef<string | null>(null);
 
   // Get first available deck as default (after data loads)
   useEffect(() => {
@@ -64,6 +66,44 @@ export function EditorForm() {
     setImagePreviewError(false);
   }, [imageUrl]);
 
+  useEffect(() => {
+    return () => {
+      if (previewBlobUrlRef.current) {
+        URL.revokeObjectURL(previewBlobUrlRef.current);
+        previewBlobUrlRef.current = null;
+      }
+      pendingImageBlobRef.current = null;
+    };
+  }, []);
+
+  const clearPendingImage = useCallback(() => {
+    if (previewBlobUrlRef.current) {
+      URL.revokeObjectURL(previewBlobUrlRef.current);
+      previewBlobUrlRef.current = null;
+    }
+    pendingImageBlobRef.current = null;
+    setImageUrl("");
+    setImageId("");
+  }, [setImageUrl, setImageId]);
+
+  const setPendingImageBlob = useCallback(
+    (blob: Blob) => {
+      if (previewBlobUrlRef.current) {
+        URL.revokeObjectURL(previewBlobUrlRef.current);
+        previewBlobUrlRef.current = null;
+      }
+      pendingImageBlobRef.current = blob;
+      const url = URL.createObjectURL(blob);
+      previewBlobUrlRef.current = url;
+      setImageUrl(url);
+      setImageId("");
+      setImageUploadError("");
+      setImagePreviewError(false);
+      setShowImageActionChoice(false);
+    },
+    [setImageUrl, setImageId]
+  );
+
   const handleAiTranslate = async () => {
     if (isTranslating) return;
 
@@ -77,26 +117,6 @@ export function EditorForm() {
     }
   };
 
-  const uploadImageAndSetUrl = useCallback(
-    async (file: File | Blob) => {
-      setImageUploadError("");
-      setIsImageUploading(true);
-      try {
-        const { url, imageId: uploadedImageId } = await uploadImage(file);
-        setImageUrl(url);
-        if (uploadedImageId) setImageId(uploadedImageId);
-        setImagePreviewError(false);
-        setShowImageActionChoice(false);
-      } catch (err: unknown) {
-        const message = err && typeof err === "object" && "message" in err ? String((err as { message: string }).message) : "Upload failed";
-        setImageUploadError(message);
-      } finally {
-        setIsImageUploading(false);
-      }
-    },
-    [setImageUrl, setImageId]
-  );
-
   const handlePasteFromClipboard = useCallback(async () => {
     try {
       const items = await navigator.clipboard.read();
@@ -104,7 +124,7 @@ export function EditorForm() {
         for (const type of item.types) {
           if (type.startsWith("image/")) {
             const blob = await item.getType(type);
-            await uploadImageAndSetUrl(blob);
+            setPendingImageBlob(blob);
             return;
           }
         }
@@ -113,17 +133,17 @@ export function EditorForm() {
     } catch (e) {
       setImageUploadError("Clipboard access denied or no image");
     }
-  }, [uploadImageAndSetUrl]);
+  }, [setPendingImageBlob]);
 
   const handleImageFileSelect = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (file && file.type.startsWith("image/")) {
-        uploadImageAndSetUrl(file);
+        setPendingImageBlob(file);
       }
       e.target.value = "";
     },
-    [uploadImageAndSetUrl]
+    [setPendingImageBlob]
   );
 
   useEffect(() => {
@@ -131,13 +151,12 @@ export function EditorForm() {
       if ((e.ctrlKey || e.metaKey) && e.key === "v") {
         const target = e.target as HTMLElement;
         if (target.closest('input[type="url"]') || target.closest("textarea") || target.closest('input[type="text"]')) return;
-        if (isImageUploading) return;
         navigator.clipboard.read().then((items) => {
           for (const item of items) {
             for (const type of item.types) {
               if (type.startsWith("image/")) {
                 e.preventDefault();
-                item.getType(type).then((blob) => uploadImageAndSetUrl(blob));
+                item.getType(type).then((blob) => setPendingImageBlob(blob));
                 return;
               }
             }
@@ -147,7 +166,7 @@ export function EditorForm() {
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [uploadImageAndSetUrl, isImageUploading]);
+  }, [setPendingImageBlob]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -165,34 +184,38 @@ export function EditorForm() {
 
     setIsSubmitting(true);
     try {
+      let imageUrlToSend = imageUrl.trim();
+      let imageIdToSend = imageId?.trim();
+
+      if (pendingImageBlobRef.current) {
+        const { url, imageId: uploadedImageId } = await uploadImage(pendingImageBlobRef.current);
+        imageUrlToSend = url;
+        imageIdToSend = uploadedImageId ?? undefined;
+      }
+
       const cardData: CreateCardDto = {
         deckId: selectedDeckId,
         sentence,
         targetWord,
         translation,
-        ...(imageUrl.trim() ? { imageUrl: imageUrl.trim() } : {}),
-        ...(imageId?.trim() ? { imageId: imageId.trim() } : {}),
+        ...(imageUrlToSend ? { imageUrl: imageUrlToSend } : {}),
+        ...(imageIdToSend ? { imageId: imageIdToSend } : {}),
         ...(audioUrl.trim() ? { audioUrl: audioUrl.trim() } : {}),
       };
 
       await createCard.mutateAsync(cardData);
 
-      // Reset form
+      // Reset form and revoke pending image blob URL
+      clearPendingImage();
       setSentence("");
       setTargetWord("");
       setTranslation("");
-      setImageUrl("");
-      setImageId("");
       setAudioUrl("");
       setShowImageUrlInput(false);
       setShowAudioUrlInput(false);
       setImagePreviewError(false);
 
-      // Show success message (could use a toast library)
       alert("Card created successfully!");
-
-      // Optionally navigate back
-      // router.push("/library")
     } catch (err: any) {
       setError(err.message || "Failed to create card");
     } finally {
@@ -339,15 +362,10 @@ export function EditorForm() {
             onDrop={(e) => {
               e.preventDefault();
               const file = e.dataTransfer.files?.[0];
-              if (file && file.type.startsWith("image/") && !isImageUploading) uploadImageAndSetUrl(file);
+              if (file && file.type.startsWith("image/")) setPendingImageBlob(file);
             }}
             onDragOver={(e) => e.preventDefault()}
           >
-            {isImageUploading && (
-              <div className="absolute inset-0 bg-app-bg/90 flex items-center justify-center z-20">
-                <i className="fas fa-spinner fa-spin text-2xl text-brand-primary" />
-              </div>
-            )}
             {imageUrl.trim() && !imagePreviewError ? (
               <PreviewImage
                 src={previewImageSrc}
@@ -394,7 +412,6 @@ export function EditorForm() {
                         e.stopPropagation();
                         handlePasteFromClipboard();
                       }}
-                      disabled={isImageUploading}
                     >
                       <i className="fas fa-paste text-xs" /> From clipboard
                     </button>
@@ -405,7 +422,6 @@ export function EditorForm() {
                         e.stopPropagation();
                         imageFileInputRef.current?.click();
                       }}
-                      disabled={isImageUploading}
                     >
                       <i className="fas fa-folder-open text-xs" /> From device
                     </button>
@@ -415,6 +431,7 @@ export function EditorForm() {
                     className="w-full py-2 bg-app-surface/80 hover:bg-app-surface border border-white/10 rounded-xl text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-white transition-all"
                     onClick={(e) => {
                       e.stopPropagation();
+                      clearPendingImage();
                       setShowImageActionChoice(false);
                       setShowImageUrlInput(true);
                     }}
@@ -451,8 +468,7 @@ export function EditorForm() {
                       className="btn-secondary px-3 py-2 text-xs"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setImageUrl("");
-                        setImageId("");
+                        clearPendingImage();
                         setImagePreviewError(false);
                       }}
                     >
@@ -461,16 +477,31 @@ export function EditorForm() {
                   )}
                 </div>
               ) : (
-                <button
-                  type="button"
-                  className="w-full py-2 bg-app-surface/80 hover:bg-app-surface border border-white/10 rounded-xl text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-white transition-all"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowImageActionChoice(true);
-                  }}
-                >
-                  Add image
-                </button>
+                <div className="flex gap-2 w-full">
+                  <button
+                    type="button"
+                    className="flex-1 py-2 bg-app-surface/80 hover:bg-app-surface border border-white/10 rounded-xl text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-white transition-all"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowImageActionChoice(true);
+                    }}
+                  >
+                    {imageUrl.trim() ? "Change image" : "Add image"}
+                  </button>
+                  {imageUrl.trim() && (
+                    <button
+                      type="button"
+                      className="py-2 px-3 bg-app-surface/80 hover:bg-app-surface border border-white/10 rounded-xl text-[10px] font-bold uppercase tracking-widest text-gray-500 hover:text-red-400 transition-all"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        clearPendingImage();
+                        setImagePreviewError(false);
+                      }}
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
               )}
             </div>
           </div>

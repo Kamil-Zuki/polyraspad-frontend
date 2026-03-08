@@ -4,9 +4,10 @@ interface StudyControlsProps {
   onRate: (rating: 1 | 2 | 3 | 4) => void;
   isRevealed: boolean;
   onReveal: () => void;
+  disabled?: boolean;
 }
 
-export function StudyControls({ onRate, isRevealed, onReveal }: StudyControlsProps) {
+export function StudyControls({ onRate, isRevealed, onReveal, disabled }: StudyControlsProps) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!isRevealed) {
@@ -30,7 +31,8 @@ export function StudyControls({ onRate, isRevealed, onReveal }: StudyControlsPro
       <footer className="h-32 flex flex-col items-center justify-center pb-8 z-20">
         <button 
           onClick={onReveal}
-          className="px-12 py-4 bg-brand-primary text-white rounded-2xl font-bold shadow-glow hover:brightness-110 transition active:scale-95"
+          disabled={disabled}
+          className="px-12 py-4 bg-brand-primary text-white rounded-2xl font-bold shadow-glow hover:brightness-110 transition active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
         >
           Show Answer
         </button>
@@ -48,7 +50,8 @@ export function StudyControls({ onRate, isRevealed, onReveal }: StudyControlsPro
         {/* Again */}
         <button 
           onClick={() => onRate(1)}
-          className="bg-white/5 border border-white/5 hover:bg-status-again/10 hover:border-status-again/30 p-3 rounded-xl flex flex-col items-center group transition-all duration-200"
+          disabled={disabled}
+          className="bg-white/5 border border-white/5 hover:bg-status-again/10 hover:border-status-again/30 p-3 rounded-xl flex flex-col items-center group transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none"
         >
           <span className="text-xs font-bold text-gray-500 uppercase mb-1 group-hover:text-status-again transition">Again</span>
           <span className="text-lg font-bold text-status-again text-rose-400">1m</span>
@@ -58,7 +61,8 @@ export function StudyControls({ onRate, isRevealed, onReveal }: StudyControlsPro
         {/* Hard */}
         <button 
           onClick={() => onRate(2)}
-          className="bg-white/5 border border-white/5 hover:bg-status-hard/10 hover:border-status-hard/30 p-3 rounded-xl flex flex-col items-center group transition-all duration-200"
+          disabled={disabled}
+          className="bg-white/5 border border-white/5 hover:bg-status-hard/10 hover:border-status-hard/30 p-3 rounded-xl flex flex-col items-center group transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none"
         >
           <span className="text-xs font-bold text-gray-500 uppercase mb-1 group-hover:text-status-hard transition">Hard</span>
           <span className="text-lg font-bold text-status-hard text-amber-400">2d</span>
@@ -68,7 +72,8 @@ export function StudyControls({ onRate, isRevealed, onReveal }: StudyControlsPro
         {/* Good */}
         <button 
           onClick={() => onRate(3)}
-          className="bg-brand-primary/10 border border-brand-primary/20 hover:bg-status-good/10 hover:border-status-good/30 p-3 rounded-xl flex flex-col items-center group transition-all duration-200"
+          disabled={disabled}
+          className="bg-brand-primary/10 border border-brand-primary/20 hover:bg-status-good/10 hover:border-status-good/30 p-3 rounded-xl flex flex-col items-center group transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none"
         >
           <span className="text-xs font-bold text-gray-500 uppercase mb-1 group-hover:text-status-good transition">Good</span>
           <span className="text-lg font-bold text-status-good text-emerald-400">5d</span>
@@ -78,7 +83,8 @@ export function StudyControls({ onRate, isRevealed, onReveal }: StudyControlsPro
         {/* Easy */}
         <button 
           onClick={() => onRate(4)}
-          className="bg-white/5 border border-white/5 hover:bg-status-easy/10 hover:border-status-easy/30 p-3 rounded-xl flex flex-col items-center group transition-all duration-200"
+          disabled={disabled}
+          className="bg-white/5 border border-white/5 hover:bg-status-easy/10 hover:border-status-easy/30 p-3 rounded-xl flex flex-col items-center group transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none"
         >
           <span className="text-xs font-bold text-gray-500 uppercase mb-1 group-hover:text-status-easy transition">Easy</span>
           <span className="text-lg font-bold text-status-easy text-cyan-400">14d</span>

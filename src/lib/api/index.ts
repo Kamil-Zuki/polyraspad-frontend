@@ -5,6 +5,7 @@ export { DeckClient } from "./deck-client";
 export { CardClient } from "./card-client";
 export { UserSettingsClient } from "./user-settings-client";
 export { AnalyticsClient } from "./analytics-client";
+export { StudyClient } from "./study-client";
 export { uploadImage } from "./media-client";
 export type { UploadImageResponse } from "./media-client";
 
@@ -15,6 +16,7 @@ import { DeckClient } from "./deck-client";
 import { CardClient } from "./card-client";
 import { UserSettingsClient } from "./user-settings-client";
 import { AnalyticsClient } from "./analytics-client";
+import { StudyClient } from "./study-client";
 
 class ApiClient {
   auth = new AuthClient();
@@ -23,6 +25,7 @@ class ApiClient {
   cards = new CardClient();
   userSettings = new UserSettingsClient();
   analytics = new AnalyticsClient();
+  study = new StudyClient();
 }
 
 export const apiClient = new ApiClient();

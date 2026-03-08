@@ -31,9 +31,6 @@ function getBreadcrumbPath(
   return null;
 }
 
-// Stats placeholder until API provides SRS counts per deck
-const DEFAULT_STATS = { newCount: 10, learningCount: 5, toReviewCount: 15 };
-const DUE_TODAY = 25;
 
 function DeckOverviewSkeleton() {
   return (
@@ -89,12 +86,12 @@ export default function DeckOverviewPage() {
 
   const stats = useMemo(
     () =>
-      deck
+      deck?.stats
         ? {
-            newCount: DEFAULT_STATS.newCount,
-            learningCount: DEFAULT_STATS.learningCount,
-            toReviewCount: DEFAULT_STATS.toReviewCount,
-            dueToday: DUE_TODAY,
+            newCount: deck.stats.newCardsCount,
+            learningCount: deck.stats.learningCardsCount,
+            toReviewCount: deck.stats.dueCardsCount,
+            dueToday: deck.stats.dueCardsCount,
           }
         : null,
     [deck],

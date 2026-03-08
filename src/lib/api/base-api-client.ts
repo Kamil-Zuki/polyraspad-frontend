@@ -112,4 +112,58 @@ export abstract class BaseApiClient {
 
     return response.json();
   }
+
+  /**
+   * Same as request() but returns null when response is 204 No Content (e.g. study session finished).
+   */
+  protected async requestOrNoContent<T>(
+    endpoint: string,
+    options: RequestInit = {}
+  ): Promise<T | null> {
+    const url = `${API_BASE_URL}${endpoint}`;
+    const config: RequestInit = {
+      ...options,
+      headers: {
+        ...this.getAuthHeaders(),
+        ...options.headers,
+      },
+    };
+
+    if (process.env.NODE_ENV === "development") {
+      console.log(`[API] ${options.method || "GET"} ${url}`, { body: options.body });
+    }
+
+    const response = await fetch(url, config);
+
+    if (response.status === 401) {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+        window.location.href = "/auth";
+      }
+      throw ApiError.fromResponse({ detail: "Unauthorized" }, response.status);
+    }
+
+    if (response.status === 204) {
+      return null;
+    }
+
+    if (!response.ok) {
+      let error: any = { detail: "Unknown error" };
+      const contentType = response.headers.get("content-type");
+      try {
+        if (contentType?.includes("application/json")) {
+          error = await response.json();
+          if (error.error && !error.detail) error.detail = error.error;
+        } else {
+          error = { detail: await response.text().catch(() => "") || `HTTP ${response.status}` };
+        }
+      } catch {
+        error = { detail: `HTTP ${response.status}: ${response.statusText}` };
+      }
+      throw ApiError.fromResponse(error, response.status);
+    }
+
+    return response.json();
+  }
 }

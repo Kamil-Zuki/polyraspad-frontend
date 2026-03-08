@@ -20,6 +20,10 @@ export function getPreviewImageSrc(options: {
   }
 
   const url = imageUrl.trim()
+  // data: and blob: URLs are usable directly in <img>; do not proxy (BFF cannot fetch them)
+  if (url.startsWith("data:") || url.startsWith("blob:")) {
+    return url
+  }
   try {
     const parsed = new URL(url)
     const apiOrigin = base ? new URL(base).origin : ""

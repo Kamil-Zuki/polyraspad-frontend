@@ -2,6 +2,7 @@ import { BaseApiClient } from "./base-api-client";
 import { API_ENDPOINTS } from "../constants";
 import {
   DeckResponseDto,
+  DeckDetailDto,
   DeckTreeItemDto,
   CreateDeckDto,
   UpdateDeckDto,
@@ -26,8 +27,8 @@ export class DeckClient extends BaseApiClient {
     });
   }
 
-  async getDeck(id: string): Promise<DeckResponseDto> {
-    return this.request<DeckResponseDto>(API_ENDPOINTS.DECKS.GET(id));
+  async getDeck(id: string): Promise<DeckDetailDto> {
+    return this.request<DeckDetailDto>(API_ENDPOINTS.DECKS.GET(id));
   }
 
   async deleteDeck(id: string): Promise<void> {
