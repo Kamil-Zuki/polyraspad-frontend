@@ -197,6 +197,29 @@ export interface DailySummaryDto {
   };
 }
 
+// Reader / Text analysis (SR-TXT-01)
+export type TextTokenStatus = "KNOWN" | "LEARNING" | "NEW" | "NONE";
+
+export interface TextTokenDto {
+  text: string;
+  lemma?: string | null;
+  status?: TextTokenStatus | null;
+  type?: "WORD" | "SPACE" | "PUNCTUATION" | null;
+}
+
+export interface TextAnalyzeResponseDto {
+  tokens: TextTokenDto[];
+  stats: {
+    uniqueWords: number;
+    knownPercentage: number;
+  };
+}
+
+export interface TextAnalyzeRequestDto {
+  projectId: string;
+  text: string;
+}
+
 // Card types
 export interface CardResponseDto {
   id: string;
@@ -482,6 +505,39 @@ export interface CopilotReviewFeedbackDto {
 export interface ExperimentAssignmentDto {
   key: string;
   variant: string;
+}
+
+// Marketplace (ProductDto, SR-SRC-03, SR-MKT-*)
+export interface ProductAuthorDto {
+  userId: string;
+  displayName: string;
+  avatarUrl?: string | null;
+  isVerified?: boolean;
+}
+
+export interface ProductDto {
+  id: string;
+  author: ProductAuthorDto;
+  linkedDeckId: string;
+  title: string;
+  descriptionHtml: string;
+  coverImageUrl: string;
+  price: number;
+  currency: string;
+  averageRating: number;
+  reviewCount: number;
+  salesCount: number;
+  isOwned: boolean;
+}
+
+export interface MarketplaceSearchParams {
+  query?: string | null;
+  tags?: string | null;
+  minPrice?: number | null;
+  maxPrice?: number | null;
+  sort?: "popularity" | "rating" | "newest" | "price_asc" | null;
+  pageNumber?: number;
+  pageSize?: number;
 }
 
 export interface TrackExperimentEventDto {

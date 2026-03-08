@@ -9,7 +9,7 @@ import { useUserSettings } from "@/lib/react-query/queries"
 
 export default function ProjectsHubPage() {
   const { data: projects } = useProjects(false) // Only non-archived projects
-  const { data: userSettings } = useUserSettings()
+  const { data: userSettings, isLoading: userSettingsLoading } = useUserSettings()
 
   // Calculate total words across all projects
   const totalWords = useMemo(() => {
@@ -46,7 +46,8 @@ export default function ProjectsHubPage() {
               <div className="px-6 py-4 rounded-2xl bg-app-surface border border-white/5 flex flex-col items-center shadow-lg">
                 <span className="text-[10px] uppercase font-bold text-gray-500 tracking-widest mb-1">Day Streak</span>
                 <span className="text-2xl font-bold text-brand-secondary flex items-center gap-2 tabular-nums">
-                  <i className="fas fa-fire text-orange-400 animate-pulse" /> {userSettings?.currentStreak || 0}
+                  <i className="fas fa-fire text-orange-400 animate-pulse" />
+                  {userSettingsLoading ? "—" : (userSettings?.currentStreak ?? 0)}
                 </span>
               </div>
             </div>

@@ -48,11 +48,19 @@ export function DashboardHero() {
           {greeting}, {userName}
         </h1>
         <p className="text-gray-500 text-sm font-medium">
-          You're on a{" "}
-          <span className="text-brand-primary font-bold">
-            {streak}-day streak
-          </span>
-          ! Keep the momentum going.
+          {streak > 0 ? (
+            <>
+              You're on a{" "}
+              <span className="text-brand-primary font-bold">
+                {streak}-day streak
+              </span>
+              ! Keep the momentum going.
+            </>
+          ) : (
+            <>
+              <span className="text-brand-primary font-bold">Start your streak</span> today — study to keep it going!
+            </>
+          )}
         </p>
       </div>
 

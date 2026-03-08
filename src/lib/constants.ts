@@ -58,11 +58,19 @@ export const API_ENDPOINTS = {
       return `/api/analytics/daily${params.toString() ? `?${params.toString()}` : ''}`
     },
   },
+  TEXT: {
+    ANALYZE: "/api/text/analyze",
+  },
   STUDY: {
     START_SESSION: "/api/study/session",
     NEXT_CARD: (sessionId: string) => `/api/study/session/${sessionId}/next`,
     SUBMIT_REVIEW: (sessionId: string) => `/api/study/session/${sessionId}/review`,
     UNDO: (sessionId: string) => `/api/study/session/${sessionId}/undo`,
+  },
+  MARKETPLACE: {
+    PRODUCTS: "/api/marketplace/products",
+    PRODUCT: (id: string) => `/api/marketplace/products/${id}`,
+    PRODUCT_PREVIEW: (id: string) => `/api/marketplace/products/${id}/preview`,
   },
   AUTOMATION: {
     AUTOPILOT: "/api/automation/autopilot",

@@ -1,7 +1,11 @@
 import React from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 
-interface ProductCardProps {
+export type ProductCardBadgeColor = 'secondary' | 'pink' | 'blue';
+
+export interface ProductCardProps {
+  id?: string;
   image: string;
   price: string | number;
   isVerified?: boolean;
@@ -13,10 +17,11 @@ interface ProductCardProps {
   rating: number;
   reviewsCount: number;
   studentsCount: string;
-  badgeColor?: 'secondary' | 'pink' | 'blue';
+  badgeColor?: ProductCardBadgeColor;
 }
 
 export function ProductCard({
+  id,
   image,
   price,
   isVerified,
@@ -36,8 +41,8 @@ export function ProductCard({
     blue: 'text-blue-400 bg-blue-500/10',
   };
 
-  return (
-    <div className="bg-app-surface rounded-xl overflow-hidden border border-white/5 transition-all duration-300 hover:-translate-y-1 hover:border-brand-primary/40 hover:shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)] group cursor-pointer relative">
+  const content = (
+    <>
       {/* Cover */}
       <div className="h-48 relative">
         <Image 
@@ -100,6 +105,16 @@ export function ProductCard({
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
+
+  const className = "bg-app-surface rounded-xl overflow-hidden border border-white/5 transition-all duration-300 hover:-translate-y-1 hover:border-brand-primary/40 hover:shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)] group cursor-pointer relative";
+  if (id) {
+    return (
+      <Link href={`/marketplace/product/${id}`} className={className} prefetch={false}>
+        {content}
+      </Link>
+    );
+  }
+  return <div className={className}>{content}</div>;
 }
