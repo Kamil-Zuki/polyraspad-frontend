@@ -1,24 +1,23 @@
 "use client"
 
 import Link from "next/link"
-import { cn } from "@/lib/utils"
 import { useProjectContext } from "@/contexts/project-context"
 import { useDeckTree } from "@/lib/react-query/queries"
 import { useMemo } from "react"
 import { DeckTreeItemDto } from "@/lib/api/types"
 
-// Helper to flatten deck tree and get root decks
+// Root-level decks = first 4 top-level nodes of the tree
 function getRootDecks(tree: DeckTreeItemDto[]): DeckTreeItemDto[] {
-  return tree.filter(deck => !deck.children || deck.children.length === 0)
+  return tree.slice(0, 4)
 }
 
 export function RecentDecks() {
   const { currentProject } = useProjectContext()
-  const { data: deckTree, isLoading } = useDeckTree(currentProject?.id || "")
+  const { data: deckTree, isLoading } = useDeckTree(currentProject?.id ?? "")
 
   const rootDecks = useMemo(() => {
     if (!deckTree || deckTree.length === 0) return []
-    return getRootDecks(deckTree).slice(0, 4) // Show max 4 recent decks
+    return getRootDecks(deckTree)
   }, [deckTree])
 
   if (isLoading) {
@@ -51,9 +50,10 @@ export function RecentDecks() {
           </div>
         ) : (
           rootDecks.map((deck) => (
-            <div 
+            <Link
               key={deck.id}
-              className="bg-app-surface rounded-2xl overflow-hidden border border-app-border group cursor-pointer transition-all duration-300 hover:-translate-y-2 hover:border-brand-primary/40 hover:shadow-2xl hover:shadow-brand-primary/5"
+              href={`/study/${deck.id}`}
+              className="bg-app-surface rounded-2xl overflow-hidden border border-app-border group cursor-pointer transition-all duration-300 hover:-translate-y-2 hover:border-brand-primary/40 hover:shadow-2xl hover:shadow-brand-primary/5 block"
             >
               <div className="h-32 bg-dark-900 relative overflow-hidden">
                 <div className="w-full h-full bg-gradient-to-br from-brand-primary/20 to-brand-secondary/20 opacity-50 group-hover:opacity-100 transition duration-700" />
@@ -71,17 +71,20 @@ export function RecentDecks() {
                   <span>Cards: <span className="text-brand-secondary">{deck.cardCount}</span></span>
                 </div>
               </div>
-            </div>
+            </Link>
           ))
         )}
 
         {/* Add New Deck Card */}
-        <button className="bg-app-surface/40 rounded-2xl border-2 border-dashed border-white/5 hover:border-brand-primary/40 hover:bg-app-surface transition-all duration-300 cursor-pointer flex flex-col items-center justify-center h-full min-h-[200px] group p-6">
+        <Link
+          href="/library"
+          className="bg-app-surface/40 rounded-2xl border-2 border-dashed border-white/5 hover:border-brand-primary/40 hover:bg-app-surface transition-all duration-300 cursor-pointer flex flex-col items-center justify-center h-full min-h-[200px] group p-6"
+        >
           <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center mb-4 group-hover:bg-brand-primary group-hover:text-white group-hover:shadow-glow text-gray-500 transition-all duration-300 border border-white/5 group-hover:border-brand-primary/50">
             <i className="fas fa-plus" />
           </div>
           <span className="text-sm font-bold text-gray-500 group-hover:text-white transition-colors">Create Deck</span>
-        </button>
+        </Link>
       </div>
     </section>
   )

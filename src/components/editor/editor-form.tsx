@@ -171,6 +171,7 @@ export function EditorForm() {
         targetWord,
         translation,
         ...(imageUrl.trim() ? { imageUrl: imageUrl.trim() } : {}),
+        ...(imageId?.trim() ? { imageId: imageId.trim() } : {}),
         ...(audioUrl.trim() ? { audioUrl: audioUrl.trim() } : {}),
       };
 
@@ -350,6 +351,7 @@ export function EditorForm() {
             {imageUrl.trim() && !imagePreviewError ? (
               <PreviewImage
                 src={previewImageSrc}
+                fallbackSrc={imageUrl?.trim() || undefined}
                 alt="Image preview"
                 className="absolute inset-0 rounded-2xl overflow-hidden border-0"
                 imgClassName="w-full h-full min-h-0 max-h-none object-cover"

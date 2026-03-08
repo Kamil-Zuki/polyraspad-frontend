@@ -8,7 +8,9 @@ import { useMemo } from "react"
 export function ActivityHeatmap() {
   const { currentProject } = useProjectContext()
   const currentYear = new Date().getFullYear()
-  const { data: heatmapData, isLoading } = useHeatmap(currentProject?.id, currentYear)
+  const { data: heatmapData, isLoading } = useHeatmap(currentProject?.id, currentYear, {
+    enabled: !!currentProject?.id,
+  })
 
   // Generate cells from heatmap data
   const cells = useMemo(() => {

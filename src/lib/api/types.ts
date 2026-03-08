@@ -227,6 +227,8 @@ export interface CreateCardDto {
   targetWord: string;
   translation: string;
   imageUrl?: string | null;
+  /** UUID of uploaded image (from upload-image), stored in media for serve-image */
+  imageId?: string | null;
   audioUrl?: string | null;
   sourceMeta?: SourceMetaDto | null;
 }
@@ -278,3 +280,5 @@ export interface ConfirmEmailDto {
   userId: string;
   token: string;
 }
+
+

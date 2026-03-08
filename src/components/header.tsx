@@ -1,9 +1,11 @@
 "use client"
 
 import { useState, useTransition } from "react"
+import Link from "next/link"
 import { useAuth } from "@/contexts/auth-context"
 import { useRouter, usePathname } from "next/navigation"
 import { ROUTES } from "@/lib/constants"
+import { useProjectContext } from "@/contexts/project-context"
 
 export function Header() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -11,6 +13,7 @@ export function Header() {
   const auth = useAuth()
   const router = useRouter()
   const pathname = usePathname()
+  const { currentProject } = useProjectContext()
 
   const handleLogout = async () => {
     await auth.logout()
@@ -97,10 +100,13 @@ export function Header() {
               <i className="far fa-bell" />
               <span className="absolute top-1.5 right-2 w-2 h-2 bg-brand-pink rounded-full border border-app-surface" />
             </button>
-            
-            <button className="btn-primary flex items-center gap-2 py-2">
-              <i className="fas fa-play text-xs" /> Study
-            </button>
+
+            <Link
+              href={currentProject ? "/library" : "/projects"}
+              className="btn-primary flex items-center gap-2 py-2"
+            >
+              <i className="fas fa-play text-xs" /> Study Now
+            </Link>
           </>
         )}
       </div>

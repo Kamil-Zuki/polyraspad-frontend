@@ -12,11 +12,14 @@ export function PreviewImage({
   alt = "Card",
   className,
   imgClassName,
+  /** When serve-image fetch fails, try this URL in <img> (e.g. direct image_url for CORS-allowed origins) */
+  fallbackSrc,
 }: {
   src: string
   alt?: string
   className?: string
   imgClassName?: string
+  fallbackSrc?: string
 }) {
   const [error, setError] = useState(false)
   // Do not set resolvedSrc to serve-image URL: <img> would request it without Authorization and get 401
@@ -35,6 +38,7 @@ export function PreviewImage({
     if (src.includes("/api/Media/serve-image")) {
       const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null
       fetch(src, {
+        credentials: "include",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       })
         .then((r) => {
@@ -46,16 +50,24 @@ export function PreviewImage({
           objectUrlRef.current = URL.createObjectURL(blob)
           setResolvedSrc(objectUrlRef.current)
         })
-        .catch(() => setError(true))
+        .catch(() => {
+          if (fallbackSrc?.trim()) {
+            setResolvedSrc(fallbackSrc.trim())
+            setError(false)
+          } else {
+            setError(true)
+          }
+        })
       return () => {
         if (objectUrlRef.current) {
           URL.revokeObjectURL(objectUrlRef.current)
           objectUrlRef.current = null
         }
       }
+    } else {
+      setResolvedSrc(src)
     }
-    setResolvedSrc(src)
-  }, [src])
+  }, [src, fallbackSrc])
 
   if (error) {
     return (
@@ -213,7 +225,7 @@ export function CardPreview() {
               &ldquo;{highlightedSentence ?? (sentence || "—")}&rdquo;
             </h2>
             {imageUrl.trim() && (
-              <PreviewImage src={previewImageSrc} className="w-full min-h-[140px] max-h-48" />
+              <PreviewImage src={previewImageSrc} fallbackSrc={imageUrl?.trim() || undefined} className="w-full min-h-[140px] max-h-48" />
             )}
           </div>
         ) : (
@@ -230,7 +242,7 @@ export function CardPreview() {
               </p>
             )}
             {imageUrl.trim() && (
-              <PreviewImage src={previewImageSrc} className="w-full min-h-[140px] max-h-48" />
+              <PreviewImage src={previewImageSrc} fallbackSrc={imageUrl?.trim() || undefined} className="w-full min-h-[140px] max-h-48" />
             )}
             {audioUrl.trim() && (
               <div className="space-y-1">
@@ -318,6 +330,7 @@ export function CardPreview() {
                   {imageUrl.trim() && (
                     <PreviewImage
                       src={previewImageSrc}
+                      fallbackSrc={imageUrl?.trim() || undefined}
                       className="w-full min-h-[200px] max-h-80"
                       imgClassName="min-h-[200px] max-h-80"
                     />
@@ -339,6 +352,7 @@ export function CardPreview() {
                   {imageUrl.trim() && (
                     <PreviewImage
                       src={previewImageSrc}
+                      fallbackSrc={imageUrl?.trim() || undefined}
                       className="w-full min-h-[200px] max-h-80"
                       imgClassName="min-h-[200px] max-h-80"
                     />

@@ -140,6 +140,7 @@ export function CardViewModal({ cardId, onClose, initialCard }: CardViewModalPro
                 <div className="rounded-xl overflow-hidden border border-app-border bg-app-bg">
                   <PreviewImage
                     src={previewImageSrc}
+                    fallbackSrc={imageUrl || undefined}
                     alt="Card"
                     imgClassName="w-full max-h-48 object-contain"
                   />
