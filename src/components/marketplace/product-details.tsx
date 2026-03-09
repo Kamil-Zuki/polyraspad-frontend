@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 
-export function ProductTabs() {
+export interface ProductTabsProps {
+  descriptionHtml?: string;
+}
+
+export function ProductTabs({ descriptionHtml }: ProductTabsProps) {
   const [activeTab, setActiveTab] = useState('description');
 
   const tabs = [
@@ -11,7 +15,6 @@ export function ProductTabs() {
 
   return (
     <div className="space-y-10">
-      {/* Tabs Navigation */}
       <div className="border-b border-app-border">
         <nav className="flex gap-8">
           {tabs.map((tab) => (
@@ -33,49 +36,55 @@ export function ProductTabs() {
         </nav>
       </div>
 
-      {/* Tab Content */}
       <div className="text-gray-300 space-y-8">
         {activeTab === 'description' && (
           <div className="space-y-6">
-            <p className="text-lg leading-relaxed">
-              Master the vocabulary needed for high-stakes business meetings, contract negotiations, and corporate strategy. This deck is curated from real-world business cases and Wall Street Journal articles.
-            </p>
-            
-            <div className="space-y-4">
-              <h3 className="text-xl font-bold text-white">What you'll learn</h3>
-              <ul className="space-y-3">
-                <li className="flex gap-3 items-center">
-                  <i className="fas fa-check-circle text-brand-green" />
-                  <span>500+ advanced idioms for negotiations</span>
-                </li>
-                <li className="flex gap-3 items-center">
-                  <i className="fas fa-check-circle text-brand-green" />
-                  <span>Email writing templates and phrases</span>
-                </li>
-                <li className="flex gap-3 items-center">
-                  <i className="fas fa-check-circle text-brand-green" />
-                  <span>Native audio for every single card (US & UK accents)</span>
-                </li>
-              </ul>
-            </div>
-
-            <div className="space-y-4">
-              <h3 className="text-xl font-bold text-white mt-8">Sample Cards</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="glass-panel p-4 rounded-xl border border-white/5 bg-white/5">
-                  <div className="text-xs text-gray-500 uppercase font-bold mb-2">Front</div>
-                  <div className="text-white text-lg font-medium">
-                    "Let's <span className="text-brand-primary">table</span> this discussion."
+            {descriptionHtml ? (
+              <div
+                className="prose prose-invert max-w-none text-gray-300"
+                dangerouslySetInnerHTML={{ __html: descriptionHtml }}
+              />
+            ) : (
+              <>
+                <p className="text-lg leading-relaxed">
+                  Master the vocabulary needed for high-stakes business meetings, contract negotiations, and corporate strategy. This deck is curated from real-world business cases and Wall Street Journal articles.
+                </p>
+                <div className="space-y-4">
+                  <h3 className="text-xl font-bold text-white">What you'll learn</h3>
+                  <ul className="space-y-3">
+                    <li className="flex gap-3 items-center">
+                      <i className="fas fa-check-circle text-brand-green" />
+                      <span>500+ advanced idioms for negotiations</span>
+                    </li>
+                    <li className="flex gap-3 items-center">
+                      <i className="fas fa-check-circle text-brand-green" />
+                      <span>Email writing templates and phrases</span>
+                    </li>
+                    <li className="flex gap-3 items-center">
+                      <i className="fas fa-check-circle text-brand-green" />
+                      <span>Native audio for every single card (US & UK accents)</span>
+                    </li>
+                  </ul>
+                </div>
+                <div className="space-y-4">
+                  <h3 className="text-xl font-bold text-white mt-8">Sample Cards</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="glass-panel p-4 rounded-xl border border-white/5 bg-white/5">
+                      <div className="text-xs text-gray-500 uppercase font-bold mb-2">Front</div>
+                      <div className="text-white text-lg font-medium">
+                        "Let's <span className="text-brand-primary">table</span> this discussion."
+                      </div>
+                    </div>
+                    <div className="glass-panel p-4 rounded-xl border border-white/5 bg-white/5">
+                      <div className="text-xs text-gray-500 uppercase font-bold mb-2">Back</div>
+                      <div className="text-gray-300">
+                        Отложить обсуждение (на потом).
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div className="glass-panel p-4 rounded-xl border border-white/5 bg-white/5">
-                  <div className="text-xs text-gray-500 uppercase font-bold mb-2">Back</div>
-                  <div className="text-gray-300">
-                    Отложить обсуждение (на потом).
-                  </div>
-                </div>
-              </div>
-            </div>
+              </>
+            )}
           </div>
         )}
 

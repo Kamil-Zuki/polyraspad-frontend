@@ -80,8 +80,8 @@ function processDeckTree(
         id: node.id,
         title: node.title,
         cardCount: node.cardCount,
-        dueCount: 0, // Deck stats (cards due) not yet in API; use deck stats endpoint when available
-        progress: 0, // Maturity progress not yet in API; use deck stats endpoint when available
+        dueCount: 0, // Fallback; DeckCardWithDetails uses useDeck() stats (DeckDetailDto.stats) when loaded
+        progress: 0,
       })
     }
   })
@@ -89,21 +89,26 @@ function processDeckTree(
   return { folders, decks }
 }
 
-// Fetches full deck (coverImageUrl, forkedFromId) via useDeck and renders card. Progress and dueCount are 0 until deck stats API exists.
+// Fetches full deck (coverImageUrl, forkedFromId, stats) via useDeck and renders card. Uses GET /api/Decks/{id} stats when available (Docs).
 function DeckCardWithDetails({
   deck,
-  deckTree,
   onEdit,
   onSettings,
   onDelete,
 }: {
   deck: { id: string; title: string; cardCount: number; dueCount: number; progress: number }
-  deckTree: DeckTreeItemDto[] | undefined
   onEdit: () => void
   onSettings: () => void
   onDelete: () => void
 }) {
   const { data: deckData } = useDeck(deck.id)
+  const stats = deckData?.stats
+  const dueCount = stats?.dueCardsCount ?? deck.dueCount
+  const total = stats?.totalCardsCount ?? deck.cardCount
+  const progress =
+    total && total > 0
+      ? ((stats?.learningCardsCount ?? 0) + (stats?.dueCardsCount ?? 0)) / total
+      : deck.progress
   return (
     <div className="relative group">
       <Link href={`/study/${deck.id}`} className="block">
@@ -111,8 +116,8 @@ function DeckCardWithDetails({
           id={deck.id}
           title={deck.title}
           cardCount={deck.cardCount}
-          dueCount={deck.dueCount}
-          progress={deck.progress}
+          dueCount={dueCount}
+          progress={progress}
           image={deckData?.coverImageUrl ?? undefined}
           isPurchased={!!deckData?.forkedFromId}
           onEdit={onEdit}
@@ -131,11 +136,11 @@ export default function LibraryPage() {
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false)
   const [editingDeck, setEditingDeck] = useState<DeckTreeItemDto | null>(null)
   const [settingsDeckId, setSettingsDeckId] = useState<string | null>(null)
-  // Filter: Мои / Скачанные / Публичные. Backend DeckTreeItemDto has no ownerId/isPublic/forkedFromId yet — all tabs show same tree until API is extended.
+  // Filter: Мои / Скачанные / Публичные (Docs: libraryFilter query param on GET /api/Decks/tree/{projectId})
   const [libraryFilter, setLibraryFilter] = useState<"mine" | "downloaded" | "public">("mine")
   const { currentProject } = useProjectContext()
   const projectId = currentProject?.id ?? ""
-  const { data: deckTree, isLoading, error, refetch } = useDeckTree(projectId)
+  const { data: deckTree, isLoading, error, refetch } = useDeckTree(projectId, libraryFilter)
   const { data: vocabularyStats, isLoading: statsLoading } = useVocabularyStats(projectId)
 
   // Mutation hooks for deck operations
@@ -408,7 +413,6 @@ export default function LibraryPage() {
                     <DeckCardWithDetails
                       key={deck.id}
                       deck={deck}
-                      deckTree={deckTree ?? undefined}
                       onEdit={() => handleDeckEdit(findNodeById(deckTree || [], deck.id)!)}
                       onSettings={() => handleDeckSettings(deck.id)}
                       onDelete={() => handleDeckDelete(deck.id)}

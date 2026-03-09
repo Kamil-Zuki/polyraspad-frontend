@@ -120,6 +120,10 @@ export interface DeckTreeItemDto {
   title: string;
   cardCount: number;
   children: DeckTreeItemDto[];
+  ownerId?: string;
+  isPublic?: boolean;
+  forkedFromId?: string | null;
+  coverImageUrl?: string | null;
 }
 
 export interface CreateDeckDto {

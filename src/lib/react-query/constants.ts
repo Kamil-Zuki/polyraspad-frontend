@@ -12,7 +12,8 @@ export const userQueryKeys = {
 
 // Query keys for decks
 export const deckQueryKeys = {
-  deckTree: (projectId: string) => ["decks", "tree", projectId] as const,
+  deckTree: (projectId: string, libraryFilter?: string) =>
+    (["decks", "tree", projectId, libraryFilter ?? null] as const),
   deck: (id: string) => ["decks", id] as const,
 };
 

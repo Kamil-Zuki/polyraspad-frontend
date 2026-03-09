@@ -8,9 +8,20 @@ import {
   UpdateDeckDto,
 } from "./types";
 
+/** Library filter for deck tree (Docs: GET /api/Decks/tree/{projectId}?libraryFilter=...) */
+export type LibraryFilter = "Mine" | "Downloaded" | "Public";
+
 export class DeckClient extends BaseApiClient {
-  async getDeckTree(projectId: string): Promise<DeckTreeItemDto[]> {
-    return this.request<DeckTreeItemDto[]>(API_ENDPOINTS.DECKS.TREE(projectId));
+  async getDeckTree(
+    projectId: string,
+    options?: { libraryFilter?: LibraryFilter }
+  ): Promise<DeckTreeItemDto[]> {
+    const base = API_ENDPOINTS.DECKS.TREE(projectId);
+    const url =
+      options?.libraryFilter != null
+        ? `${base}?libraryFilter=${encodeURIComponent(options.libraryFilter)}`
+        : base;
+    return this.request<DeckTreeItemDto[]>(url);
   }
 
   async createDeck(data: CreateDeckDto): Promise<DeckResponseDto> {
