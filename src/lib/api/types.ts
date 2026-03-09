@@ -548,3 +548,14 @@ export interface TrackExperimentEventDto {
   deckId?: string | null;
 }
 
+// Deck subscriptions (IA: /subscriptions)
+export interface DeckSubscriptionDto {
+  id: string;
+  userId: string;
+  deckId: string;
+  lastSyncedVersion: number;
+  subscribedAt: string;
+  lastAccessedAt: string;
+  deckTitle?: string;
+}
+

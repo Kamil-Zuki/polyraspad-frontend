@@ -9,6 +9,7 @@ export { StudyClient } from "./study-client";
 export { AutomationClient } from "./automation-client";
 export { MarketplaceClient } from "./marketplace-client";
 export { TextClient } from "./text-client";
+export { SubscriptionsClient } from "./subscriptions-client";
 export { uploadImage } from "./media-client";
 export type { UploadImageResponse } from "./media-client";
 
@@ -23,6 +24,7 @@ import { StudyClient } from "./study-client";
 import { AutomationClient } from "./automation-client";
 import { MarketplaceClient } from "./marketplace-client";
 import { TextClient } from "./text-client";
+import { SubscriptionsClient } from "./subscriptions-client";
 
 class ApiClient {
   auth = new AuthClient();
@@ -35,6 +37,7 @@ class ApiClient {
   automation = new AutomationClient();
   marketplace = new MarketplaceClient();
   text = new TextClient();
+  subscriptions = new SubscriptionsClient();
 }
 
 export const apiClient = new ApiClient();

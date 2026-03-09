@@ -72,6 +72,9 @@ export const API_ENDPOINTS = {
     PRODUCT: (id: string) => `/api/marketplace/products/${id}`,
     PRODUCT_PREVIEW: (id: string) => `/api/marketplace/products/${id}/preview`,
   },
+  SUBSCRIPTIONS: {
+    LIST: "/api/subscriptions",
+  },
   AUTOMATION: {
     AUTOPILOT: "/api/automation/autopilot",
     RECOMMENDATIONS: "/api/automation/recommendations",
