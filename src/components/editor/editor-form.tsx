@@ -29,6 +29,8 @@ export function EditorForm({ selectedDeckId: selectedDeckIdProp, onSelectedDeckI
     setTargetWord,
     translation,
     setTranslation,
+    notes,
+    setNotes,
     imageUrl,
     setImageUrl,
     imageId,
@@ -234,6 +236,7 @@ export function EditorForm({ selectedDeckId: selectedDeckIdProp, onSelectedDeckI
       setSentence("");
       setTargetWord("");
       setTranslation("");
+      setNotes("");
       setAudioUrl("");
       setShowImageUrlInput(false);
       setShowAudioUrlInput(false);
@@ -358,6 +361,19 @@ export function EditorForm({ selectedDeckId: selectedDeckIdProp, onSelectedDeckI
           </p>
         </section>
       </div>
+
+      {/* 2b. Notes (optional) */}
+      <section className="glass-panel p-8 rounded-3xl border-app-border">
+        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">
+          Notes
+        </label>
+        <textarea
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          className="input-dark w-full p-4 rounded-xl text-sm min-h-[80px] resize-none"
+          placeholder="Grammar notes, usage tips... (use AI Assistant &quot;Add to notes&quot;)"
+        />
+      </section>
 
       {/* 3. Media (Anki Style) */}
       <section className="glass-panel p-8 rounded-3xl border-app-border">

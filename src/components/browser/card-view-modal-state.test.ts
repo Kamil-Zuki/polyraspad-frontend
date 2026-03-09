@@ -1,8 +1,6 @@
-import test from "node:test"
-import assert from "node:assert/strict"
-
+import { expect, test } from "vitest"
 import type { CardResponseDto } from "@/lib/api/types"
-import { resolveCardViewModalCard } from "./card-view-modal-state.ts"
+import { resolveCardViewModalCard } from "./card-view-modal-state"
 
 function createCard(overrides?: Partial<CardResponseDto>): CardResponseDto {
   return {
@@ -22,7 +20,7 @@ function createCard(overrides?: Partial<CardResponseDto>): CardResponseDto {
   }
 }
 
-test("should_prefer_fetched_card_when_initial_card_has_no_media", () => {
+test("should prefer fetched card when initial card has no media", () => {
   const initialCard = createCard({ media: null })
   const fetchedCard = createCard({
     media: {
@@ -35,20 +33,22 @@ test("should_prefer_fetched_card_when_initial_card_has_no_media", () => {
 
   const result = resolveCardViewModalCard(fetchedCard, initialCard)
 
-  assert.equal(result?.media?.imageId, "image-1")
-  assert.equal(result?.media?.imageUrl, "http://localhost:5206/api/Media/serve-image?id=image-1")
+  expect(result?.media?.imageId).toBe("image-1")
+  expect(result?.media?.imageUrl).toBe(
+    "http://localhost:5206/api/Media/serve-image?id=image-1",
+  )
 })
 
-test("should_fall_back_to_initial_card_when_fetched_card_is_missing", () => {
+test("should fall back to initial card when fetched card is missing", () => {
   const initialCard = createCard({ id: "card-2" })
 
   const result = resolveCardViewModalCard(null, initialCard)
 
-  assert.equal(result?.id, "card-2")
+  expect(result?.id).toBe("card-2")
 })
 
-test("should_return_null_when_no_card_data_is_available", () => {
+test("should return null when no card data is available", () => {
   const result = resolveCardViewModalCard(null, null)
 
-  assert.equal(result, null)
+  expect(result).toBeNull()
 })
