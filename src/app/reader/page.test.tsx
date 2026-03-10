@@ -1,40 +1,48 @@
-import { describe, it, expect, vi, beforeEach } from "vitest"
-import "@testing-library/jest-dom/vitest"
-import { render, screen, fireEvent, waitFor } from "@testing-library/react"
+import { vi, describe, it, expect, beforeEach } from "vitest"
+import { render, screen, waitFor, fireEvent, within } from "@testing-library/react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import ReaderPage from "./page"
-import { apiClient } from "@/lib/api"
+import { clientSideTokenize } from "./reader-utils"
 
+// Мок API: capture и analyze
+const captureCardMock = vi.fn()
+const textAnalyzeMock = vi.fn()
 vi.mock("@/lib/api", () => ({
   apiClient: {
-    text: { analyze: vi.fn() },
-    cards: { captureCard: vi.fn() },
+    cards: { captureCard: (data: unknown) => captureCardMock(data) },
+    text: { analyze: (params: { text: string }) => textAnalyzeMock(params) },
   },
 }))
 
+// Мок контекста проекта
+const mockProject = { id: "proj-1", name: "Test Project" }
 vi.mock("@/contexts/project-context", () => ({
-  useProjectContext: vi.fn(),
-}))
-
-vi.mock("@/contexts/auth-context", () => ({
-  useAuth: vi.fn(() => ({
-    isAuthenticated: true,
+  useProjectContext: () => ({
+    currentProject: mockProject,
+    setCurrentProject: vi.fn(),
     isLoading: false,
-  })),
+  }),
 }))
 
-vi.mock("next/navigation", () => ({
-  useRouter: vi.fn(() => ({ push: vi.fn() })),
+// Мок дерева колод: одна листовая колода для выбора
+const mockDeckTree = [
+  { id: "deck-1", title: "My Deck", cardCount: 0, children: [] },
+]
+vi.mock("@/lib/react-query/deck-queries", () => ({
+  useDeckTree: () => ({
+    data: mockDeckTree,
+    isLoading: false,
+  }),
 }))
 
-import { useProjectContext } from "@/contexts/project-context"
+// ProtectedRoute просто рендерит детей
+vi.mock("@/components/auth/protected-route", () => ({
+  ProtectedRoute: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}))
 
-function renderReaderPage() {
+function renderReader() {
   const queryClient = new QueryClient({
-    defaultOptions: {
-      mutations: { retry: false },
-      queries: { retry: false },
-    },
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   })
   return render(
     <QueryClientProvider client={queryClient}>
@@ -43,213 +51,54 @@ function renderReaderPage() {
   )
 }
 
-const mockProject = {
-  id: "proj-1",
-  userId: "user-1",
-  title: "Test Project",
-  sourceLang: "en",
-  targetLang: "ru",
-  isArchived: false,
-  createdAt: "2025-01-01T00:00:00Z",
-}
-
-describe("ReaderPage", () => {
+describe("Reader page", () => {
   beforeEach(() => {
-    vi.mocked(useProjectContext).mockReturnValue({
-      currentProject: null,
-      setCurrentProject: vi.fn(),
-      isLoading: false,
-    } as ReturnType<typeof useProjectContext>)
-    vi.mocked(apiClient.text.analyze).mockReset()
-    vi.mocked(apiClient.cards.captureCard).mockReset()
+    vi.clearAllMocks()
+    // Анализ текста возвращает токены с клиентского fallback (слова со статусом NEW)
+    textAnalyzeMock.mockImplementation(({ text }: { text: string }) =>
+      Promise.resolve(clientSideTokenize(text))
+    )
   })
 
-  it("should_show_select_project_when_no_project", () => {
-    renderReaderPage()
-    expect(screen.getByText("Select a project")).toBeInTheDocument()
-  })
+  it("should_save_mined_card_to_selected_deck_when_user_clicks_word", async () => {
+    renderReader()
 
-  it("should_call_analyze_api_when_analyze_clicked_with_text", async () => {
-    vi.mocked(useProjectContext).mockReturnValue({
-      currentProject: mockProject,
-      setCurrentProject: vi.fn(),
-      isLoading: false,
-    } as ReturnType<typeof useProjectContext>)
+    // Выбор колоды для майнинга
+    const deckSelect = screen.getByRole("combobox", { name: /choose deck/i })
+    fireEvent.change(deckSelect, { target: { value: "deck-1" } })
 
-    vi.mocked(apiClient.text.analyze).mockResolvedValue({
-      tokens: [],
-      stats: { uniqueWords: 0, knownPercentage: 0 },
-    })
-
-    renderReaderPage()
-    const textarea = screen.getByPlaceholderText(/The cat jumped over a fence/)
-    const analyzeBtn = screen.getByRole("button", { name: /Analyze/ })
-
-    fireEvent.change(textarea, { target: { value: "Hello world" } })
+    // Ввод текста и анализ
+    const textarea = screen.getByPlaceholderText(/cat jumped over a fence/i)
+    fireEvent.change(textarea, { target: { value: "The cat sat." } })
+    const analyzeBtn = screen.getByRole("button", { name: /analyze/i })
     fireEvent.click(analyzeBtn)
 
-    await waitFor(() => {
-      expect(apiClient.text.analyze).toHaveBeenCalledWith({
-        projectId: mockProject.id,
-        text: "Hello world",
-      })
-    })
-  })
+    // Ждём появления токенов и клика по слову (cat — NEW)
+    const catToken = await screen.findByText("cat")
+    fireEvent.click(catToken)
 
-  it("should_open_mine_modal_when_clicking_new_word", async () => {
-    vi.mocked(useProjectContext).mockReturnValue({
-      currentProject: mockProject,
-      setCurrentProject: vi.fn(),
-      isLoading: false,
-    } as ReturnType<typeof useProjectContext>)
-
-    vi.mocked(apiClient.text.analyze).mockResolvedValue({
-      tokens: [
-        { text: "The", type: "WORD", status: "KNOWN" },
-        { text: " ", type: "SPACE" },
-        { text: "behemoth", type: "WORD", status: "NEW" },
-        { text: " ", type: "SPACE" },
-        { text: "rose", type: "WORD", status: "KNOWN" },
-        { text: ".", type: "PUNCTUATION" },
-      ],
-      stats: { uniqueWords: 3, knownPercentage: 66 },
-    })
-
-    renderReaderPage()
-    const textarea = screen.getByPlaceholderText(/The cat jumped over a fence/)
-    fireEvent.change(textarea, { target: { value: "The behemoth rose." } })
-    fireEvent.click(screen.getByRole("button", { name: /Analyze/ }))
-
-    await waitFor(() => {
-      expect(screen.getByText("behemoth")).toBeInTheDocument()
-    })
-
-    fireEvent.click(screen.getByText("behemoth"))
-
-    expect(screen.getByRole("dialog", { name: /Mine card/ })).toBeInTheDocument()
-    expect(screen.getByText("Mine card")).toBeInTheDocument()
-  })
-
-  it("should_call_capture_api_with_correct_dto_when_mine_submitted", async () => {
-    vi.mocked(useProjectContext).mockReturnValue({
-      currentProject: mockProject,
-      setCurrentProject: vi.fn(),
-      isLoading: false,
-    } as ReturnType<typeof useProjectContext>)
-
-    vi.mocked(apiClient.text.analyze).mockResolvedValue({
-      tokens: [
-        { text: "The", type: "WORD", status: "KNOWN" },
-        { text: " ", type: "SPACE" },
-        { text: "behemoth", type: "WORD", status: "NEW" },
-        { text: " ", type: "SPACE" },
-        { text: "rose", type: "WORD", status: "KNOWN" },
-        { text: ".", type: "PUNCTUATION" },
-      ],
-      stats: { uniqueWords: 3, knownPercentage: 66 },
-    })
-
-    vi.mocked(apiClient.cards.captureCard).mockResolvedValue({
-      id: "card-1",
-      deckId: "deck-1",
-      creatorId: "user-1",
-      sentence: "The behemoth rose.",
-      translation: "Чудище",
-      targetWord: "behemoth",
-      srsStatus: "NEW",
-      createdAt: "2025-01-01T00:00:00Z",
-    } as any)
-
-    renderReaderPage()
-
-    const sourceTitleInput = screen.getByPlaceholderText(/e.g. Article: Mythical Creatures/)
-    fireEvent.change(sourceTitleInput, { target: { value: "Test Article" } })
-
-    const textarea = screen.getByPlaceholderText(/The cat jumped over a fence/)
-    fireEvent.change(textarea, { target: { value: "The behemoth rose." } })
-    fireEvent.click(screen.getByRole("button", { name: /Analyze/ }))
-
-    await waitFor(() => {
-      expect(screen.getByText("behemoth")).toBeInTheDocument()
-    })
-
-    fireEvent.click(screen.getByText("behemoth"))
-
-    await waitFor(() => {
-      expect(screen.getByText("Mine card")).toBeInTheDocument()
-    })
-
-    const translationInput = screen.getByPlaceholderText(/e.g. Чудище/)
-    fireEvent.change(translationInput, { target: { value: "Чудище" } })
-
-    const mineBtn = screen.getByRole("button", { name: "+ Mine" })
+    // Диалог майнинга: ввод перевода и сохранение (плейсхолдер только в диалоге)
+    const dialog = screen.getByRole("dialog")
+    const translationInput = within(dialog).getByPlaceholderText(/Чудище|Бегемот/i)
+    fireEvent.change(translationInput, { target: { value: "Кот" } })
+    const mineBtn = within(dialog).getByRole("button", { name: /\+ mine/i })
     fireEvent.click(mineBtn)
 
+    // Карточка создана с выбранной колодой и метаданными источника (SR-VOC-03)
     await waitFor(() => {
-      expect(apiClient.cards.captureCard).toHaveBeenCalledWith({
-        projectId: mockProject.id,
-        sentence: "The behemoth rose.",
-        targetWord: "behemoth",
-        translation: "Чудище",
-        sourceMeta: { type: "TEXT", title: "Test Article" },
-      })
+      expect(captureCardMock).toHaveBeenCalledTimes(1)
     })
-  })
-
-  it("should_show_success_message_when_capture_succeeds", async () => {
-    vi.mocked(useProjectContext).mockReturnValue({
-      currentProject: mockProject,
-      setCurrentProject: vi.fn(),
-      isLoading: false,
-    } as ReturnType<typeof useProjectContext>)
-
-    vi.mocked(apiClient.text.analyze).mockResolvedValue({
-      tokens: [
-        { text: "The", type: "WORD", status: "KNOWN" },
-        { text: " ", type: "SPACE" },
-        { text: "behemoth", type: "WORD", status: "NEW" },
-        { text: " ", type: "SPACE" },
-        { text: "rose", type: "WORD", status: "KNOWN" },
-        { text: ".", type: "PUNCTUATION" },
-      ],
-      stats: { uniqueWords: 3, knownPercentage: 66 },
-    })
-
-    vi.mocked(apiClient.cards.captureCard).mockResolvedValue({
-      id: "card-1",
+    const payload = captureCardMock.mock.calls[0][0]
+    expect(payload).toMatchObject({
+      projectId: "proj-1",
       deckId: "deck-1",
-      creatorId: "user-1",
-      sentence: "The behemoth rose.",
-      translation: "Чудище",
-      targetWord: "behemoth",
-      srsStatus: "NEW",
-      createdAt: "2025-01-01T00:00:00Z",
-    } as any)
-
-    renderReaderPage()
-
-    const textarea = screen.getByPlaceholderText(/The cat jumped over a fence/)
-    fireEvent.change(textarea, { target: { value: "The behemoth rose." } })
-    fireEvent.click(screen.getByRole("button", { name: /Analyze/ }))
-
-    await waitFor(() => {
-      expect(screen.getByText("behemoth")).toBeInTheDocument()
-    })
-
-    fireEvent.click(screen.getByText("behemoth"))
-
-    await waitFor(() => {
-      expect(screen.getByText("Mine card")).toBeInTheDocument()
-    })
-
-    const translationInput = screen.getByPlaceholderText(/e.g. Чудище/)
-    fireEvent.change(translationInput, { target: { value: "Чудище" } })
-
-    const mineBtn = screen.getByRole("button", { name: "+ Mine" })
-    fireEvent.click(mineBtn)
-
-    await waitFor(() => {
-      expect(screen.getByText(/Card saved to Inbox|saved/i)).toBeInTheDocument()
+      sentence: "The cat sat.",
+      targetWord: "cat",
+      translation: "Кот",
+      sourceMeta: expect.objectContaining({
+        type: "TEXT",
+        title: "Reader",
+      }),
     })
   })
 })

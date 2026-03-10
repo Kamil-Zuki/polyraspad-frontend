@@ -1,9 +1,11 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useMemo } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { ProtectedRoute } from "@/components/auth/protected-route"
 import { useProjectContext } from "@/contexts/project-context"
+import { useDeckTree } from "@/lib/react-query/deck-queries"
+import { getLeafDecksFromTree } from "@/lib/utils/deck-tree-utils"
 import { apiClient } from "@/lib/api"
 import type {
   TextTokenDto,
@@ -23,6 +25,10 @@ export default function ReaderPage() {
   const [rawText, setRawText] = useState("")
   const [result, setResult] = useState<TextAnalyzeResponseDto | null>(null)
   const [sourceTitle, setSourceTitle] = useState("")
+  /** Колода для майнинга: пусто = Inbox (SR-API-01). */
+  const [miningDeckId, setMiningDeckId] = useState("")
+  /** URL источника для метаданных (SR-VOC-03). */
+  const [sourceUrl, setSourceUrl] = useState("")
   const [minedWord, setMinedWord] = useState<{
     word: string
     lemma: string | undefined
@@ -31,6 +37,17 @@ export default function ReaderPage() {
   } | null>(null)
   const [translation, setTranslation] = useState("")
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+
+  const projectId = currentProject?.id ?? ""
+  const { data: deckTree } = useDeckTree(projectId, "mine")
+  const leafDecks = useMemo(
+    () => (deckTree && deckTree.length > 0 ? getLeafDecksFromTree(deckTree) : []),
+    [deckTree]
+  )
+  const selectedDeckTitle = useMemo(
+    () => leafDecks.find((d) => d.id === miningDeckId)?.title ?? null,
+    [leafDecks, miningDeckId]
+  )
 
   const analyzeMutation = useMutation({
     mutationFn: async (text: string) => {
@@ -53,8 +70,11 @@ export default function ReaderPage() {
 
   const captureMutation = useMutation({
     mutationFn: (data: CaptureCardDto) => apiClient.cards.captureCard(data),
-    onSuccess: () => {
-      setSuccessMessage("Card saved to Inbox")
+    onSuccess: (_, variables) => {
+      const deckLabel = variables.deckId
+        ? selectedDeckTitle ?? "selected deck"
+        : "Inbox"
+      setSuccessMessage(`Card saved to ${deckLabel}`)
       setTimeout(() => setSuccessMessage(null), 3000)
       queryClient.invalidateQueries({ queryKey: ["decks", "tree"] })
       queryClient.invalidateQueries({ queryKey: ["cards"] })
@@ -100,7 +120,7 @@ export default function ReaderPage() {
   const handleMine = useCallback(() => {
     if (!currentProject || !minedWord) return
     if (!translation.trim()) return
-    captureMutation.mutate({
+    const payload: CaptureCardDto = {
       projectId: currentProject.id,
       sentence: minedWord.sentence,
       targetWord: minedWord.word,
@@ -108,9 +128,12 @@ export default function ReaderPage() {
       sourceMeta: {
         type: "TEXT",
         title: sourceTitle || "Reader",
+        ...(sourceUrl.trim() ? { url: sourceUrl.trim() } : {}),
       },
-    })
-  }, [currentProject, minedWord, translation, sourceTitle, captureMutation])
+    }
+    if (miningDeckId.trim()) payload.deckId = miningDeckId.trim()
+    captureMutation.mutate(payload)
+  }, [currentProject, minedWord, translation, sourceTitle, sourceUrl, miningDeckId, captureMutation])
 
   const noProject = !currentProject
 
@@ -139,14 +162,49 @@ export default function ReaderPage() {
           ) : (
             <>
               <div className="glass-panel rounded-xl p-6 mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-2">
+                      Mining deck (optional)
+                    </label>
+                    <select
+                      value={miningDeckId}
+                      onChange={(e) => setMiningDeckId(e.target.value)}
+                      className="w-full bg-app-bg border border-white/5 rounded-lg px-4 py-2 text-white focus:border-brand-primary focus:outline-none"
+                      aria-label="Choose deck for mined cards"
+                    >
+                      <option value="">Inbox (default)</option>
+                      {leafDecks.map((d) => (
+                        <option key={d.id} value={d.id}>
+                          {d.title}
+                        </option>
+                      ))}
+                    </select>
+                    {projectId && leafDecks.length === 0 && (
+                      <p className="text-xs text-gray-500 mt-1">No decks. Create one in Library.</p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-2">
+                      Source title (optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={sourceTitle}
+                      onChange={(e) => setSourceTitle(e.target.value)}
+                      placeholder="e.g. Article: Mythical Creatures"
+                      className="w-full bg-app-bg border border-white/5 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:border-brand-primary focus:outline-none"
+                    />
+                  </div>
+                </div>
                 <label className="block text-sm font-medium text-gray-400 mb-2">
-                  Source title (optional)
+                  Source URL (optional, SR-VOC-03)
                 </label>
                 <input
-                  type="text"
-                  value={sourceTitle}
-                  onChange={(e) => setSourceTitle(e.target.value)}
-                  placeholder="e.g. Article: Mythical Creatures"
+                  type="url"
+                  value={sourceUrl}
+                  onChange={(e) => setSourceUrl(e.target.value)}
+                  placeholder="https://..."
                   className="w-full bg-app-bg border border-white/5 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:border-brand-primary focus:outline-none mb-4"
                 />
                 <label className="block text-sm font-medium text-gray-400 mb-2">

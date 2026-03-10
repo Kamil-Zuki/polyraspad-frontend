@@ -28,13 +28,48 @@ export default function AnalyticsPage() {
   const { data: dailySummary } = useDailySummary(currentProject?.id);
   const { data: userSettings } = useUserSettings();
 
-  // Calculate streak data from userSettings and dailySummary
+  // totalDays = число дней с активностью в текущем году (ключи heatmap.activity)
+  const totalDays =
+    currentYear === heatmapData?.year
+      ? Object.keys(heatmapData.activity || {}).length
+      : 0;
+
+  // longestStreak: userSettings.maxStreak с fallback на heatmap.longestStreak
+  const longestStreak = userSettings?.maxStreak ?? heatmapData?.longestStreak ?? 0;
+
   const streakData = {
-    currentStreak: dailySummary?.currentStreak || userSettings?.currentStreak || 0,
-    longestStreak: userSettings?.maxStreak || 0,
-    totalDays: 0, // This would need to be calculated from activity history
-    streakHistory: [] // This would need to be calculated from activity history
+    currentStreak: dailySummary?.currentStreak ?? userSettings?.currentStreak ?? 0,
+    longestStreak,
+    totalDays,
+    streakHistory: [] // пока пусто по заданию
   };
+
+  // Среднее число повторений за последние 30 дней (сумма count / 30)
+  const today = new Date();
+  const cutoff30 = new Date(today);
+  cutoff30.setDate(cutoff30.getDate() - 30);
+  const cutoff30Str = cutoff30.toISOString().slice(0, 10);
+  const last30Entries = Object.entries(heatmapData?.activity || {}).filter(
+    ([date]) => date >= cutoff30Str
+  );
+  const sumCountLast30 = last30Entries.reduce((acc, [, v]) => acc + v.count, 0);
+  const avgDailyReviewsLast30 = last30Entries.length ? sumCountLast30 / 30 : 0;
+
+  // Retention: matureCount / totalLemmas в процентах
+  const retentionPercent =
+    vocabularyData && vocabularyData.totalLemmas > 0
+      ? (vocabularyData.matureCount / vocabularyData.totalLemmas) * 100
+      : null;
+
+  // Время учёбы: heatmap totalTimeSpentSeconds (Xh) или dailySummary (Xm today)
+  const studyTimeDisplay =
+    heatmapData?.totalTimeSpentSeconds != null
+      ? `${(heatmapData.totalTimeSpentSeconds / 3600).toFixed(1)}h`
+      : dailySummary?.timeSpentSeconds != null
+        ? `${(dailySummary.timeSpentSeconds / 60).toFixed(0)}m today`
+        : "—";
+
+  const cardsLoading = heatmapLoading || vocabularyLoading;
 
   return (
     <ProtectedRoute>
@@ -99,22 +134,52 @@ export default function AnalyticsPage() {
               <div className="text-xs text-gray-500 uppercase font-bold tracking-wider mb-2">
                 Average Daily Reviews
               </div>
-              <div className="text-3xl font-bold text-white">42</div>
+              <div className="text-3xl font-bold text-white">
+                {cardsLoading ? (
+                  <span className="inline-block w-12 h-8 bg-app-border/50 rounded animate-pulse" />
+                ) : !currentProject ? (
+                  "—"
+                ) : (
+                  avgDailyReviewsLast30
+                )}
+              </div>
               <div className="text-xs text-gray-500 mt-2">Last 30 days</div>
             </div>
             <div className="glass-panel p-6 rounded-2xl border border-app-border">
               <div className="text-xs text-gray-500 uppercase font-bold tracking-wider mb-2">
                 Retention Rate
               </div>
-              <div className="text-3xl font-bold text-status-success">94%</div>
+              <div className="text-3xl font-bold text-status-success">
+                {cardsLoading ? (
+                  <span className="inline-block w-12 h-8 bg-app-border/50 rounded animate-pulse" />
+                ) : !currentProject || retentionPercent === null ? (
+                  "—"
+                ) : (
+                  `${retentionPercent.toFixed(0)}%`
+                )}
+              </div>
               <div className="text-xs text-gray-500 mt-2">Mature cards</div>
             </div>
             <div className="glass-panel p-6 rounded-2xl border border-app-border">
               <div className="text-xs text-gray-500 uppercase font-bold tracking-wider mb-2">
                 Study Time
               </div>
-              <div className="text-3xl font-bold text-brand-secondary">127h</div>
-              <div className="text-xs text-gray-500 mt-2">Total this year</div>
+              <div className="text-3xl font-bold text-brand-secondary">
+                {cardsLoading ? (
+                  <span className="inline-block w-12 h-8 bg-app-border/50 rounded animate-pulse" />
+                ) : !currentProject ? (
+                  "—"
+                ) : (
+                  studyTimeDisplay
+                )}
+              </div>
+              <div className="text-xs text-gray-500 mt-2">
+                {heatmapData?.totalTimeSpentSeconds != null
+                  ? "Total this year"
+                  : dailySummary?.timeSpentSeconds != null
+                    ? "Today"
+                    : "—"}
+              </div>
             </div>
           </div>
         </div>

@@ -1,5 +1,13 @@
 "use client"
 
+/**
+ * Card Browser (/browser): просмотр и поиск карточек по проекту/колоде/SRS.
+ * Bulk/Tags: out of scope until API supports.
+ * - В REST API и Entities нет эндпоинтов массовых операций над карточками (bulk delete, bulk move deck).
+ * - Нет сущности Tag и полей тегов у карточек в API/Docs; фильтр "tags" в API относится к маркетплейсу товаров.
+ * При появлении bulk/tags в API — добавить выбор строк (checkbox), кнопки действий и/или отображение тегов и фильтр по тегу.
+ */
+
 import { useState, useMemo } from "react"
 import { useProjects, useSearchCards, useDeckTree } from "@/lib/react-query/queries"
 import { useProjectContext } from "@/contexts/project-context"

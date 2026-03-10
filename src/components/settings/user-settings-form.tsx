@@ -1,5 +1,7 @@
 "use client"
 
+// Биллинг и смена пароля: в IA (Docs) указаны для /profile; в PVS REST API нет эндпоинтов.
+// Реализация делегируется Identity Service / внешнему сервису. Помечены в UI как out of scope.
 import { useState, useEffect } from "react"
 import { useUserSettings, useUpdateUserSettings } from "@/lib/react-query/queries"
 import { apiClient } from "@/lib/api"
@@ -246,6 +248,20 @@ export function UserSettingsForm() {
                 <p className="text-white font-medium text-2xl">{settings.maxStreak} days</p>
               </div>
             </div>
+          </div>
+
+          {/* Биллинг и смена пароля — out of scope: нет эндпоинтов в PVS API (см. IA: /profile). */}
+          <div>
+            <h3 className="text-lg font-semibold text-white mb-4">Биллинг</h3>
+            <p className="text-sm text-gray-400">
+              Управление подпиской и способами оплаты — в профиле аккаунта (out of scope для текущей версии).
+            </p>
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-white mb-4">Смена пароля</h3>
+            <p className="text-sm text-gray-400">
+              Смена пароля управляется в профиле аккаунта (Identity Service; out of scope для текущей версии).
+            </p>
           </div>
 
           {/* Notification Preferences */}

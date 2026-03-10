@@ -2,6 +2,8 @@ import { BaseApiClient } from "./base-api-client";
 import { API_ENDPOINTS } from "../constants";
 import type {
   ProductDto,
+  ProductReviewDto,
+  CardPreviewDto,
   PaginatedResponseDto,
   MarketplaceSearchParams,
 } from "./types";
@@ -25,5 +27,35 @@ export class MarketplaceClient extends BaseApiClient {
 
   async getProduct(id: string): Promise<ProductDto> {
     return this.request<ProductDto>(API_ENDPOINTS.MARKETPLACE.PRODUCT(id));
+  }
+
+  /** Список отзывов по товару (GET; при наличии в API) */
+  async getProductReviews(
+    productId: string,
+    params?: { pageNumber?: number; pageSize?: number }
+  ): Promise<PaginatedResponseDto<ProductReviewDto>> {
+    const searchParams = new URLSearchParams();
+    if (params?.pageNumber != null) searchParams.set("pageNumber", String(params.pageNumber));
+    if (params?.pageSize != null) searchParams.set("pageSize", String(params.pageSize));
+    const query = searchParams.toString();
+    const url = query
+      ? `${API_ENDPOINTS.MARKETPLACE.PRODUCT_REVIEWS(productId)}?${query}`
+      : API_ENDPOINTS.MARKETPLACE.PRODUCT_REVIEWS(productId);
+    return this.request<PaginatedResponseDto<ProductReviewDto>>(url);
+  }
+
+  /** Smart Preview (демо): сэмпл карточек товара (SR-MKT-02) */
+  async getProductPreview(
+    productId: string,
+    params?: { pageNumber?: number; pageSize?: number }
+  ): Promise<PaginatedResponseDto<CardPreviewDto>> {
+    const searchParams = new URLSearchParams();
+    if (params?.pageNumber != null) searchParams.set("pageNumber", String(params.pageNumber));
+    if (params?.pageSize != null) searchParams.set("pageSize", String(params.pageSize));
+    const query = searchParams.toString();
+    const url = query
+      ? `${API_ENDPOINTS.MARKETPLACE.PRODUCT_PREVIEW(productId)}?${query}`
+      : API_ENDPOINTS.MARKETPLACE.PRODUCT_PREVIEW(productId);
+    return this.request<PaginatedResponseDto<CardPreviewDto>>(url);
   }
 }

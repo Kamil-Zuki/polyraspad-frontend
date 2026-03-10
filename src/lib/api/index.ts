@@ -12,6 +12,12 @@ export { TextClient } from "./text-client";
 export { SubscriptionsClient } from "./subscriptions-client";
 export { uploadImage } from "./media-client";
 export type { UploadImageResponse } from "./media-client";
+export { startImport } from "./import-client";
+export type {
+  ImportConfig,
+  ImportColumnMapping,
+  ImportJobResponse,
+} from "./import-client";
 
 // Combined client for backward compatibility
 import { AuthClient } from "./auth-client";

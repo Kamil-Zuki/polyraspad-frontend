@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useUpdateProject } from "@/lib/react-query/queries"
 import type { ProjectResponseDto, UpdateProjectDto } from "@/lib/api/types"
 import { FsrsSettingsEditor } from "@/components/projects/fsrs-settings-editor"
@@ -14,11 +14,20 @@ export function ProjectDetailsView({ project }: ProjectDetailsViewProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [title, setTitle] = useState(project.title)
   const [settings, setSettings] = useState(project.settings)
+  const [isArchived, setIsArchived] = useState(project.isArchived ?? false)
   const updateProject = useUpdateProject()
+
+  // Синхронизация локального состояния с актуальным project (после refetch)
+  useEffect(() => {
+    setTitle(project.title)
+    setSettings(project.settings)
+    setIsArchived(project.isArchived ?? false)
+  }, [project.id, project.title, project.settings, project.isArchived])
 
   const handleSave = async () => {
     const updateData: UpdateProjectDto = {
       title,
+      isArchived,
       settings,
     }
 
@@ -48,7 +57,7 @@ export function ProjectDetailsView({ project }: ProjectDetailsViewProps) {
           )}
         </div>
 
-        {/* Project Info */}
+        {/* Project Info — все поля ProjectDto (id, title, sourceLang, targetLang, settings, stats, isArchived, createdAt) */}
         <div className="glass-panel rounded-xl p-6 mb-6">
           <h2 className="text-xl font-bold text-white mb-4">Project Information</h2>
           <div className="grid grid-cols-2 gap-4">
@@ -62,11 +71,26 @@ export function ProjectDetailsView({ project }: ProjectDetailsViewProps) {
             </div>
             <div>
               <label className="text-sm text-gray-400">Total Lemmas</label>
-              <p className="text-white font-medium">{project.stats?.totalLemmas || 0}</p>
+              <p className="text-white font-medium">{project.stats?.totalLemmas ?? 0}</p>
             </div>
             <div>
               <label className="text-sm text-gray-400">Mature Lemmas</label>
-              <p className="text-white font-medium">{project.stats?.matureLemmas || 0}</p>
+              <p className="text-white font-medium">{project.stats?.matureLemmas ?? 0}</p>
+            </div>
+            <div>
+              <label className="text-sm text-gray-400">Archived</label>
+              <p className="text-white font-medium">{project.isArchived ? "Yes" : "No"}</p>
+            </div>
+            <div>
+              <label className="text-sm text-gray-400">Created</label>
+              <p className="text-white font-medium">
+                {project.createdAt
+                  ? new Date(project.createdAt).toLocaleString(undefined, {
+                      dateStyle: "medium",
+                      timeStyle: "short",
+                    })
+                  : "—"}
+              </p>
             </div>
           </div>
         </div>
@@ -93,33 +117,55 @@ export function ProjectDetailsView({ project }: ProjectDetailsViewProps) {
           </div>
 
           {isEditing ? (
-            <FsrsSettingsEditor
-              settings={settings}
-              onChange={setSettings}
-              onSave={handleSave}
-              onCancel={() => {
-                setIsEditing(false)
-                setTitle(project.title)
-                setSettings(project.settings)
-              }}
-              isLoading={updateProject.isPending}
-            />
+            <>
+              <div className="mb-4">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={isArchived}
+                    onChange={(e) => setIsArchived(e.target.checked)}
+                    className="rounded"
+                  />
+                  <span className="text-sm text-gray-300">Archived</span>
+                </label>
+              </div>
+              <FsrsSettingsEditor
+                settings={settings}
+                onChange={setSettings}
+                onSave={handleSave}
+                onCancel={() => {
+                  setIsEditing(false)
+                  setTitle(project.title)
+                  setSettings(project.settings)
+                  setIsArchived(project.isArchived ?? false)
+                }}
+                isLoading={updateProject.isPending}
+              />
+            </>
           ) : (
             <div className="space-y-4">
               <div>
                 <label className="text-sm text-gray-400">Request Retention</label>
                 <p className="text-white font-medium">
-                  {((settings?.requestRetention || 0) * 100).toFixed(1)}%
+                  {((settings?.requestRetention ?? 0) * 100).toFixed(1)}%
                 </p>
               </div>
               <div>
                 <label className="text-sm text-gray-400">Maximum Interval</label>
-                <p className="text-white font-medium">{settings?.maximumInterval || 0} days</p>
+                <p className="text-white font-medium">{settings?.maximumInterval ?? 0} days</p>
               </div>
               <div>
                 <label className="text-sm text-gray-400">Enable Short Term</label>
                 <p className="text-white font-medium">{settings?.enableShortTerm ? "Yes" : "No"}</p>
               </div>
+              {settings?.w && settings.w.length > 0 && (
+                <div>
+                  <label className="text-sm text-gray-400">Weights (w)</label>
+                  <p className="text-white font-medium text-sm">
+                    {settings.w.length} значений (SrsParamsDto)
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </div>

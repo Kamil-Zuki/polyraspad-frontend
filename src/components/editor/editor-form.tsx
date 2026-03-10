@@ -276,23 +276,17 @@ export function EditorForm({ selectedDeckId: selectedDeckIdProp, onSelectedDeckI
         <div className="relative group">
           <textarea
             ref={sentenceTextareaRef}
+            data-testid="sentence-input"
             value={sentence}
             onChange={(e) => setSentence(e.target.value)}
-            onMouseUp={(e) => {
-              const ta = e.currentTarget
+            onSelect={() => {
+              const ta = sentenceTextareaRef.current
+              if (!ta) return
               const start = ta.selectionStart
               const end = ta.selectionEnd
               if (start === end) return
               const selected = sentence.slice(start, end).trim()
-              if (selected && /^\S+$/.test(selected)) setTargetWord(selected)
-            }}
-            onKeyUp={(e) => {
-              const ta = e.currentTarget
-              const start = ta.selectionStart
-              const end = ta.selectionEnd
-              if (start === end) return
-              const selected = sentence.slice(start, end).trim()
-              if (selected && /^\S+$/.test(selected)) setTargetWord(selected)
+              if (selected) setTargetWord(selected)
             }}
             className="input-dark w-full p-5 rounded-2xl text-xl min-h-[140px] resize-none leading-relaxed"
             placeholder="Type or paste your sentence here..."
@@ -317,6 +311,7 @@ export function EditorForm({ selectedDeckId: selectedDeckIdProp, onSelectedDeckI
           </label>
           <input
             type="text"
+            data-testid="target-input"
             value={targetWord}
             onChange={(e) => setTargetWord(e.target.value)}
             className="input-dark w-full p-4 rounded-xl font-bold text-white"
@@ -413,11 +408,11 @@ export function EditorForm({ selectedDeckId: selectedDeckIdProp, onSelectedDeckI
                 <div className="w-12 h-12 rounded-full bg-app-surface border border-white/5 flex items-center justify-center mb-3 text-gray-600 group-hover:text-brand-primary group-hover:shadow-glow group-hover:bg-brand-primary/10 transition-all">
                   <i className="fas fa-image text-lg" />
                 </div>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 group-hover:text-white">
-                  {imageUrl.trim()
-                    ? "Invalid image URL"
-                    : "Drop image or Paste (Ctrl+V)"}
-                </span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 group-hover:text-white">
+                    {imageUrl.trim()
+                      ? "Invalid image URL"
+                      : "Drop image or Paste (Ctrl+V)"}
+                  </span>
               </div>
             )}
 
@@ -566,7 +561,7 @@ export function EditorForm({ selectedDeckId: selectedDeckIdProp, onSelectedDeckI
                     <i className="fas fa-microphone text-lg" />
                   </div>
                   <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 group-hover:text-white">
-                    Upload or Record
+                    Upload audio or Record
                   </span>
                 </>
               )}

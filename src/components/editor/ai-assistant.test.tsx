@@ -1,5 +1,5 @@
 import { expect, test, vi, beforeEach } from "vitest"
-import { render, screen, fireEvent, waitFor } from "@testing-library/react"
+import { render, screen, fireEvent, waitFor, within } from "@testing-library/react"
 import { useEffect } from "react"
 import { AiAssistant } from "./ai-assistant"
 import { EditorCardProvider, useEditorCard } from "@/contexts/editor-card-context"
@@ -41,6 +41,18 @@ function renderWithTarget(word: string) {
   )
 }
 
+/** Панель с приглашением ввести слово (первый aside). */
+function getFirstAssistantPanel() {
+  return screen.getAllByRole("complementary")[0]
+}
+
+/** Панель с контентом для targetWord (Context Generator) — в DOM может быть два aside из-за Strict Mode. */
+function getAssistantPanelWithContext() {
+  const panels = screen.getAllByRole("complementary")
+  const withContext = panels.find((p) => within(p).queryByText("Context Generator"))
+  return withContext ?? panels[0]
+}
+
 beforeEach(() => {
   vi.mocked(ollamaGenerate).mockReset()
 })
@@ -51,13 +63,15 @@ test("should render prompt to enter target word when targetWord is empty", () =>
       <AiAssistant />
     </EditorCardProvider>,
   )
-  expect(screen.getByText(/Enter a target word to get AI suggestions/)).toBeInTheDocument()
+  const panel = getFirstAssistantPanel()
+  expect(within(panel).getByText(/Enter a target word to get AI suggestions/)).toBeInTheDocument()
 })
 
 test("should show Context Generator and Generate button when targetWord is set", () => {
   renderWithTarget("inevitable")
-  expect(screen.getByText("Context Generator")).toBeInTheDocument()
-  expect(screen.getByRole("button", { name: /Generate more examples/ })).toBeInTheDocument()
+  const panel = getAssistantPanelWithContext()
+  expect(within(panel).getByText("Context Generator")).toBeInTheDocument()
+  expect(within(panel).getByRole("button", { name: /Generate more examples/ })).toBeInTheDocument()
 })
 
 test("should call ollamaGenerate when Generate more examples is clicked", async () => {
@@ -66,7 +80,8 @@ test("should call ollamaGenerate when Generate more examples is clicked", async 
   )
 
   renderWithTarget("inevitable")
-  fireEvent.click(screen.getByRole("button", { name: /Generate more examples/ }))
+  const panel = getAssistantPanelWithContext()
+  fireEvent.click(within(panel).getByRole("button", { name: /Generate more examples/ }))
 
   await waitFor(() => {
     expect(ollamaGenerate).toHaveBeenCalledWith(
@@ -84,15 +99,17 @@ test("should apply example to form when Use this example is clicked", async () =
   )
 
   renderWithTarget("inevitable")
-  fireEvent.click(screen.getByRole("button", { name: /Generate more examples/ }))
+  const panel = getAssistantPanelWithContext()
+  fireEvent.click(within(panel).getByRole("button", { name: /Generate more examples/ }))
   await waitFor(() => expect(ollamaGenerate).toHaveBeenCalled())
 
-  const exampleCard = await screen.findByText(/Success is inevitable/)
-  fireEvent.click(exampleCard)
+  const exampleCards = await within(panel).findAllByText(/Success is inevitable/)
+  fireEvent.click(exampleCards[0])
 
+  const editorState = screen.getAllByTestId("editor-state")[0]
   await waitFor(() => {
-    expect(screen.getByTestId("sentence")).toHaveTextContent("Success is inevitable.")
-    expect(screen.getByTestId("translation")).toHaveTextContent("Успех неизбежен.")
+    expect(within(editorState).getByTestId("sentence")).toHaveTextContent("Success is inevitable.")
+    expect(within(editorState).getByTestId("translation")).toHaveTextContent("Успех неизбежен.")
   })
 })
 
@@ -102,15 +119,17 @@ test("should add grammar text to notes when Add to notes is clicked", async () =
   )
 
   renderWithTarget("inevitable")
+  const panel = getAssistantPanelWithContext()
 
-  fireEvent.click(screen.getByRole("button", { name: /Explain grammar/ }))
+  fireEvent.click(within(panel).getByRole("button", { name: /Explain grammar/ }))
   await waitFor(() => expect(ollamaGenerate).toHaveBeenCalled())
 
-  const addToNotesBtn = await screen.findByRole("button", { name: /Add to notes/ })
+  const addToNotesBtn = await within(panel).findByRole("button", { name: /Add to notes/ })
   fireEvent.click(addToNotesBtn)
 
+  const editorState = screen.getAllByTestId("editor-state")[0]
   await waitFor(() => {
-    expect(screen.getByTestId("notes")).toHaveTextContent("Inevitably is an adverb")
+    expect(within(editorState).getByTestId("notes")).toHaveTextContent("Inevitably is an adverb")
   })
 })
 
@@ -118,9 +137,10 @@ test("should show error when ollamaGenerate fails", async () => {
   vi.mocked(ollamaGenerate).mockRejectedValue(new Error("Network error"))
 
   renderWithTarget("inevitable")
-  fireEvent.click(screen.getByRole("button", { name: /Generate more examples/ }))
+  const panel = getAssistantPanelWithContext()
+  fireEvent.click(within(panel).getByRole("button", { name: /Generate more examples/ }))
 
   await waitFor(() => {
-    expect(screen.getByText("Network error")).toBeInTheDocument()
+    expect(within(panel).getByText("Network error")).toBeInTheDocument()
   })
 })

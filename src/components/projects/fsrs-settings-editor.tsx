@@ -2,6 +2,7 @@
 
 import type { SrsSettingsDto } from "@/lib/api/types"
 
+/** Редактор параметров FSRS (SrsParamsDto): requestRetention, maximumInterval, w, enableShortTerm. */
 interface FsrsSettingsEditorProps {
   settings?: SrsSettingsDto
   onChange: (settings: SrsSettingsDto) => void

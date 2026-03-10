@@ -1,5 +1,5 @@
 import { expect, test } from "vitest"
-import { render, screen, fireEvent, waitFor } from "@testing-library/react"
+import { render, screen, fireEvent, waitFor, within } from "@testing-library/react"
 import { EditorCardProvider, useEditorCard } from "./editor-card-context"
 
 function Consumer({ onMount }: { onMount: (state: ReturnType<typeof useEditorCard>) => void }) {
@@ -70,17 +70,17 @@ test("should update via individual setters", async () => {
       </div>
     )
   }
-  render(
+  const { container } = render(
     <EditorCardProvider>
       <SetterAndShow />
     </EditorCardProvider>,
   )
-  const out = screen.getByTestId("out")
+  const out = within(container).getByTestId("out")
   expect(out).toHaveTextContent("|")
 
-  fireEvent.click(screen.getByRole("button", { name: /Set sentence/ }))
+  fireEvent.click(within(container).getByRole("button", { name: /Set sentence/ }))
   await waitFor(() => expect(out).toHaveTextContent("Test sentence|"))
 
-  fireEvent.click(screen.getByRole("button", { name: /Set target/ }))
+  fireEvent.click(within(container).getByRole("button", { name: /Set target/ }))
   await waitFor(() => expect(out).toHaveTextContent("Test sentence|word"))
 })

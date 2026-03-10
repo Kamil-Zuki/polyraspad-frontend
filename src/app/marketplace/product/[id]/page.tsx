@@ -95,7 +95,12 @@ export default function ProductPage({ params }: { params: { id: string } }) {
               studentsCount={studentsCount}
             />
 
-            <ProductTabs descriptionHtml={product.descriptionHtml} />
+            <ProductTabs
+              productId={product.id}
+              descriptionHtml={product.descriptionHtml}
+              reviewCount={product.reviewCount}
+              isOwned={product.isOwned}
+            />
           </div>
 
           <div className="lg:col-span-1">

@@ -22,6 +22,7 @@ const navItems: NavItem[] = [
   { id: "browser", label: "Browser", icon: "search", href: "/browser", group: "Learning" },
   { id: "editor", label: "Create Card", icon: "plus-circle", href: "/editor", group: "Studio" },
   { id: "reader", label: "Reader", icon: "book-reader", href: "/reader", group: "Studio" },
+  { id: "import", label: "Import", icon: "file-import", href: "/import", group: "Studio" },
   { id: "marketplace", label: "Marketplace", icon: "store", href: "/marketplace", group: "Community" },
 ]
 
@@ -31,6 +32,7 @@ const iconMap: Record<string, string> = {
   search: "fas fa-search",
   "plus-circle": "fas fa-plus-circle",
   "book-reader": "fas fa-book-reader",
+  "file-import": "fas fa-file-import",
   store: "fas fa-store",
 }
 
@@ -54,6 +56,7 @@ export function Sidebar() {
       case "browser": return "group-hover:text-white"
       case "editor": return "group-hover:text-brand-primary"
       case "reader": return "group-hover:text-brand-pink"
+      case "import": return "group-hover:text-white"
       case "marketplace": return "group-hover:text-yellow-400"
       default: return "group-hover:text-white"
     }

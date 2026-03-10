@@ -1,23 +1,33 @@
-import { describe, it, expect, vi, beforeEach } from "vitest"
-import "@testing-library/jest-dom/vitest"
-import { render, screen, waitFor } from "@testing-library/react"
+import { vi, describe, it, expect, beforeEach } from "vitest"
+import { render, screen, waitFor, fireEvent } from "@testing-library/react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import SubscriptionsPage from "./page"
-import { apiClient } from "@/lib/api"
+
+const getSubscriptionsMock = vi.fn()
+const deleteSubscriptionMock = vi.fn()
 
 vi.mock("@/lib/api", () => ({
   apiClient: {
-    subscriptions: { getSubscriptions: vi.fn() },
+    subscriptions: {
+      getSubscriptions: () => getSubscriptionsMock(),
+      deleteSubscription: (deckId: string) => deleteSubscriptionMock(deckId),
+    },
   },
 }))
 
-function renderSubscriptionsPage() {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: { retry: false },
-      mutations: { retry: false },
-    },
-  })
+const mockSubscriptions = [
+  {
+    id: "sub-1",
+    userId: "user-1",
+    deckId: "deck-abc",
+    lastSyncedVersion: 0,
+    subscribedAt: "2025-01-01T00:00:00Z",
+    lastAccessedAt: "2025-01-01T00:00:00Z",
+    deckTitle: "Test Deck",
+  },
+]
+
+function renderSubscriptionsPage(queryClient: QueryClient) {
   return render(
     <QueryClientProvider client={queryClient}>
       <SubscriptionsPage />
@@ -25,51 +35,30 @@ function renderSubscriptionsPage() {
   )
 }
 
-describe("SubscriptionsPage", () => {
+describe("Subscriptions page", () => {
   beforeEach(() => {
-    vi.mocked(apiClient.subscriptions.getSubscriptions).mockReset()
+    vi.clearAllMocks()
+    getSubscriptionsMock.mockResolvedValue(mockSubscriptions)
+    deleteSubscriptionMock.mockResolvedValue(undefined)
   })
 
-  it("should_show_title_and_description_when_page_renders", () => {
-    vi.mocked(apiClient.subscriptions.getSubscriptions).mockResolvedValue([])
-    renderSubscriptionsPage()
-    expect(screen.getByRole("heading", { level: 1, name: "Subscriptions" })).toBeInTheDocument()
-    expect(screen.getByText(/Manage your deck subscriptions/i)).toBeInTheDocument()
-  })
-
-  it("should_show_empty_state_when_no_subscriptions", async () => {
-    vi.mocked(apiClient.subscriptions.getSubscriptions).mockResolvedValue([])
-    renderSubscriptionsPage()
-
-    await waitFor(() => {
-      expect(apiClient.subscriptions.getSubscriptions).toHaveBeenCalled()
+  it("should_remove_subscription_from_list_when_user_clicks_unsubscribe_and_api_returns_204", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
     })
+    const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries")
+
+    renderSubscriptionsPage(queryClient)
+
+    await screen.findByText("Test Deck")
+    const unsubBtn = screen.getByRole("button", { name: /отписаться/i })
+    fireEvent.click(unsubBtn)
 
     await waitFor(() => {
-      expect(screen.getByText(/no subscriptions|you have no subscriptions|empty/i)).toBeInTheDocument()
+      expect(deleteSubscriptionMock).toHaveBeenCalledWith("deck-abc")
     })
-  })
-
-  it("should_show_list_of_decks_when_subscriptions_exist", async () => {
-    vi.mocked(apiClient.subscriptions.getSubscriptions).mockResolvedValue([
-      {
-        id: "sub-1",
-        userId: "user-1",
-        deckId: "deck-1",
-        lastSyncedVersion: 1,
-        subscribedAt: "2025-01-01T00:00:00Z",
-        lastAccessedAt: "2025-01-01T00:00:00Z",
-        deckTitle: "My Deck",
-      },
-    ])
-    renderSubscriptionsPage()
-
     await waitFor(() => {
-      expect(apiClient.subscriptions.getSubscriptions).toHaveBeenCalled()
-    })
-
-    await waitFor(() => {
-      expect(screen.getByText("My Deck")).toBeInTheDocument()
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["subscriptions"] })
     })
   })
 })

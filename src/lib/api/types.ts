@@ -182,6 +182,10 @@ export interface HeatmapDto {
   year: number;
   totalReviews: number;
   activity: Record<string, { count: number; level: number }>;
+  /** Самая длинная серия дней подряд с активностью (опционально с бэкенда) */
+  longestStreak?: number;
+  /** Суммарное время учёбы в секундах за период (опционально с бэкенда) */
+  totalTimeSpentSeconds?: number;
 }
 
 export interface DailySummaryDto {
@@ -275,6 +279,8 @@ export interface CreateCardDto {
 
 export interface CaptureCardDto {
   projectId: string;
+  /** Если не передан — карточка сохраняется в Inbox проекта (SR-API-01). */
+  deckId?: string | null;
   sentence: string;
   targetWord: string;
   translation: string;
@@ -532,6 +538,29 @@ export interface ProductDto {
   reviewCount: number;
   salesCount: number;
   isOwned: boolean;
+}
+
+/** Отзыв о товаре (ProductReviewDto, SR-MKT-05) */
+export interface ProductReviewDto {
+  id: string;
+  productId: string;
+  author: ProductAuthorDto;
+  rating: number;
+  comment: string;
+  isVerifiedPurchase?: boolean;
+  authorReply?: string | null;
+  createdAt: string;
+}
+
+/** Карточка для Smart Preview (CardPreviewDto, SR-MKT-02) */
+export interface CardPreviewDto {
+  id: string;
+  sentence: string;
+  targetWord: string;
+  translation: string;
+  srsStatus?: string;
+  hasAudio?: boolean;
+  deckTitle?: string;
 }
 
 export interface MarketplaceSearchParams {
