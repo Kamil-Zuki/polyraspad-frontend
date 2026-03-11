@@ -1,7 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useDeck, useUpdateDeck } from "@/lib/react-query/queries"
+import { uploadImage } from "@/lib/api/media-client"
 import type { UpdateDeckDto, ContributionPolicyDto } from "@/lib/api/types"
 import { ContributionPolicyDto as ContributionPolicyEnum } from "@/lib/api/types"
 
@@ -30,6 +31,7 @@ export function DeckSettingsDialog({
   const [coverImageUrl, setCoverImageUrl] = useState("")
   const [contributionPolicy, setContributionPolicy] = useState<ContributionPolicyDto>(ContributionPolicyEnum.Open)
   const [error, setError] = useState("")
+  const coverImageUrlRef = useRef<string>("")
 
   const { data: deck, isLoading } = useDeck(deckId ?? "")
   const updateDeck = useUpdateDeck()
@@ -39,8 +41,9 @@ export function DeckSettingsDialog({
       setTitle(deck.title)
       setDescription(deck.description ?? "")
       setIsPublic(deck.isPublic)
-      setCoverImageUrl(deck.coverImageUrl ?? "")
-      setContributionPolicy(deck.contributionPolicy)
+      const cover = deck.coverImageUrl ?? ""
+      setCoverImageUrl(cover)
+      coverImageUrlRef.current = cover
     }
   }, [deck])
 
@@ -55,11 +58,12 @@ export function DeckSettingsDialog({
     setError("")
     if (!deckId) return
     try {
+      const effectiveCover = (coverImageUrlRef.current || coverImageUrl).trim() || null
       const data: UpdateDeckDto = {
         title: title.trim() || undefined,
         description: description.trim() || null,
         isPublic,
-        coverImageUrl: coverImageUrl.trim() || null,
+        coverImageUrl: effectiveCover,
         contributionPolicy,
       }
       await updateDeck.mutateAsync({ id: deckId, data })
@@ -132,9 +136,32 @@ export function DeckSettingsDialog({
                   id="deck-settings-cover"
                   type="url"
                   value={coverImageUrl}
-                  onChange={(e) => setCoverImageUrl(e.target.value)}
+                  onChange={(e) => {
+                    const v = e.target.value
+                    setCoverImageUrl(v)
+                    coverImageUrlRef.current = v
+                  }}
                   className="w-full px-3 py-2 border border-white/10 rounded-lg bg-app-bg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-brand-primary/50 transition"
                   placeholder="https://..."
+                />
+                <input
+                  id="deck-settings-cover-upload"
+                  type="file"
+                  accept="image/*"
+                  aria-label="Upload image"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0]
+                    if (!file) return
+                    try {
+                      const { url } = await uploadImage(file)
+                      coverImageUrlRef.current = url
+                      setCoverImageUrl(url)
+                    } catch (err: unknown) {
+                      setError(err instanceof Error ? err.message : "Upload failed")
+                    }
+                    e.target.value = ""
+                  }}
+                  className="mt-2 w-full text-sm text-gray-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-brand-primary/20 file:text-brand-primary hover:file:bg-brand-primary/30"
                 />
               </div>
 
