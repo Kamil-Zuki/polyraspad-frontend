@@ -82,6 +82,11 @@ export default function StudySessionPage() {
   const cardsReviewed = session?.cardsReviewed ?? 0;
   const currentIndex = cardsReviewed + (currentCard ? 1 : 0);
 
+  // «Нет карт в сессии» — нормальное завершение сессии, не ошибка (бэкенд может вернуть 204 или ранее возвращал 404)
+  const isNoMoreCardsError = useCallback((e: unknown) => {
+    return e instanceof Error && e.message.includes("No more cards in session");
+  }, []);
+
   const fetchNextCard = useCallback(async (sessionId: string) => {
     const next = await apiClient.study.getNextCard(sessionId);
     if (next === null) {
@@ -123,7 +128,13 @@ export default function StudySessionPage() {
         await fetchNextCard(started.id);
       } catch (e) {
         if (cancelled) return;
-        setError(e instanceof Error ? e.message : "Failed to start session");
+        if (isNoMoreCardsError(e)) {
+          setSessionComplete(true);
+          setCurrentCard(null);
+          setError(null);
+        } else {
+          setError(e instanceof Error ? e.message : "Failed to start session");
+        }
       } finally {
         if (!cancelled) setIsStarting(false);
       }
@@ -132,7 +143,7 @@ export default function StudySessionPage() {
     return () => {
       cancelled = true;
     };
-  }, [deck?.projectId, id, fetchNextCard]);
+  }, [deck?.projectId, id, fetchNextCard, isNoMoreCardsError]);
 
   // Invalidate cached data when session completes so dashboard/deck show fresh stats
   useEffect(() => {
@@ -178,9 +189,16 @@ export default function StudySessionPage() {
           ? { ...prev, cardsReviewed: prev.cardsReviewed + 1 }
           : null
       );
+      // Бэкенд сам отдаёт карту досрочно (learn ahead), если других карт нет — как в Anki
       await fetchNextCard(session.id);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to submit review");
+      if (isNoMoreCardsError(e)) {
+        setSessionComplete(true);
+        setCurrentCard(null);
+        setError(null);
+      } else {
+        setError(e instanceof Error ? e.message : "Failed to submit review");
+      }
     } finally {
       setIsLoadingNext(false);
     }
@@ -199,7 +217,13 @@ export default function StudySessionPage() {
       );
       await fetchNextCard(session.id);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to undo");
+      if (isNoMoreCardsError(e)) {
+        setSessionComplete(true);
+        setCurrentCard(null);
+        setError(null);
+      } else {
+        setError(e instanceof Error ? e.message : "Failed to undo");
+      }
     } finally {
       setIsLoadingNext(false);
     }
