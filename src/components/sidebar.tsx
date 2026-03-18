@@ -4,7 +4,8 @@ import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
-import { useUserSettings } from "@/lib/react-query/queries"
+import { useProjectContext } from "@/contexts/project-context"
+import { useUserSettings, useDailySummary } from "@/lib/react-query/queries"
 import { ProjectSwitcher } from "./sidebar/project-switcher"
 import { cn } from "@/lib/utils"
 
@@ -41,8 +42,19 @@ export function Sidebar() {
   const auth = useAuth()
   const user = auth.user
   const { data: userSettings } = useUserSettings()
-  const userInitial = user?.userName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "U"
-
+  const { currentProject } = useProjectContext()
+  const projectId = currentProject?.id
+  const { data: dailySummary } = useDailySummary(projectId, { enabled: !!projectId })
+  // Серия: свежие данные из дневной сводки по проекту, иначе из настроек пользователя
+  const streakDisplay =
+    dailySummary?.currentStreak ?? userSettings?.currentStreak ?? 0
+  const reviewGoal =
+    dailySummary?.reviews.target ?? userSettings?.dailyGoalReview ?? 1
+  const reviewsDone = dailySummary?.reviews.current ?? 0
+  const goalProgressPct = Math.min(
+    100,
+    Math.round((reviewsDone / Math.max(reviewGoal, 1)) * 100)
+  )
   const groupedItems = navItems.reduce((acc, item) => {
     const group = item.group || "Other"
     if (!acc[group]) acc[group] = []
@@ -113,26 +125,29 @@ export function Sidebar() {
             <div className="flex items-center gap-1.5 text-orange-400">
               <i className="fas fa-fire text-sm animate-pulse" />
               <span className="font-bold text-white text-sm tabular-nums">
-                {userSettings?.currentStreak || 0}
+                {streakDisplay}
               </span>
             </div>
           </div>
           <div className="w-full bg-app-bg h-1.5 rounded-full overflow-hidden relative z-10">
-            {/* Progress will be calculated from DailySummary - placeholder for now */}
-            <div className="bg-gradient-to-r from-orange-400 to-red-500 h-full w-[65%] rounded-full shadow-[0_0_8px_rgba(249,115,22,0.6)]" />
+            <div
+              className="bg-gradient-to-r from-orange-400 to-red-500 h-full rounded-full shadow-[0_0_8px_rgba(249,115,22,0.6)] transition-[width] duration-300"
+              style={{ width: `${goalProgressPct}%` }}
+            />
           </div>
           <div className="flex justify-between text-[9px] text-gray-500 mt-1.5 relative z-10">
             <span>Daily Goal</span>
             <span className="text-gray-300 tabular-nums">
-              {userSettings?.dailyGoalReview || 0} reviews
+              {reviewsDone} / {reviewGoal} reviews
             </span>
           </div>
         </div>
 
         {/* Profile Mini */}
         <Link
-          href="/settings"
+          href="/profile"
           className="mt-4 flex items-center gap-3 px-1 group cursor-pointer hover:opacity-80 transition"
+          aria-label="Profile"
         >
           <div className="relative">
             <img src={`https://i.pravatar.cc/150?u=${user?.id || 1}`} className="w-8 h-8 rounded-full border border-gray-600" />
@@ -143,7 +158,7 @@ export function Sidebar() {
               {user?.userName || user?.email?.split('@')[0] || "Kamil Karatov"}
             </div>
             <div className="text-[10px] text-gray-500 group-hover:text-gray-400 transition">
-              Pro Plan
+              Profile
             </div>
           </div>
           <i className="fas fa-cog text-gray-600 group-hover:text-white transition" />

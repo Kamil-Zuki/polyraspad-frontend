@@ -12,7 +12,9 @@ import {
   BarChart3,
   FolderOpen,
 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useDeck, useDeckTree } from "@/lib/react-query/queries";
+import { deckQueryKeys } from "@/lib/react-query/constants";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { DeckSettingsDialog } from "@/components/decks/deck-settings-dialog";
 import { apiClient } from "@/lib/api";
@@ -109,7 +111,10 @@ export default function DeckOverviewPage() {
 
   const [autopilot, setAutopilot] = useState<DailyAutopilotDto | null>(null);
   const [autoImportJob, setAutoImportJob] = useState<AutomationJobDto | null>(null);
+  const [importJobError, setImportJobError] = useState<string | null>(null);
+  const [importJobLoading, setImportJobLoading] = useState(false);
   const [miningDrafts, setMiningDrafts] = useState<ZeroTouchMiningResponseDto | null>(null);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (!deck?.projectId || !id) return;
@@ -141,24 +146,50 @@ export default function DeckOverviewPage() {
   }, [deck?.projectId, id]);
 
   const runAutomatedImport = async () => {
-    if (!deck?.projectId) return;
-    const job = await apiClient.automation.createJob({
-      type: "IMPORT",
-      projectId: deck.projectId,
-      deckId: id,
-      itemsCount: 25,
-    });
-    setAutoImportJob(job);
-    const poll = async () => {
-      let current = job;
-      for (let i = 0; i < 5; i += 1) {
-        await new Promise((resolve) => setTimeout(resolve, 450));
-        current = await apiClient.automation.getJob(job.id);
-        setAutoImportJob(current);
-        if (current.status === "COMPLETED") break;
+    if (!deck?.projectId || !id) return;
+    setImportJobError(null);
+    setImportJobLoading(true);
+    setAutoImportJob(null);
+    try {
+      const job = await apiClient.automation.createJob({
+        type: "IMPORT",
+        projectId: deck.projectId,
+        deckId: id,
+        itemsCount: 25,
+      });
+      setAutoImportJob(job);
+      if (job.status === "FAILED") {
+        setImportJobError(job.lastError?.trim() || "Импорт не выполнен.");
+        setImportJobLoading(false);
+        return;
       }
-    };
-    void poll();
+      // Polling: джоб может быть RUNNING (если позже сделают async) или сразу COMPLETED
+      const poll = async () => {
+        let current = job;
+        for (let i = 0; i < 8; i += 1) {
+          if (current.status === "COMPLETED" || current.status === "FAILED") break;
+          await new Promise((resolve) => setTimeout(resolve, 400));
+          try {
+            current = await apiClient.automation.getJob(job.id);
+            setAutoImportJob(current);
+          } catch {
+            break;
+          }
+        }
+        if (current.status === "FAILED") {
+          setImportJobError(current.lastError?.trim() || "Импорт завершился с ошибкой.");
+        } else if (current.status === "COMPLETED") {
+          void queryClient.invalidateQueries({ queryKey: deckQueryKeys.deck(id) });
+        }
+        setImportJobLoading(false);
+      };
+      void poll();
+    } catch (e) {
+      const msg =
+        e instanceof Error ? e.message : "Не удалось запустить импорт. Проверьте сеть и авторизацию.";
+      setImportJobError(msg);
+      setImportJobLoading(false);
+    }
   };
 
   const runZeroTouchMining = async () => {
@@ -338,11 +369,12 @@ export default function DeckOverviewPage() {
                 </button>
                 <button
                   type="button"
+                  disabled={importJobLoading}
                   onClick={runAutomatedImport}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-app-surface hover:bg-app-hover border border-app-border text-white text-sm font-medium transition-colors"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-app-surface hover:bg-app-hover border border-app-border text-white text-sm font-medium transition-colors disabled:opacity-50"
                 >
                   <LayoutGrid className="w-4 h-4" />
-                  Run Import Job
+                  {importJobLoading ? "Import…" : "Run Import Job"}
                 </button>
                 <button
                   type="button"
@@ -406,8 +438,13 @@ export default function DeckOverviewPage() {
                   </div>
                 </section>
               )}
+              {importJobError && (
+                <p className="mt-4 text-sm text-status-error max-w-md text-center px-2" role="alert">
+                  {importJobError}
+                </p>
+              )}
               {autoImportJob && (
-                <p className="mt-4 text-xs text-gray-300">
+                <p className="mt-2 text-xs text-gray-300">
                   Job {autoImportJob.type}: {autoImportJob.status} ({autoImportJob.progressPercent}%)
                 </p>
               )}

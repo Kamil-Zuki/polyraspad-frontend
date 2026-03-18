@@ -5,6 +5,9 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   compress: true,
+  async redirects() {
+    return [{ source: "/settings", destination: "/profile", permanent: false }]
+  },
   images: {
     remotePatterns: [
       {

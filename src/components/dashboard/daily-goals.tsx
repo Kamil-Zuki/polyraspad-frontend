@@ -58,8 +58,8 @@ export function DailyGoals() {
           {!hasReviewGoal ? (
             <>
               Set a daily review goal in{" "}
-              <Link href="/settings" className="text-brand-secondary hover:text-white transition">
-                Settings
+              <Link href="/profile" className="text-brand-secondary hover:text-white transition">
+                Profile
               </Link>
               .
             </>
@@ -99,8 +99,8 @@ export function DailyGoals() {
           {!hasNewGoal ? (
             <>
               Set a daily new cards goal in{" "}
-              <Link href="/settings" className="text-brand-secondary hover:text-white transition">
-                Settings
+              <Link href="/profile" className="text-brand-secondary hover:text-white transition">
+                Profile
               </Link>
               .
             </>

@@ -7,11 +7,16 @@ interface StudyControlsProps {
   onUndo?: () => void;
   canUndo?: boolean;
   disabled?: boolean;
-  /** Interval shown on Good button (e.g. "5d") from FSRS */
-  goodInterval?: string;
+  /** Intervals for each rating from FSRS (1=Again, 2=Hard, 3=Good, 4=Easy) */
+  intervals?: Record<number, string>;
 }
 
-const DEFAULT_GOOD_INTERVAL = "5d";
+const DEFAULT_INTERVALS: Record<number, string> = {
+  1: "1m",
+  2: "2d",
+  3: "4d",
+  4: "14d",
+};
 
 export function StudyControls({
   onRate,
@@ -20,7 +25,7 @@ export function StudyControls({
   onUndo,
   canUndo = false,
   disabled,
-  goodInterval = DEFAULT_GOOD_INTERVAL,
+  intervals = DEFAULT_INTERVALS,
 }: StudyControlsProps) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -74,7 +79,7 @@ export function StudyControls({
           className="bg-white/5 border border-white/5 hover:bg-status-again/10 hover:border-status-again/30 p-3 rounded-xl flex flex-col items-center group transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none"
         >
           <span className="text-xs font-bold text-gray-500 uppercase mb-1 group-hover:text-status-again transition">Again</span>
-          <span className="text-lg font-bold text-status-again text-rose-400">1m</span>
+          <span className="text-lg font-bold text-status-again text-rose-400">{intervals[1] || "1m"}</span>
           <span className="text-[10px] text-gray-600 mt-1 uppercase tracking-tighter">Key: 1</span>
         </button>
 
@@ -85,7 +90,7 @@ export function StudyControls({
           className="bg-white/5 border border-white/5 hover:bg-status-hard/10 hover:border-status-hard/30 p-3 rounded-xl flex flex-col items-center group transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none"
         >
           <span className="text-xs font-bold text-gray-500 uppercase mb-1 group-hover:text-status-hard transition">Hard</span>
-          <span className="text-lg font-bold text-status-hard text-amber-400">2d</span>
+          <span className="text-lg font-bold text-status-hard text-amber-400">{intervals[2] || "2d"}</span>
           <span className="text-[10px] text-gray-600 mt-1 uppercase tracking-tighter">Key: 2</span>
         </button>
 
@@ -96,7 +101,7 @@ export function StudyControls({
           className="bg-brand-primary/10 border border-brand-primary/20 hover:bg-status-good/10 hover:border-status-good/30 p-3 rounded-xl flex flex-col items-center group transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none"
         >
           <span className="text-xs font-bold text-gray-500 uppercase mb-1 group-hover:text-status-good transition">Good</span>
-          <span className="text-lg font-bold text-emerald-400">{goodInterval}</span>
+          <span className="text-lg font-bold text-emerald-400">{intervals[3] || "4d"}</span>
           <span className="text-[10px] text-gray-600 mt-1 uppercase tracking-tighter">Key: 3</span>
         </button>
 
@@ -107,7 +112,7 @@ export function StudyControls({
           className="bg-white/5 border border-white/5 hover:bg-status-easy/10 hover:border-status-easy/30 p-3 rounded-xl flex flex-col items-center group transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none"
         >
           <span className="text-xs font-bold text-gray-500 uppercase mb-1 group-hover:text-status-easy transition">Easy</span>
-          <span className="text-lg font-bold text-status-easy text-cyan-400">14d</span>
+          <span className="text-lg font-bold text-status-easy text-cyan-400">{intervals[4] || "14d"}</span>
           <span className="text-[10px] text-gray-600 mt-1 uppercase tracking-tighter">Key: 4</span>
         </button>
       </div>

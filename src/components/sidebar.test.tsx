@@ -12,8 +12,18 @@ vi.mock("@/contexts/auth-context", () => ({
   })),
 }))
 
+vi.mock("@/contexts/project-context", () => ({
+  useProjectContext: () => ({ currentProject: { id: "proj-1", title: "P" } }),
+}))
+
 vi.mock("@/lib/react-query/queries", () => ({
-  useUserSettings: vi.fn(() => ({ data: { currentStreak: 0, dailyGoalReview: 10 } })),
+  useUserSettings: vi.fn(() => ({ data: { currentStreak: 2, dailyGoalReview: 10 } })),
+  useDailySummary: vi.fn(() => ({
+    data: {
+      currentStreak: 5,
+      reviews: { current: 3, target: 10, isCompleted: false },
+    },
+  })),
 }))
 
 vi.mock("next/navigation", () => ({

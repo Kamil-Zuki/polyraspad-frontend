@@ -7,7 +7,12 @@ import { useUserSettings, useUpdateUserSettings } from "@/lib/react-query/querie
 import { apiClient } from "@/lib/api"
 import type { NotificationPreferencesDto, UpdateUserSettingsDto } from "@/lib/api/types"
 
-export function UserSettingsForm() {
+type UserSettingsFormProps = {
+  /** Вариант для страницы профиля: без дублирующего заголовка «User Settings». */
+  variant?: "default" | "profile"
+}
+
+export function UserSettingsForm({ variant = "default" }: UserSettingsFormProps) {
   const { data: settings, isLoading, error } = useUserSettings()
   const updateSettings = useUpdateUserSettings()
 
@@ -115,20 +120,37 @@ export function UserSettingsForm() {
     setErrorMessage("")
   }
 
+  const isProfile = variant === "profile"
+
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-white">User Settings</h2>
-        {!isEditing && (
+    <div className={isProfile ? "space-y-4" : "space-y-6"}>
+      {!isProfile && (
+        <div className="flex justify-between items-center">
+          <h2 className="text-2xl font-bold text-white">User Settings</h2>
+          {!isEditing && (
+            <button
+              type="button"
+              onClick={() => setIsEditing(true)}
+              className="px-4 py-2 bg-brand-purple hover:bg-indigo-600 text-white rounded-lg transition-colors font-medium"
+            >
+              <i className="fas fa-edit mr-2" />
+              Edit
+            </button>
+          )}
+        </div>
+      )}
+      {isProfile && !isEditing && (
+        <div className="flex justify-end">
           <button
+            type="button"
             onClick={() => setIsEditing(true)}
-            className="px-4 py-2 bg-brand-purple hover:bg-indigo-600 text-white rounded-lg transition-colors font-medium"
+            className="px-4 py-2 bg-brand-purple/80 hover:bg-brand-purple text-white rounded-lg transition-colors text-sm font-medium"
           >
             <i className="fas fa-edit mr-2" />
-            Edit
+            Edit preferences
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {errorMessage && (
         <div className="p-3 bg-red-500/20 border border-red-500/30 rounded-lg text-red-400 text-sm">
@@ -136,8 +158,14 @@ export function UserSettingsForm() {
         </div>
       )}
 
-      <div className="glass-panel rounded-xl p-6">
-        <div className="space-y-6">
+      <div
+        className={
+          isProfile
+            ? "rounded-xl p-0 sm:p-1"
+            : "glass-panel rounded-xl p-6"
+        }
+      >
+        <div className={isProfile ? "space-y-8" : "space-y-6"}>
           {/* Daily Goals */}
           <div>
             <h3 className="text-lg font-semibold text-white mb-4">Daily Goals</h3>

@@ -99,5 +99,8 @@ export const ROUTES = {
   PROJECTS: "/projects",
   DASHBOARD: "/dashboard",
   PROJECT_DETAIL: (id: string) => `/projects/${id}`,
-  SETTINGS: "/settings",
+  /** Профиль и настройки пользователя */
+  PROFILE: "/profile",
+  /** Редирект на PROFILE */
+  SETTINGS: "/profile",
 } as const

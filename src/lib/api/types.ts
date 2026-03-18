@@ -367,6 +367,7 @@ export interface CardStudyDto {
   content: CardStudyContentDto;
   media?: CardMediaDto | null;
   srsState: SrsStateDto;
+  nextIntervals: Record<number, string>;
   siblingsCount: number;
 }
 

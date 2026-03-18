@@ -37,15 +37,6 @@ function cardStudyToStudyCardProps(card: CardStudyDto) {
   };
 }
 
-/** Format interval for display (e.g. 21 → "21d", 0 → "1m" for learning) */
-function formatGoodInterval(state: string, currentInterval: number): string {
-  if (state === "NEW" || state === "LEARNING" || currentInterval < 1) return "1d";
-  if (currentInterval >= 365) return `${Math.round(currentInterval / 365)}y`;
-  if (currentInterval >= 30) return `${Math.round(currentInterval / 30)}mo`;
-  if (currentInterval >= 7) return `${Math.round(currentInterval / 7)}w`;
-  return `${currentInterval}d`;
-}
-
 function initialQueueTotal(stats: QueueStatsDto) {
   return stats.new + stats.review + stats.learning;
 }
@@ -231,14 +222,6 @@ export default function StudySessionPage() {
 
   const handleReveal = () => setIsRevealed(true);
 
-  const goodInterval =
-    currentCard?.srsState != null
-      ? formatGoodInterval(
-          currentCard.srsState.state,
-          currentCard.srsState.currentInterval
-        )
-      : "5d";
-
   if (isDeckLoading || isStarting) {
     return (
       <div className="flex-1 flex items-center justify-center bg-app-bg">
@@ -401,7 +384,7 @@ export default function StudySessionPage() {
         onUndo={handleUndo}
         canUndo={session != null && session.cardsReviewed > 0 && !isLoadingNext}
         disabled={!currentCard || isLoadingNext}
-        goodInterval={goodInterval}
+        intervals={currentCard?.nextIntervals}
       />
     </div>
   );

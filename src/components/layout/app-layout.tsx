@@ -13,7 +13,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const isGlobalPage =
     pathname === "/auth" ||
     pathname === "/projects" ||
-    pathname === "/profile" ||
     pathname === "/editor" ||
     pathname === "/study" ||
     pathname.startsWith("/study/")
