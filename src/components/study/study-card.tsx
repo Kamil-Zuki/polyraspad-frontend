@@ -14,6 +14,10 @@ interface StudyCardProps {
   srsState?: { state: string; currentInterval: number };
   isRevealed: boolean;
   onReveal: () => void;
+  userAnswer?: string;
+  onAnswerChange?: (value: string) => void;
+  onEnter?: () => void;
+  inputRef?: React.RefObject<HTMLInputElement | null>;
 }
 
 const SRS_BADGE: Record<string, { label: string; className: string }> = {
@@ -34,6 +38,10 @@ export function StudyCard({
   srsState,
   isRevealed,
   onReveal,
+  userAnswer = "",
+  onAnswerChange,
+  onEnter,
+  inputRef,
 }: StudyCardProps) {
   const highlightedSentence = sentence.split(targetWord).reduce(
     (acc, part, i) => {
@@ -48,6 +56,12 @@ export function StudyCard({
     },
     [] as (string | React.ReactNode)[]
   );
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && onEnter) {
+      onEnter();
+    }
+  };
 
   const badge = srsState ? SRS_BADGE[srsState.state] ?? SRS_BADGE.NEW : SRS_BADGE.NEW;
 
@@ -92,7 +106,21 @@ export function StudyCard({
         </h2>
 
         {!isRevealed && (
-          <p className="text-gray-500 text-sm mt-6">Press <kbd className="px-1.5 py-0.5 rounded bg-white/10 font-mono text-xs">Space</kbd> to reveal</p>
+          <div className="mt-8 w-full max-w-sm">
+            <input
+              ref={inputRef}
+              type="text"
+              value={userAnswer}
+              onChange={(e) => onAnswerChange?.(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Type your answer..."
+              className="w-full bg-app-bg/60 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-brand-primary/50 transition-colors text-center"
+              autoFocus
+            />
+            <p className="text-gray-500 text-sm mt-4">
+              Press <kbd className="px-1.5 py-0.5 rounded bg-white/10 font-mono text-xs">Enter</kbd> to reveal
+            </p>
+          </div>
         )}
 
         {isRevealed && (

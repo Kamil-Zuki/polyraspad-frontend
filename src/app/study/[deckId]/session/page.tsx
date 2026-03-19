@@ -56,14 +56,17 @@ export default function StudySessionPage() {
 
   const [session, setSession] = useState<StudySessionDto | null>(null);
   const [currentCard, setCurrentCard] = useState<CardStudyDto | null>(null);
+  const [userAnswer, setUserAnswer] = useState(""); // Состояние для хранения ответа пользователя
   const [isRevealed, setIsRevealed] = useState(false);
   const [sessionComplete, setSessionComplete] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isStarting, setIsStarting] = useState(true);
   const [isLoadingNext, setIsLoadingNext] = useState(false);
   const [copilotFeedback, setCopilotFeedback] = useState<CopilotReviewFeedbackDto | null>(null);
+  const [leechNotification, setLeechNotification] = useState(false); // Состояние для уведомления о личе
   const [experimentVariant, setExperimentVariant] = useState<string>("control");
   const cardShownAtRef = useRef<number>(0);
+  const inputRef = useRef<HTMLInputElement>(null); // Реф для фокусировки на поле ввода
 
   const deckName = deck?.title ?? "Unknown Deck";
   const projectName = currentProject?.title ?? "Unknown Project";
@@ -86,7 +89,10 @@ export default function StudySessionPage() {
     } else {
       setCurrentCard(next);
       setIsRevealed(false);
+      setUserAnswer(""); // Сброс ответа пользователя для новой карточки
       cardShownAtRef.current = Date.now();
+      // Фокусировка на поле ввода при смене карточки
+      setTimeout(() => inputRef.current?.focus(), 50);
     }
   }, []);
 
@@ -151,11 +157,19 @@ export default function StudySessionPage() {
     const durationMs = Math.round(Date.now() - cardShownAtRef.current);
     setIsLoadingNext(true);
     try {
-      await apiClient.study.submitReview(session.id, {
+      const reviewResult = await apiClient.study.submitReview(session.id, {
         cardId: currentCard.id,
         rating,
         durationMs,
+        userAnswer, // Отправка ответа пользователя
       });
+
+      // Показ уведомления о личе (если карта была отмечена как leech)
+      if (reviewResult.isLeech) {
+        setLeechNotification(true);
+        setTimeout(() => setLeechNotification(false), 5000);
+      }
+
       const feedback = await apiClient.automation.getCopilotReviewFeedback({
         cardId: currentCard.id,
         sentence: currentCard.content.sentence,
@@ -165,6 +179,7 @@ export default function StudySessionPage() {
             currentCard.content.targetIndex.start + currentCard.content.targetIndex.len
           ) || currentCard.content.targetLemma || "",
         translation: currentCard.content.translation,
+        userAnswer, // Передача ответа пользователя для Copilot
         rating,
       });
       setCopilotFeedback(feedback);
@@ -357,12 +372,25 @@ export default function StudySessionPage() {
       />
 
       <main className="flex-1 flex flex-col items-center justify-center p-6 relative z-10">
+        {leechNotification && (
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-top duration-300">
+            <div className="bg-amber-500/90 backdrop-blur-sm text-white px-6 py-3 rounded-2xl shadow-xl flex items-center gap-3 border border-amber-400/50">
+              <i className="fas fa-exclamation-triangle" />
+              <span className="text-sm font-medium">This card was marked as a leech and suspended.</span>
+            </div>
+          </div>
+        )}
+
         {currentCard ? (
           <div className="w-full max-w-3xl">
             <StudyCard
               {...cardStudyToStudyCardProps(currentCard)}
               isRevealed={isRevealed}
               onReveal={handleReveal}
+              userAnswer={userAnswer}
+              onAnswerChange={setUserAnswer}
+              onEnter={handleReveal}
+              inputRef={inputRef}
             />
             {copilotFeedback && (
               <div className="mt-4 rounded-xl border border-brand-primary/30 bg-brand-primary/10 p-4">

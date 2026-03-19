@@ -29,7 +29,19 @@ export function StudyControls({
 }: StudyControlsProps) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.key === "z") {
+      // Игнорируем горячие клавиши, если фокус в поле ввода (SR-LRN-06)
+      const activeElement = document.activeElement;
+      if (
+        activeElement && (
+          activeElement.tagName === 'INPUT' || 
+          activeElement.tagName === 'TEXTAREA' || 
+          (activeElement as HTMLElement).isContentEditable
+        )
+      ) {
+        return;
+      }
+
+      if (e.ctrlKey && (e.key === "z" || e.key === "Z")) {
         e.preventDefault();
         if (isRevealed && canUndo && onUndo) onUndo();
         return;
