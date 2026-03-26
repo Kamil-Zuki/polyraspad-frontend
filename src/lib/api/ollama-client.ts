@@ -7,7 +7,7 @@ const API_BASE =
 export const EDITOR_DEFAULT_OLLAMA_MODEL =
   (typeof process !== "undefined" &&
     process.env.NEXT_PUBLIC_EDITOR_OLLAMA_MODEL?.trim()) ||
-  "qwen2.5:1.5b"
+  ""
 
 /**
  * Выбирает имя модели для редактора: точное совпадение или тег :latest из установленных,
@@ -17,10 +17,11 @@ export function resolveEditorOllamaModel(
   installedNames: string[],
   preferred: string = EDITOR_DEFAULT_OLLAMA_MODEL,
 ): string {
-  const p = (preferred || "qwen2.5:1.5b").trim()
+  const p = (preferred || "").trim()
   if (installedNames.length === 0) return p
 
   const pl = p.toLowerCase()
+  if (!pl) return installedNames[0]
   // Ollama часто отдаёт теги с другим регистром (например qwen2.5:1.5B) — без этого в API уходит «не то» имя
   const exactCi = installedNames.find(
     (n) => {

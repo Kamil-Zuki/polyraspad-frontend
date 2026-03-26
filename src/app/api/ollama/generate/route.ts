@@ -4,7 +4,7 @@ import { geminiGenerateText } from "@/lib/server/gemini-generate"
 
 // 127.0.0.1 надёжнее localhost на Windows, если Ollama слушает только IPv4
 const OLLAMA_BASE = process.env.OLLAMA_BASE_URL ?? "http://127.0.0.1:11434"
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL ?? "qwen2.5:1.5b"
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL?.trim() ?? ""
 
 export interface OllamaGenerateBody {
   prompt: string
@@ -81,6 +81,7 @@ export async function POST(request: NextRequest) {
 
   try {
     let { model = OLLAMA_MODEL, stream = false } = body
+    model = model.trim()
     const prompt = body.prompt?.trim()
 
     if (!prompt) {
@@ -117,6 +118,20 @@ export async function POST(request: NextRequest) {
         }
         return NextResponse.json({ error: msg }, { status: 502 })
       }
+    }
+
+    if (!model) {
+      const models = await fetchAvailableModels()
+      if (models.length === 0) {
+        return NextResponse.json(
+          {
+            error:
+              "Модель не указана. Задайте OLLAMA_MODEL в .env (сервер Next) или передайте model в запросе.",
+          },
+          { status: 400 },
+        )
+      }
+      model = models[0]
     }
 
     let result = await doGenerate(model, prompt, stream)
