@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
+import { getEditorAiProvider } from "@/lib/server/editor-ai-provider"
+import { geminiGenerateText } from "@/lib/server/gemini-generate"
 
-const OLLAMA_BASE = process.env.OLLAMA_BASE_URL ?? "http://localhost:11434"
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL ?? "llama3.2"
+// 127.0.0.1 надёжнее localhost на Windows, если Ollama слушает только IPv4
+const OLLAMA_BASE = process.env.OLLAMA_BASE_URL ?? "http://127.0.0.1:11434"
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL ?? "qwen2.5:1.5b"
 
 export interface OllamaGenerateBody {
   prompt: string
@@ -27,11 +30,28 @@ async function doGenerate(
   prompt: string,
   stream: boolean,
 ): Promise<{ ok: boolean; data?: { response?: string; error?: string }; errText?: string; status?: number }> {
-  const res = await fetch(`${OLLAMA_BASE}/api/generate`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ model, prompt, stream }),
-  })
+  // Таймаут для медленных CPU-моделей (крупные модели могут генерировать >30 сек)
+  const controller = new AbortController()
+  const timeoutMs = 180_000
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
+
+  let res: Response
+  try {
+    res = await fetch(`${OLLAMA_BASE}/api/generate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ model, prompt, stream }),
+      signal: controller.signal,
+    })
+  } catch (e) {
+    clearTimeout(timer)
+    const msg = e instanceof Error ? e.message : String(e)
+    if (msg.includes("abort") || msg.includes("Abort")) {
+      return { ok: false, errText: `Ollama request timed out after ${timeoutMs}ms`, status: 504 }
+    }
+    return { ok: false, errText: `Ollama fetch error: ${msg}`, status: 502 }
+  }
+  clearTimeout(timer)
   const errText = await res.text()
   if (!res.ok) {
     return { ok: false, errText, status: res.status }
@@ -45,13 +65,58 @@ async function doGenerate(
 }
 
 export async function POST(request: NextRequest) {
+  let body: OllamaGenerateBody
   try {
-    const body = (await request.json()) as OllamaGenerateBody
+    const raw = (await request.text()).replace(/^\uFEFF/, "").trim()
+    if (!raw) {
+      return NextResponse.json({ error: "Пустое тело запроса" }, { status: 400 })
+    }
+    body = JSON.parse(raw) as OllamaGenerateBody
+  } catch {
+    return NextResponse.json(
+      { error: "Некорректный JSON в теле запроса (проверьте Content-Type: application/json)." },
+      { status: 400 },
+    )
+  }
+
+  try {
     let { model = OLLAMA_MODEL, stream = false } = body
     const prompt = body.prompt?.trim()
 
     if (!prompt) {
       return NextResponse.json({ error: "Prompt is required" }, { status: 400 })
+    }
+
+    if (getEditorAiProvider() === "gemini") {
+      const key = process.env.GEMINI_API_KEY?.trim()
+      if (!key) {
+        return NextResponse.json(
+          {
+            error:
+              "Режим Gemini: задайте GEMINI_API_KEY в .env (сервер Next). Или EDITOR_AI_PROVIDER=ollama для локальной Ollama.",
+          },
+          { status: 503 },
+        )
+      }
+
+      const controller = new AbortController()
+      const timeoutMs = 180_000
+      const timer = setTimeout(() => controller.abort(), timeoutMs)
+      try {
+        const { text, modelId } = await geminiGenerateText(prompt, controller.signal)
+        clearTimeout(timer)
+        return NextResponse.json({ response: text, model: modelId, provider: "gemini" })
+      } catch (e) {
+        clearTimeout(timer)
+        const msg = e instanceof Error ? e.message : String(e)
+        if (msg.includes("abort") || msg.includes("Abort")) {
+          return NextResponse.json(
+            { error: `Gemini: таймаут ${timeoutMs} мс` },
+            { status: 504 },
+          )
+        }
+        return NextResponse.json({ error: msg }, { status: 502 })
+      }
     }
 
     let result = await doGenerate(model, prompt, stream)
@@ -86,7 +151,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: data.error }, { status: 500 })
     }
 
-    return NextResponse.json({ response: data.response ?? "", model })
+    return NextResponse.json({ response: data.response ?? "", model, provider: "ollama" })
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Unknown error"
     return NextResponse.json(

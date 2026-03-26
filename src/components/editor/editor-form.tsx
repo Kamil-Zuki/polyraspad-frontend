@@ -11,6 +11,12 @@ import { CreateCardDto, SourceMetaDto } from "@/lib/api/types";
 import { uploadImage } from "@/lib/api/media-client";
 import { getPreviewImageSrc } from "@/lib/utils/media-preview-url";
 import { PreviewImage } from "@/components/editor/card-preview";
+import {
+  ollamaGenerate,
+  ollamaListModels,
+  resolveEditorOllamaModel,
+  EDITOR_DEFAULT_OLLAMA_MODEL,
+} from "@/lib/api/ollama-client";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -52,6 +58,9 @@ export function EditorForm({ selectedDeckId: selectedDeckIdProp, onSelectedDeckI
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
+  /** Идентификатор модели в UI (Ollama или Gemini в зависимости от провайдера на сервере) */
+  const [translateOllamaModel, setTranslateOllamaModel] = useState(EDITOR_DEFAULT_OLLAMA_MODEL);
+  const [editorAiProvider, setEditorAiProvider] = useState<"ollama" | "gemini">("ollama");
   const [showImageUrlInput, setShowImageUrlInput] = useState(false);
   const [showImageActionChoice, setShowImageActionChoice] = useState(false);
   const [showAudioUrlInput, setShowAudioUrlInput] = useState(false);
@@ -75,6 +84,22 @@ export function EditorForm({ selectedDeckId: selectedDeckIdProp, onSelectedDeckI
     const firstDeck = findFirstDeck(deckTree);
     if (firstDeck?.id) setInternalDeckId(firstDeck.id);
   }, [deckTree, selectedDeckId, onSelectedDeckIdChange]);
+
+  useEffect(() => {
+    ollamaListModels()
+      .then(({ models, provider }) => {
+        setEditorAiProvider(provider);
+        if (provider === "gemini" && models.length > 0) {
+          setTranslateOllamaModel(models[0]);
+        } else {
+          setTranslateOllamaModel(resolveEditorOllamaModel(models));
+        }
+      })
+      .catch(() => {
+        setEditorAiProvider("ollama");
+        setTranslateOllamaModel(EDITOR_DEFAULT_OLLAMA_MODEL);
+      });
+  }, []);
 
   useEffect(() => {
     setImagePreviewError(false);
@@ -121,11 +146,44 @@ export function EditorForm({ selectedDeckId: selectedDeckIdProp, onSelectedDeckI
   const handleAiTranslate = async () => {
     if (isTranslating) return;
 
+    const s = sentence.trim();
+    const w = targetWord.trim();
+    if (!s) {
+      setError("Введите предложение (Sentence), чтобы перевести в контексте.");
+      return;
+    }
+
+    setError("");
     setIsTranslating(true);
     try {
-      await new Promise((r) => setTimeout(r, 1000));
-      const word = targetWord.trim() || "TargetWord";
-      setTranslation(`AI Translation: ${word} means...`);
+      const targetHint = w
+        ? `Focus word or phrase: "${w}".`
+        : "No separate target word — translate the whole sentence naturally.";
+      const prompt = `You are a translator for English→Russian flashcards.
+English sentence: """${s}"""
+${targetHint}
+Task: Output ONE concise Russian line: the meaning of the sentence in context (how the focus word is used, if given). 
+Rules: Russian only. No quotes around the answer. No labels like "Translation:". No English.`;
+
+      const text = await ollamaGenerate({
+        prompt,
+        model: translateOllamaModel,
+        stream: false,
+      });
+
+      const cleaned = text
+        .trim()
+        .replace(/^(translation|перевод)\s*[:：]\s*/i, "")
+        .replace(/^["'`«»]+|["'`«»]+$/g, "")
+        .trim();
+
+      if (cleaned) {
+        setTranslation(cleaned);
+      } else {
+        setError("Модель вернула пустой перевод. Попробуйте ещё раз.");
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Ошибка AI Translate.");
     } finally {
       setIsTranslating(false);
     }
@@ -331,8 +389,9 @@ export function EditorForm({ selectedDeckId: selectedDeckIdProp, onSelectedDeckI
             <button
               type="button"
               onClick={handleAiTranslate}
-              disabled={isTranslating}
-              className="text-[10px] font-bold uppercase tracking-widest text-brand-primary hover:text-white transition-colors flex items-center gap-1.5"
+              disabled={isTranslating || !sentence.trim()}
+              title={`${editorAiProvider === "gemini" ? "Gemini" : "Ollama"}: ${translateOllamaModel}`}
+              className="text-[10px] font-bold uppercase tracking-widest text-brand-primary hover:text-white transition-colors flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <i
                 className={cn(

@@ -105,15 +105,29 @@ export default function StudySessionPage() {
 
     (async () => {
       try {
-        const assignment = await apiClient.automation.getExperimentAssignment("study-copilot-2026");
-        setExperimentVariant(assignment.variant);
-        await apiClient.automation.trackExperimentEvent({
-          key: assignment.key,
-          variant: assignment.variant,
-          eventName: "study_session_started",
-          projectId: deck.projectId,
-          deckId: id,
-        });
+        // Эксперименты — необязательны: старый BFF без /experiments/* не должен блокировать учёбу
+        const defaultKey = "study-copilot-2026";
+        let expKey = defaultKey;
+        let expVariant = "control";
+        try {
+          const assignment = await apiClient.automation.getExperimentAssignment(defaultKey);
+          expKey = assignment.key;
+          expVariant = assignment.variant;
+          setExperimentVariant(expVariant);
+        } catch {
+          setExperimentVariant("control");
+        }
+        try {
+          await apiClient.automation.trackExperimentEvent({
+            key: expKey,
+            variant: expVariant,
+            eventName: "study_session_started",
+            projectId: deck.projectId,
+            deckId: id,
+          });
+        } catch {
+          /* игнорируем отсутствие POST /experiments/events */
+        }
 
         const started = await apiClient.study.startSession({
           projectId: deck.projectId,
@@ -170,26 +184,34 @@ export default function StudySessionPage() {
         setTimeout(() => setLeechNotification(false), 5000);
       }
 
-      const feedback = await apiClient.automation.getCopilotReviewFeedback({
-        cardId: currentCard.id,
-        sentence: currentCard.content.sentence,
-        targetWord:
-          currentCard.content.sentence.slice(
-            currentCard.content.targetIndex.start,
-            currentCard.content.targetIndex.start + currentCard.content.targetIndex.len
-          ) || currentCard.content.targetLemma || "",
-        translation: currentCard.content.translation,
-        userAnswer, // Передача ответа пользователя для Copilot
-        rating,
-      });
-      setCopilotFeedback(feedback);
-      await apiClient.automation.trackExperimentEvent({
-        key: "study-copilot-2026",
-        variant: experimentVariant,
-        eventName: `review_rating_${rating}`,
-        projectId: deck?.projectId,
-        deckId: id,
-      });
+      try {
+        const feedback = await apiClient.automation.getCopilotReviewFeedback({
+          cardId: currentCard.id,
+          sentence: currentCard.content.sentence,
+          targetWord:
+            currentCard.content.sentence.slice(
+              currentCard.content.targetIndex.start,
+              currentCard.content.targetIndex.start + currentCard.content.targetIndex.len
+            ) || currentCard.content.targetLemma || "",
+          translation: currentCard.content.translation,
+          userAnswer,
+          rating,
+        });
+        setCopilotFeedback(feedback);
+      } catch {
+        setCopilotFeedback(null);
+      }
+      try {
+        await apiClient.automation.trackExperimentEvent({
+          key: "study-copilot-2026",
+          variant: experimentVariant,
+          eventName: `review_rating_${rating}`,
+          projectId: deck?.projectId,
+          deckId: id,
+        });
+      } catch {
+        /* необязательная телеметрия */
+      }
       setSession((prev) =>
         prev
           ? { ...prev, cardsReviewed: prev.cardsReviewed + 1 }

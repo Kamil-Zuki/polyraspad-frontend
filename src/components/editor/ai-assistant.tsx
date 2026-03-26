@@ -3,7 +3,12 @@
 import { useState, useCallback, useEffect } from "react"
 import { cn } from "@/lib/utils"
 import { useEditorCard } from "@/contexts/editor-card-context"
-import { ollamaGenerate, ollamaListModels } from "@/lib/api/ollama-client"
+import {
+  ollamaGenerate,
+  ollamaListModels,
+  resolveEditorOllamaModel,
+  EDITOR_DEFAULT_OLLAMA_MODEL,
+} from "@/lib/api/ollama-client"
 
 interface ContextExample {
   sentence: string
@@ -12,9 +17,13 @@ interface ContextExample {
 
 export function AiAssistant() {
   const [isCollapsed, setIsCollapsed] = useState(false)
-  const [ollamaModel, setOllamaModel] = useState<string | null>(null)
+  /** Модель в UI; для Gemini приходит с сервера (GEMINI_MODEL) */
+  const [ollamaModel, setOllamaModel] = useState<string>(EDITOR_DEFAULT_OLLAMA_MODEL)
+  const [editorAiProvider, setEditorAiProvider] = useState<"ollama" | "gemini">("ollama")
   const {
+    sentence,
     targetWord,
+    translation,
     notes,
     setSentence,
     setTranslation,
@@ -34,10 +43,13 @@ export function AiAssistant() {
   const [audioSuggestion, setAudioSuggestion] = useState<string | null>(null)
   const [isSuggestingAudio, setIsSuggestingAudio] = useState(false)
 
-  const ollamaOptions = useCallback(() => ({
-    model: ollamaModel ?? undefined,
-    stream: false as const,
-  }), [ollamaModel])
+  const ollamaOptions = useCallback(
+    () => ({
+      model: ollamaModel,
+      stream: false as const,
+    }),
+    [ollamaModel],
+  )
 
   const fetchContextExample = useCallback(async () => {
     const word = targetWord.trim()
@@ -87,23 +99,52 @@ TRANSLATION: "[your Russian translation here]"`,
     setIsGeneratingGrammar(true)
     setGrammarError(null)
     try {
+      // SR-AI-02: гипер-контекст (предложение + целевое слово), ответ на русском, 2–3 предложения
+      const ctxSentence = sentence.trim()
+      const ctxTranslation = translation.trim()
+
+      let prompt: string
+      if (ctxSentence) {
+        prompt = `You are a concise English grammar tutor. The learner's native language is Russian.
+
+English sentence:
+${ctxSentence}
+
+Target word or phrase to explain:
+${word}
+${ctxTranslation ? `\nLearner's Russian back-of-card (optional context):\n${ctxTranslation}\n` : "\n"}
+
+Write 2-3 short sentences in RUSSIAN only. Explain why the target appears in THIS sentence as it does (form, syntax, agreement, tense, word order, or a common mistake learners make here). Do not write a generic textbook article — tie every point to this sentence. No bullet lists, no English in the answer, no prefix like "Объяснение:".`
+      } else {
+        prompt = `You are a concise English grammar tutor. The learner's native language is Russian.
+No full sentence was given.
+
+English word or phrase:
+${word}
+
+Write 2-3 short sentences in RUSSIAN only: part of speech, typical usage or word-formation, common mistakes. No bullet lists, no English in the answer, no prefix like "Объяснение:".`
+      }
+
       const response = await ollamaGenerate({
-        prompt: `Explain the grammar of the English word "${word}" in 1-2 short sentences. Focus on: part of speech, word formation (e.g. adverb from adjective), usage, or common mistakes. Use simple language. Output only the explanation, no labels or bullets.`,
+        prompt,
         ...ollamaOptions(),
       })
 
-      const trimmed = response.trim()
+      const trimmed = response
+        .trim()
+        .replace(/^(объяснение|explanation)\s*[:：]\s*/i, "")
+        .trim()
       if (trimmed) {
         setGrammarText(trimmed)
       } else {
-        setGrammarError("Empty response. Try again.")
+        setGrammarError("Пустой ответ модели. Попробуйте ещё раз.")
       }
     } catch (e) {
-      setGrammarError(e instanceof Error ? e.message : "Failed to generate")
+      setGrammarError(e instanceof Error ? e.message : "Не удалось сгенерировать объяснение")
     } finally {
       setIsGeneratingGrammar(false)
     }
-  }, [targetWord, ollamaOptions])
+  }, [targetWord, sentence, translation, ollamaOptions])
 
   const fetchImageSuggestion = useCallback(async () => {
     const word = targetWord.trim()
@@ -143,8 +184,18 @@ TRANSLATION: "[your Russian translation here]"`,
 
   useEffect(() => {
     ollamaListModels()
-      .then((models) => setOllamaModel(models[0] ?? null))
-      .catch(() => setOllamaModel(null))
+      .then(({ models, provider }) => {
+        setEditorAiProvider(provider)
+        if (provider === "gemini" && models.length > 0) {
+          setOllamaModel(models[0])
+        } else {
+          setOllamaModel(resolveEditorOllamaModel(models))
+        }
+      })
+      .catch(() => {
+        setEditorAiProvider("ollama")
+        setOllamaModel(EDITOR_DEFAULT_OLLAMA_MODEL)
+      })
   }, [])
 
   useEffect(() => {
@@ -165,9 +216,17 @@ TRANSLATION: "[your Russian translation here]"`,
     )}>
       <div className="p-4 border-b border-app-border flex justify-between items-center overflow-hidden">
         {!isCollapsed && (
-          <span className="text-sm font-bold text-gray-100 flex items-center gap-2 whitespace-nowrap">
-            <i className="fas fa-robot text-brand-primary" /> AI Assistant
-          </span>
+          <div className="flex flex-col min-w-0">
+            <span className="text-sm font-bold text-gray-100 flex items-center gap-2 whitespace-nowrap">
+              <i className="fas fa-robot text-brand-primary" /> AI Assistant
+            </span>
+            <span
+              className="text-[10px] text-gray-500 truncate mt-0.5"
+              title={`${editorAiProvider === "gemini" ? "Gemini" : "Ollama"}: ${ollamaModel}`}
+            >
+              {editorAiProvider === "gemini" ? "Gemini" : "Ollama"} · {ollamaModel}
+            </span>
+          </div>
         )}
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
@@ -222,13 +281,18 @@ TRANSLATION: "[your Russian translation here]"`,
                 </div>
               </div>
 
-              {/* Grammar Explainer (SR-AI-02) */}
+              {/* Grammar Explainer (SR-AI-02: контекст предложения + объяснение на русском) */}
               <div>
                 <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">Grammar Explainer</div>
                 <div className="glass-panel p-4 rounded-xl border border-app-border text-sm leading-relaxed">
+                  {!sentence.trim() && (
+                    <p className="text-[10px] text-amber-500/90 mb-3 leading-snug">
+                      Для точного объяснения (как в спецификации SR-AI-02) лучше заполнить поле Sentence — тогда модель привяжет грамматику к контексту.
+                    </p>
+                  )}
                   {grammarText ? (
                     <>
-                      <p className="text-gray-400 mb-3">{grammarText}</p>
+                      <p className="text-gray-400 mb-3 whitespace-pre-wrap">{grammarText}</p>
                       <button
                         onClick={() => setNotes(notes ? `${notes}\n\n${grammarText}` : grammarText)}
                         className="text-[10px] font-bold uppercase tracking-widest text-brand-primary hover:text-white transition-colors flex items-center gap-1.5"
@@ -237,15 +301,26 @@ TRANSLATION: "[your Russian translation here]"`,
                       </button>
                     </>
                   ) : grammarError ? (
-                    <p className="text-red-400 text-xs">{grammarError}</p>
+                    <div className="space-y-2">
+                      <p className="text-red-400 text-xs">{grammarError}</p>
+                      <button
+                        type="button"
+                        onClick={fetchGrammarExplanation}
+                        disabled={isGeneratingGrammar || !targetWord.trim()}
+                        className="text-[10px] font-bold uppercase tracking-widest text-brand-primary hover:text-white transition-colors disabled:opacity-50"
+                      >
+                        Повторить
+                      </button>
+                    </div>
                   ) : (
                     <button
+                      type="button"
                       onClick={fetchGrammarExplanation}
-                      disabled={isGeneratingGrammar}
-                      className="text-[10px] font-bold uppercase tracking-widest text-brand-primary hover:text-white transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                      disabled={isGeneratingGrammar || !targetWord.trim()}
+                      className="text-[10px] font-bold uppercase tracking-widest text-brand-primary hover:text-white transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isGeneratingGrammar ? <i className="fas fa-spinner fa-spin" /> : <i className="fas fa-lightbulb" />}
-                      {" "}{isGeneratingGrammar ? "Generating..." : "Explain grammar"}
+                      {" "}{isGeneratingGrammar ? "Генерация…" : "Explain grammar"}
                     </button>
                   )}
                 </div>
