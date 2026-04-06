@@ -27,14 +27,17 @@ export function PreviewImage({
     src && !src.includes("/api/Media/serve-image") ? src : ""
   )
   const objectUrlRef = useRef<string | null>(null)
+  const triedFallbackRef = useRef(false)
 
   useEffect(() => {
     if (!src) {
       setResolvedSrc("")
       setError(false)
+      triedFallbackRef.current = false
       return
     }
     setError(false)
+    triedFallbackRef.current = false
     if (src.includes("/api/Media/serve-image")) {
       const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null
       fetch(src, {
@@ -52,6 +55,7 @@ export function PreviewImage({
         })
         .catch(() => {
           if (fallbackSrc?.trim()) {
+            triedFallbackRef.current = true
             setResolvedSrc(fallbackSrc.trim())
             setError(false)
           } else {
@@ -108,7 +112,17 @@ export function PreviewImage({
         src={resolvedSrc}
         alt={alt}
         className={cn("w-full h-full min-h-[140px] max-h-48 object-contain", imgClassName)}
-        onError={() => setError(true)}
+        onError={() => {
+          const fallback = fallbackSrc?.trim()
+          if (fallback && resolvedSrc !== fallback && !triedFallbackRef.current) {
+            triedFallbackRef.current = true
+            setResolvedSrc(fallback)
+            setError(false)
+            return
+          }
+
+          setError(true)
+        }}
       />
     </div>
   )

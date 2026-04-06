@@ -1,4 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
+import {
+  fetchAggregatorOllamaGenerate,
+  isAggregatorOllamaProxyConfigured,
+} from "@/lib/server/aggregator-ollama-proxy"
 import { getEditorAiProvider } from "@/lib/server/editor-ai-provider"
 import { geminiGenerateText } from "@/lib/server/gemini-generate"
 
@@ -22,6 +26,47 @@ async function fetchAvailableModels(): Promise<string[]> {
       .filter((n): n is string => !!n)
   } catch {
     return []
+  }
+}
+
+/** Генерация через Aggregator (модель и Ollama на стороне бэкенда). */
+async function doGenerateViaAggregator(
+  model: string | undefined,
+  prompt: string,
+  stream: boolean,
+): Promise<{
+  ok: boolean
+  data?: { response?: string; error?: string; model?: string }
+  errText?: string
+  status?: number
+}> {
+  const controller = new AbortController()
+  const timeoutMs = 180_000
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
+
+  let res: Response
+  try {
+    const body: { prompt: string; stream: boolean; model?: string } = { prompt, stream }
+    if (model) body.model = model
+    res = await fetchAggregatorOllamaGenerate(body, controller.signal)
+  } catch (e) {
+    clearTimeout(timer)
+    const msg = e instanceof Error ? e.message : String(e)
+    if (msg.includes("abort") || msg.includes("Abort")) {
+      return { ok: false, errText: `Ollama proxy request timed out after ${timeoutMs}ms`, status: 504 }
+    }
+    return { ok: false, errText: `Ollama proxy fetch error: ${msg}`, status: 502 }
+  }
+  clearTimeout(timer)
+  const errText = await res.text()
+  if (!res.ok) {
+    return { ok: false, errText, status: res.status }
+  }
+  try {
+    const data = JSON.parse(errText) as { response?: string; error?: string; model?: string }
+    return { ok: res.ok, data }
+  } catch {
+    return { ok: true, data: { response: errText } }
   }
 }
 
@@ -118,6 +163,26 @@ export async function POST(request: NextRequest) {
         }
         return NextResponse.json({ error: msg }, { status: 502 })
       }
+    }
+
+    if (isAggregatorOllamaProxyConfigured()) {
+      const modelForBody = model.length > 0 ? model : undefined
+      const result = await doGenerateViaAggregator(modelForBody, prompt, stream)
+      if (!result.ok) {
+        return NextResponse.json(
+          { error: result.errText ?? `Ollama proxy error: ${result.status}` },
+          { status: result.status ?? 500 },
+        )
+      }
+      const data = result.data!
+      if (data.error) {
+        return NextResponse.json({ error: data.error }, { status: 500 })
+      }
+      return NextResponse.json({
+        response: data.response ?? "",
+        model: data.model ?? modelForBody ?? "",
+        provider: "ollama",
+      })
     }
 
     if (!model) {

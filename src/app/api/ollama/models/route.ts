@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server"
 import {
+  fetchAggregatorOllamaModels,
+  isAggregatorOllamaProxyConfigured,
+} from "@/lib/server/aggregator-ollama-proxy"
+import {
   getConfiguredGeminiModelId,
   getEditorAiProvider,
 } from "@/lib/server/editor-ai-provider"
@@ -36,6 +40,36 @@ export async function GET() {
         models: [id],
         provider: "gemini" as const,
       })
+    }
+
+    if (isAggregatorOllamaProxyConfigured()) {
+      const res = await fetchAggregatorOllamaModels()
+      const raw = await res.text()
+      if (!res.ok) {
+        let errMsg = raw
+        try {
+          const j = JSON.parse(raw) as { error?: string }
+          if (j.error) errMsg = j.error
+        } catch {
+          /* как есть */
+        }
+        return NextResponse.json(
+          { error: errMsg || `Aggregator Ollama proxy: ${res.status}`, models: [] },
+          { status: res.status },
+        )
+      }
+      try {
+        const data = JSON.parse(raw) as { models?: string[]; provider?: string }
+        return NextResponse.json({
+          models: data.models ?? [],
+          provider: "ollama" as const,
+        })
+      } catch {
+        return NextResponse.json(
+          { error: "Некорректный ответ прокси Aggregator", models: [] },
+          { status: 502 },
+        )
+      }
     }
 
     const res = await fetch(`${OLLAMA_BASE}/api/tags`, {
