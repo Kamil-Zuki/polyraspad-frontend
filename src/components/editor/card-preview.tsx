@@ -3,9 +3,10 @@
 import React, { useState, useEffect, useCallback, useRef } from "react"
 import { cn } from "@/lib/utils"
 import { useEditorCard } from "@/contexts/editor-card-context"
+import { resolvePublicApiBaseUrl } from "@/lib/api/public-api-url"
 import { getPreviewImageSrc } from "@/lib/utils/media-preview-url"
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+const API_BASE_URL = resolvePublicApiBaseUrl()
 
 export function PreviewImage({
   src,

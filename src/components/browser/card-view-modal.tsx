@@ -5,11 +5,12 @@ import { cn } from "@/lib/utils"
 import { useCard } from "@/lib/react-query/queries"
 import type { CardResponseDto } from "@/lib/api/types"
 import Link from "next/link"
+import { resolvePublicApiBaseUrl } from "@/lib/api/public-api-url"
 import { getPreviewImageSrc } from "@/lib/utils/media-preview-url"
 import { PreviewImage } from "@/components/editor/card-preview"
 import { resolveCardViewModalCard } from "@/components/browser/card-view-modal-state"
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+const API_BASE_URL = resolvePublicApiBaseUrl()
 
 type CardViewModalProps = {
   cardId: string

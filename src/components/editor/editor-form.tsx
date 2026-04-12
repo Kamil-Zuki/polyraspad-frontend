@@ -9,6 +9,7 @@ import { useDeckTree } from "@/lib/react-query/queries";
 import { useCreateCard } from "@/lib/react-query/queries";
 import { CreateCardDto, SourceMetaDto } from "@/lib/api/types";
 import { uploadImage } from "@/lib/api/media-client";
+import { resolvePublicApiBaseUrl } from "@/lib/api/public-api-url";
 import { getPreviewImageSrc } from "@/lib/utils/media-preview-url";
 import { PreviewImage } from "@/components/editor/card-preview";
 import {
@@ -18,7 +19,7 @@ import {
   EDITOR_DEFAULT_OLLAMA_MODEL,
 } from "@/lib/api/ollama-client";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const API_BASE_URL = resolvePublicApiBaseUrl();
 
 export interface EditorFormProps {
   selectedDeckId?: string;

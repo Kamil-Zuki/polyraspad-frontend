@@ -1,6 +1,7 @@
 import { ApiError } from "./errors";
+import { resolvePublicApiBaseUrl } from "./public-api-url";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const API_BASE_URL = resolvePublicApiBaseUrl();
 
 export abstract class BaseApiClient {
   protected getAuthHeaders(): HeadersInit {

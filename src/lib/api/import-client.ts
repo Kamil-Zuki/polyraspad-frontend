@@ -1,7 +1,8 @@
 import { API_ENDPOINTS } from "../constants";
 import { ApiError } from "./errors";
+import { resolvePublicApiBaseUrl } from "./public-api-url";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const API_BASE_URL = resolvePublicApiBaseUrl();
 
 /** Маппинг колонок файла: индексы колонок для sentence, translation, target */
 export interface ImportColumnMapping {

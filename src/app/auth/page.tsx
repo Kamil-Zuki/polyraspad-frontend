@@ -3,9 +3,11 @@
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
+import { resolvePublicApiBaseUrl } from "@/lib/api/public-api-url"
 import { ROUTES } from "@/lib/constants"
 
 export default function AuthPage() {
+  const apiBaseUrl = resolvePublicApiBaseUrl()
   const [isLogin, setIsLogin] = useState(true)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -41,7 +43,7 @@ export default function AuthPage() {
         errorMessage = err.message
         // Если это ошибка сети
         if (err.message.includes("Failed to fetch") || err.message.includes("NetworkError")) {
-          errorMessage = "Не удалось подключиться к серверу. Проверьте, что API сервер запущен на http://localhost:5206"
+          errorMessage = `Не удалось подключиться к серверу. Проверьте доступность API по адресу ${apiBaseUrl}`
         }
       } else if (err?.message) {
         errorMessage = err.message
