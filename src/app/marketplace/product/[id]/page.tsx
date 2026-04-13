@@ -26,16 +26,16 @@ export default function ProductPage({ params }: { params: { id: string } }) {
     enabled: !!id,
   })
 
+  let content: React.ReactNode
+
   if (!id) {
-    return (
+    content = (
       <div className="flex-1 bg-app-bg p-8">
         <p className="text-gray-400">Invalid product.</p>
       </div>
     )
-  }
-
-  if (isLoading) {
-    return (
+  } else if (isLoading) {
+    content = (
       <div className="flex-1 bg-app-bg p-8" aria-busy="true">
         <div className="flex flex-col items-center justify-center py-24 gap-3">
           <div className="h-10 w-10 rounded-full border-2 border-white/20 border-t-white animate-spin" />
@@ -43,10 +43,8 @@ export default function ProductPage({ params }: { params: { id: string } }) {
         </div>
       </div>
     )
-  }
-
-  if (isError || !product) {
-    return (
+  } else if (isError || !product) {
+    content = (
       <div className="flex-1 bg-app-bg p-8">
         <div className="max-w-7xl mx-auto">
           <p className="text-gray-400">
@@ -55,35 +53,56 @@ export default function ProductPage({ params }: { params: { id: string } }) {
         </div>
       </div>
     )
-  }
+  } else {
+    const image =
+      product.coverImageUrl ||
+      "https://images.unsplash.com/photo-1543269865-cbf427effbad?w=400&q=80"
+    const category = "—"
+    const level = "—"
+    const studentsCount = formatStudentsCount(product.salesCount)
+    const authorAvatar =
+      product.author?.avatarUrl ?? "https://i.pravatar.cc/150?u=anon"
 
-  const image = product.coverImageUrl || ""
-  const category = "—"
-  const level = "—"
-  const studentsCount = formatStudentsCount(product.salesCount)
-  const authorAvatar =
-    product.author?.avatarUrl ?? "https://i.pravatar.cc/150?u=anon"
+    content = (
+      <div className="bg-app-bg text-gray-300 font-sans min-h-screen flex flex-col relative">
+        <header className="h-16 glass border-b border-app-border flex items-center px-8 z-30 sticky top-0">
+          <div className="flex items-center gap-4">
+            <Link
+              href="/projects"
+              className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-primary to-brand-secondary flex items-center justify-center text-white font-bold text-lg mr-3 shadow-glow"
+            >
+              P
+            </Link>
+            <div className="h-6 w-px bg-white/10" />
+            <Link
+              href="/marketplace"
+              className="text-sm font-medium hover:text-white transition flex items-center gap-2 text-gray-400"
+            >
+              <i className="fas fa-arrow-left" /> Back to Marketplace
+            </Link>
+          </div>
+          <div className="flex-1" />
+          <div className="relative w-8 h-8 rounded-full overflow-hidden border border-gray-600">
+            <Image
+              src={authorAvatar}
+              alt={product.author?.displayName ?? "Author"}
+              fill
+              className="object-cover"
+            />
+          </div>
+        </header>
 
-  return (
-    <div className="flex-1 bg-app-bg relative">
-      <div className="w-full h-96 absolute top-0 left-0 z-0 overflow-hidden">
-        <Image
-          src={image}
-          alt="Hero background"
-          fill
-          className="object-cover opacity-20 blur-xl"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-app-bg/80 via-app-bg/90 to-app-bg" />
-      </div>
+        <div className="w-full h-96 absolute top-0 left-0 z-0 overflow-hidden">
+          <Image
+            src={image}
+            alt="Hero background"
+            fill
+            className="object-cover opacity-20 blur-xl"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-app-bg/80 via-app-bg/90 to-app-bg" />
+        </div>
 
-      <main className="w-full max-w-7xl mx-auto px-8 py-12 relative z-10">
-        <Link
-          href="/marketplace"
-          className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white transition mb-6"
-        >
-          <i className="fas fa-arrow-left" /> Back to Marketplace
-        </Link>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+        <main className="flex-1 w-full max-w-7xl mx-auto px-6 py-12 relative z-10 grid grid-cols-1 lg:grid-cols-3 gap-12">
           <div className="lg:col-span-2 space-y-12">
             <ProductHeader
               title={product.title}
@@ -111,8 +130,10 @@ export default function ProductPage({ params }: { params: { id: string } }) {
               authorRole="Creator"
             />
           </div>
-        </div>
-      </main>
-    </div>
-  )
+        </main>
+      </div>
+    )
+  }
+
+  return content
 }

@@ -68,12 +68,11 @@ export function StudyCard({
   return (
     <div
       onClick={!isRevealed ? onReveal : undefined}
-      className={`w-full max-w-2xl min-h-[320px] rounded-2xl border border-white/10 bg-app-surface/90 backdrop-blur-sm shadow-xl flex flex-col items-center text-center relative ${
+      className={`w-full max-w-3xl min-h-[400px] rounded-3xl border border-white/10 bg-[rgba(19,25,39,0.8)] backdrop-blur-[20px] shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] flex flex-col items-center text-center relative ${
         !isRevealed ? "cursor-pointer hover:border-brand-primary/30 hover:bg-app-surface transition-colors" : ""
       }`}
     >
-      {/* Anki-style SRS badge (top right) */}
-      <div className="absolute top-4 right-4 flex items-center gap-2">
+      <div className="absolute top-6 right-6 flex items-center gap-2">
         <span
           className={`px-2.5 py-1 rounded-md border text-[10px] font-semibold uppercase tracking-wider ${badge.className}`}
         >
@@ -93,15 +92,14 @@ export function StudyCard({
       </div>
 
       {sourceType && (
-        <div className="absolute top-4 left-4 flex items-center gap-2 text-xs text-gray-500">
+        <div className="absolute top-6 left-6 flex items-center gap-2 text-xs text-gray-500 hover:text-brand-primary transition">
           {sourceType === "youtube" && <i className="fab fa-youtube text-red-500" />}
           <span>{sourceTitle} {sourceTimestamp && `(${sourceTimestamp})`}</span>
         </div>
       )}
 
-      <div className="flex-1 flex flex-col items-center justify-center w-full px-8 py-12">
-        {/* Front: sentence only (Anki question style) */}
-        <h2 className="text-2xl md:text-3xl leading-relaxed font-medium text-white">
+      <div className="flex-1 flex flex-col items-center justify-center w-full px-10 py-12 mt-8 mb-8">
+        <h2 className="text-3xl md:text-4xl leading-tight font-medium text-white mb-6">
           &ldquo;{highlightedSentence}&rdquo;
         </h2>
 
@@ -125,23 +123,22 @@ export function StudyCard({
 
         {isRevealed && (
           <div className="mt-8 w-full flex flex-col items-center animate-in fade-in duration-300">
-            <div className="h-px w-16 bg-white/20 mb-6" />
-            <p className="text-lg text-gray-300 font-light max-w-xl">
+            <p className="text-lg text-gray-400 font-light max-w-xl">
               &ldquo;{translation}&rdquo;
             </p>
             {note && (
-              <div className="mt-6 p-4 bg-app-bg/60 border border-white/5 rounded-xl text-sm text-left w-full max-w-lg">
+              <div className="mt-8 p-4 bg-app-bg/50 border border-app-border rounded-xl text-sm text-left w-full max-w-lg">
                 <span className="text-[10px] text-gray-500 uppercase font-semibold">Note</span>
                 <p className="text-gray-300 mt-1">{note}</p>
               </div>
             )}
             <button
               type="button"
-              className="mt-6 w-10 h-10 rounded-full bg-app-bg border border-white/10 text-gray-400 flex items-center justify-center hover:text-brand-secondary hover:border-brand-secondary/30 transition"
+              className="mt-8 w-12 h-12 rounded-full bg-app-surface border border-brand-secondary/30 text-brand-secondary flex items-center justify-center hover:bg-brand-secondary hover:text-white transition shadow-lg hover:shadow-brand-secondary/50"
               title="Play audio"
               aria-label="Play audio"
             >
-              <i className="fas fa-volume-up text-sm" />
+              <i className="fas fa-volume-up text-lg" />
             </button>
           </div>
         )}

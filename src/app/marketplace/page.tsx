@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { MarketplaceFilters, type PriceFilter } from "@/components/marketplace/marketplace-filters";
 import { ProductCard, type ProductCardBadgeColor } from "@/components/marketplace/product-card";
@@ -119,30 +120,28 @@ function productDtoToCardProps(product: ProductDto): React.ComponentProps<typeof
 const PAGE_SIZE = 12;
 
 export default function MarketplacePage() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchDebounced, setSearchDebounced] = useState("");
+  const searchParams = useSearchParams();
+  const urlQuery = searchParams.get("q") ?? "";
   const [selectedCategories, setSelectedCategories] = useState<string[]>(["Languages"]);
   const [selectedLevels, setSelectedLevels] = useState<string[]>([]);
   const [priceFilter, setPriceFilter] = useState<PriceFilter>("all");
   const [sort, setSort] = useState<"popularity" | "rating" | "newest" | "price_asc">("popularity");
   const [pageNumber, setPageNumber] = useState(1);
 
-  // Debounce search
-  React.useEffect(() => {
-    const t = setTimeout(() => setSearchDebounced(searchQuery), 300);
-    return () => clearTimeout(t);
-  }, [searchQuery]);
+  useEffect(() => {
+    setPageNumber(1);
+  }, [urlQuery]);
 
   const apiParams = useMemo(
     () => ({
-      query: searchDebounced || undefined,
+      query: urlQuery.trim() || undefined,
       tags: selectedCategories.length ? selectedCategories.join(",") : undefined,
       maxPrice: priceFilter === "free" ? 0 : undefined,
       sort,
       pageNumber,
       pageSize: PAGE_SIZE,
     }),
-    [searchDebounced, selectedCategories, priceFilter, sort, pageNumber]
+    [urlQuery, selectedCategories, priceFilter, sort, pageNumber]
   );
 
   const { data: rawData, isLoading, isError } = useQuery<PaginatedResponseDto<ProductDto>>({
@@ -159,11 +158,6 @@ export default function MarketplacePage() {
   const hasPreviousPage = data?.hasPreviousPage ?? false;
   const showSkeleton = isLoading && !data?.items?.length;
 
-  const handleSellYourDeck = useCallback(() => {
-    // IA: future route for creating product; for now anchor or dashboard
-    window.location.href = "/dashboard";
-  }, []);
-
   return (
     <div className="flex h-full overflow-hidden bg-app-bg">
       <MarketplaceFilters
@@ -178,23 +172,13 @@ export default function MarketplacePage() {
       <main className="flex-1 overflow-y-auto p-8 custom-scroll relative flex flex-col">
         <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-brand-primary/5 to-transparent pointer-events-none" />
 
-        <div className="max-w-7xl mx-auto relative z-10 flex flex-col flex-1">
-          {/* Header: search + filters + Sell */}
-          <header className="flex flex-col sm:flex-row gap-4 justify-between items-stretch sm:items-center mb-6">
-            <div className="relative flex-1 max-w-xl">
-              <i className="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
-              <input
-                type="text"
-                placeholder="Search for decks, topics, or authors..."
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setPageNumber(1);
-                }}
-                className="w-full bg-app-bg border border-app-border rounded-xl pl-11 pr-4 py-2.5 text-sm text-white placeholder-gray-500 focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all"
-              />
-            </div>
-            <div className="flex items-center gap-4 flex-shrink-0">
+        <div className="max-w-7xl mx-auto relative z-10 flex flex-col flex-1 pt-8">
+          <div className="flex justify-between items-center mb-6 gap-4">
+            <h2 className="text-xl font-bold text-white">Featured Courses</h2>
+            <div className="flex items-center gap-4">
+              <div className="text-xs text-gray-500">
+                {isLoading ? "Loading…" : `Showing ${items.length} of ${totalCount} results`}
+              </div>
               <select
                 value={sort}
                 onChange={(e) => {
@@ -208,20 +192,6 @@ export default function MarketplacePage() {
                 <option value="newest">Newest</option>
                 <option value="price_asc">Price</option>
               </select>
-              <button
-                type="button"
-                onClick={handleSellYourDeck}
-                className="bg-app-surface hover:bg-app-hover border border-app-border text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2"
-              >
-                <i className="fas fa-upload" /> Sell Your Deck
-              </button>
-            </div>
-          </header>
-
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold text-white">Featured Courses</h2>
-            <div className="text-xs text-gray-500">
-              {isLoading ? "Loading…" : `Showing ${items.length} of ${totalCount} results`}
             </div>
           </div>
 
