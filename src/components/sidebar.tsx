@@ -2,12 +2,14 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { useProjectContext } from "@/contexts/project-context"
 import { useUserSettings, useDailySummary } from "@/lib/react-query/queries"
 import { ProjectSwitcher } from "./sidebar/project-switcher"
 import { cn } from "@/lib/utils"
+import polyraspadLogo from "@/assets/polyraspad-logo.png"
 
 interface NavItem {
   id: string
@@ -78,10 +80,17 @@ export function Sidebar() {
     <aside className="w-full h-full bg-app-surface border-r border-app-border flex flex-col z-30">
       {/* Logo Area */}
       <div className="h-16 flex items-center px-6 border-b border-app-border">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-primary to-brand-secondary flex items-center justify-center text-white font-bold text-lg mr-3 shadow-glow">
-          P
+        <div className="flex items-center gap-3 min-w-0">
+          <Image
+            src={polyraspadLogo}
+            alt="Polyraspad logo"
+            priority
+            className="h-10 w-10 rounded-xl object-cover shadow-glow"
+          />
+          <span className="truncate font-bold text-white text-lg tracking-tight">
+            Polyraspad
+          </span>
         </div>
-        <span className="font-bold text-white text-lg tracking-tight">PVS.ai</span>
       </div>
 
       {/* Project Switcher */}

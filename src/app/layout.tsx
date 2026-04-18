@@ -21,6 +21,10 @@ export const metadata: Metadata = {
     default: "Polyraspad",
     template: "%s | Polyraspad",
   },
+  icons: {
+    icon: "/icon.png",
+    apple: "/icon.png",
+  },
   description: "Personal Vocabulary Learning Platform - изучайте языки эффективно",
   keywords: ["vocabulary", "language learning", "SRS", "spaced repetition"],
   authors: [{ name: "Polyraspad Team" }],

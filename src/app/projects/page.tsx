@@ -70,7 +70,7 @@ export default function ProjectsHubPage() {
         <footer className="w-full border-t border-white/5 py-8 mt-auto relative z-10">
           <div className="max-w-6xl mx-auto px-6 text-center">
             <p className="text-xs text-gray-600 font-medium tracking-wide">
-              &copy; {new Date().getFullYear()} PVS.ai. Deep Immersion Learning Platform.
+              &copy; {new Date().getFullYear()} Polyraspad. Deep Immersion Learning Platform.
             </p>
           </div>
         </footer>

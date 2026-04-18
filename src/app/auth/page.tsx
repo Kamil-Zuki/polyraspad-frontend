@@ -1,10 +1,12 @@
 "use client"
 
 import { useState, useTransition } from "react"
+import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { resolvePublicApiBaseUrl } from "@/lib/api/public-api-url"
 import { ROUTES } from "@/lib/constants"
+import polyraspadLogo from "@/assets/polyraspad-logo.png"
 
 export default function AuthPage() {
   const apiBaseUrl = resolvePublicApiBaseUrl()
@@ -63,10 +65,13 @@ export default function AuthPage() {
       <div className="w-full max-w-md p-10 glass-panel rounded-2xl border-app-border shadow-2xl relative z-10 animate-in fade-in zoom-in duration-300">
         {/* Logo */}
         <div className="flex items-center justify-center mb-8">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-brand-primary to-brand-secondary flex items-center justify-center text-white font-bold text-xl mr-4 shadow-glow">
-            P
-          </div>
-          <span className="font-bold text-white text-3xl tracking-tight">PVS.ai</span>
+          <Image
+            src={polyraspadLogo}
+            alt="Polyraspad logo"
+            priority
+            className="mr-4 h-14 w-14 rounded-2xl object-cover shadow-glow"
+          />
+          <span className="font-bold text-white text-3xl tracking-tight">Polyraspad</span>
         </div>
 
         <h1 className="text-2xl font-bold text-white mb-2 text-center">

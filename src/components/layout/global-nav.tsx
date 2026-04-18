@@ -1,7 +1,9 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { useAuth } from "@/contexts/auth-context"
+import polyraspadLogo from "@/assets/polyraspad-logo.png"
 
 export function GlobalNav() {
   const { user } = useAuth()
@@ -12,10 +14,13 @@ export function GlobalNav() {
       <div className="w-full max-w-6xl px-6 flex items-center justify-between">
         {/* Logo */}
         <Link href="/projects" className="flex items-center gap-3 group">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-primary to-brand-secondary flex items-center justify-center text-white font-bold shadow-glow group-hover:scale-105 transition-transform">
-            P
-          </div>
-          <span className="font-bold text-xl tracking-tight text-white">PVS.ai</span>
+          <Image
+            src={polyraspadLogo}
+            alt="Polyraspad logo"
+            priority
+            className="h-10 w-10 rounded-xl object-cover shadow-glow group-hover:scale-105 transition-transform"
+          />
+          <span className="font-bold text-xl tracking-tight text-white">Polyraspad</span>
         </Link>
 
         {/* Global Actions & User Profile */}
